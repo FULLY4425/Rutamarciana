@@ -20,19 +20,22 @@
     <div class="row">
       <label for="budget">Suit budget</label>
       <select id="budget">
-        <option value="3">3 h</option>
-        <option value="4" selected>4 h</option>
-        <option value="6">6 h</option>
+        <option value="120">120 min</option>
+        <option value="180" selected>180 min</option>
+        <option value="240">240 min</option>
+        <option value="360">360 min</option>
       </select>
     </div>
     <div class="row">
-      <label for="science">Science stops</label>
+      <label for="science">Science per stop</label>
       <select id="science">
         <option value="10" selected>10 min</option>
         <option value="20">20 min</option>
         <option value="30">30 min</option>
       </select>
     </div>
+
+    <div id="reco" class="reco">—</div>
 
     <button id="compute">COMPUTE ROUTES</button>
     <button id="reset" class="ghost">RESET POINTS</button>

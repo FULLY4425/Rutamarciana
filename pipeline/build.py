@@ -15,18 +15,14 @@ from pipeline.tiles import save_png, save_tile_bmp, to_u8
 MARS_KM_PER_DEG = 59.27
 
 
-def _load_dem(path, target_cell_m, rows, cols):
-    """Lee un GeoTIFF, recorta el centro y promedia a bloques de `target_cell_m`."""
+def _load_dem(path, target_cell_m, rows, cols, at=None):
+    """Lee una ventana del GeoTIFF y la promedia a bloques de `target_cell_m` (metros)."""
     import rasterio
+    from rasterio.windows import Window
 
     with rasterio.open(path) as ds:
-        z = ds.read(1).astype(np.float32)
-        nod = ds.nodata
-        if nod is not None:
-            z[z == nod] = np.nan
-        z[z < -1000] = np.nan
         tr = ds.transform
-        geo = ds.crs.is_geographic if ds.crs else False
+        geo = bool(ds.crs and ds.crs.is_geographic)
         if geo:
             cy = (ds.bounds.top + ds.bounds.bottom) / 2.0
             cell_x = abs(tr.a) * MARS_KM_PER_DEG * 1000.0 * np.cos(np.radians(cy))
@@ -34,12 +30,31 @@ def _load_dem(path, target_cell_m, rows, cols):
         else:
             cell_x, cell_y = abs(tr.a), abs(tr.e)
 
-    cell = float(np.mean([cell_x, cell_y]))
-    f = max(1, int(round(target_cell_m / cell)))
-    r0 = max(0, (z.shape[0] - rows * f) // 2)
-    c0 = max(0, (z.shape[1] - cols * f) // 2)
-    z = z[r0:r0 + rows * f, c0:c0 + cols * f]
-    z = np.nan_to_num(z, nan=float(np.nanmedian(z)))
+        cell = float(np.mean([cell_x, cell_y]))
+        f = max(1, int(round(target_cell_m / cell)))
+        win_h, win_w = rows * f, cols * f
+
+        if at:
+            r0, c0 = int(at[0]), int(at[1])
+        else:
+            r0 = max(0, (ds.height - win_h) // 2)
+            c0 = max(0, (ds.width - win_w) // 2)
+        r0 = max(0, min(r0, max(0, ds.height - win_h)))
+        c0 = max(0, min(c0, max(0, ds.width - win_w)))
+
+        z = ds.read(1, window=Window(c0, r0, win_w, win_h)).astype(np.float32)
+        nod = ds.nodata
+
+    # El centinela de "sin dato" es ~ -3.4e38 (no un umbral: en Marte las
+    # elevaciones son negativas, p. ej. -2400 m en Jezero).
+    if nod is not None:
+        z[z == np.float32(nod)] = np.nan
+    z[~np.isfinite(z)] = np.nan
+    if np.isfinite(z).any():
+        z = np.nan_to_num(z, nan=float(np.nanmedian(z)))
+    else:
+        raise SystemExit("la ventana no tiene datos: prueba otro --at")
+
     z = z.reshape(z.shape[0] // f, f, z.shape[1] // f, f).mean(axis=(1, 3))
     return z.astype(np.float32), cell * f
 
@@ -64,8 +79,10 @@ def main():
     ap.add_argument("--cols", type=int, default=500)
     ap.add_argument("--start", type=int, nargs=2)
     ap.add_argument("--end", type=int, nargs=2)
+    ap.add_argument("--at", type=int, nargs=2, help="fila,col de la esquina superior izquierda (px del DEM)")
     ap.add_argument("--budget-h", type=float, default=4.0)
     ap.add_argument("--science-min", type=float, default=10.0)
+    ap.add_argument("--stops", type=int, default=5)
     a = ap.parse_args()
 
     out = Path(a.out)
@@ -74,7 +91,7 @@ def main():
     else:
         if not a.dem:
             raise SystemExit("falta --dem o --synth")
-        dem, cell_m = _load_dem(a.dem, a.cell, a.rows, a.cols)
+        dem, cell_m = _load_dem(a.dem, a.cell, a.rows, a.cols, a.at)
 
     slope = slope_deg(dem, cell_m)
     rough = rough_from_dem(dem)
@@ -104,6 +121,7 @@ def main():
         routes=routes,
         budget_s=int(a.budget_h * 3600),
         science_s=int(a.science_min * 60),
+        science_stops=a.stops,
         cell_m=cell_m,
         grid={"rows": int(r), "cols": int(c)},
     )

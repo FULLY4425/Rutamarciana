@@ -3,13 +3,14 @@ from pathlib import Path
 
 
 def write_manifest(path: Path, *, site, waypoints, layers, routes, budget_s, science_s,
-                   cell_m=4.0, grid=None):
+                   cell_m=4.0, grid=None, science_stops=5):
     doc = {
         "site": site,
         "cell_m": cell_m,
         "grid": grid or {},
         "budget_s": budget_s,
         "science_s": science_s,
+        "science_stops": science_stops,
         "waypoints": waypoints,
         "layers": layers,
         "routes": routes,

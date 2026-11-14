@@ -11,12 +11,60 @@ const state = {
   start: null,
   end: null,
   data: null,
-  budgetH: 4,
-  scienceMin: 10,
+  budgetMin: 180,
+  sciencePerStop: 10,
+  stops: 5,
 };
 
-function budgetSeconds() {
-  return state.budgetH * 3600 - state.scienceMin * 60;
+function plan(route) {
+  const budget = state.budgetMin * 60;
+  const science = state.sciencePerStop * 60 * state.stops;
+  const used = route.time_s + science;
+  const margin = budget - used;
+  const reserve = budget * 0.15;
+  const status = margin <= 0 ? "NO-GO" : margin < reserve ? "LOW MARGIN" : "GO";
+  return { budget, science, used, margin, reserve, status };
+}
+
+function statusClass(status) {
+  return status === "GO" ? "go" : status === "LOW MARGIN" ? "low" : "nogo";
+}
+
+function renderCards() {
+  if (!state.data) return;
+  cards.innerHTML = "";
+  const fits = [];
+  for (const name of ["safe", "fast"]) {
+    const r = state.data[name];
+    if (!r) continue;
+    const p = plan(r);
+    if (p.status !== "NO-GO") fits.push(name);
+    const el = document.createElement("div");
+    el.className = "card";
+    el.innerHTML = `
+      <h2>${name === "safe" ? "SAFE ROUTE" : "FAST ROUTE"}</h2>
+      <div class="big">${(r.time_s / 60).toFixed(0)} min</div>
+      <div class="kv">${(r.distance_m / 1000).toFixed(2)} km ·
+        roughness ${r.rough_mean === null ? "—" : r.rough_mean.toFixed(2)} ·
+        dose ${r.dose_msv === undefined ? "—" : r.dose_msv.toFixed(3)} mSv</div>
+      <div class="kv">route ${(r.time_s / 60).toFixed(0)} + science
+        ${(p.science / 60).toFixed(0)} = <b>${(p.used / 60).toFixed(0)} min</b>
+        of ${(p.budget / 60).toFixed(0)}</div>
+      <div class="verdict ${statusClass(p.status)}">
+        ${p.status} · margin ${(p.margin / 60).toFixed(0)} min
+      </div>`;
+    cards.appendChild(el);
+  }
+
+  const reco = document.getElementById("reco");
+  if (!fits.length) {
+    reco.textContent = "NO ROUTE FITS — do not leave the habitat";
+  } else if (fits.length === 2) {
+    reco.textContent = "BOTH FIT — take the SAFE route (" +
+      (state.sciencePerStop * state.stops) + " min of science)";
+  } else {
+    reco.textContent = "ONLY THE " + fits[0].toUpperCase() + " ROUTE FITS";
+  }
 }
 
 function g2c(pt) {
@@ -64,32 +112,6 @@ function draw() {
     ctx.strokeStyle = "#05070b";
     ctx.lineWidth = 2;
     ctx.stroke();
-  }
-}
-
-function verdict(route) {
-  const margin = budgetSeconds() - route.time_s;
-  return { margin, ok: margin > 0 };
-}
-
-function renderCards() {
-  if (!state.data) return;
-  cards.innerHTML = "";
-  for (const name of ["safe", "fast"]) {
-    const r = state.data[name];
-    if (!r) continue;
-    const v = verdict(r);
-    const el = document.createElement("div");
-    el.className = "card";
-    el.innerHTML = `
-      <h2>${name === "safe" ? "SAFE ROUTE" : "FAST ROUTE"}</h2>
-      <div class="big">${(r.time_s / 60).toFixed(0)} min</div>
-      <div class="kv">${(r.distance_m / 1000).toFixed(2)} km ·
-        roughness ${r.rough_mean === null ? "—" : r.rough_mean.toFixed(2)}</div>
-      <div class="verdict ${v.ok ? "go" : "nogo"}">
-        ${v.ok ? "GO" : "NO-GO"} · margin ${(v.margin / 60).toFixed(0)} min
-      </div>`;
-    cards.appendChild(el);
   }
 }
 
@@ -154,12 +176,12 @@ document.getElementById("reset").addEventListener("click", () => {
 });
 
 document.getElementById("budget").addEventListener("change", (e) => {
-  state.budgetH = Number(e.target.value);
+  state.budgetMin = Number(e.target.value);
   renderCards();
 });
 
 document.getElementById("science").addEventListener("change", (e) => {
-  state.scienceMin = Number(e.target.value);
+  state.sciencePerStop = Number(e.target.value);
   renderCards();
 });
 
@@ -169,7 +191,11 @@ bg.onload = draw;
   try {
     const meta = await fetch("/api/routes").then((r) => r.json());
     if (meta.grid && meta.grid.rows) state.grid = meta.grid;
-    if (meta.budget_s) state.budgetH = Math.round(meta.budget_s / 3600);
+    if (meta.budget_s) state.budgetMin = Math.round(meta.budget_s / 60);
+    if (meta.science_stops) state.stops = meta.science_stops;
+    if (meta.science_s) state.sciencePerStop = Math.round(meta.science_s / 60);
+    document.getElementById("budget").value = String(state.budgetMin);
+    document.getElementById("science").value = String(state.sciencePerStop);
     const r = meta.routes || meta;
     if (r.safe && r.fast) {
       state.data = { safe: r.safe, fast: r.fast };

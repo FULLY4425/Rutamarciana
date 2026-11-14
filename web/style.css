@@ -134,9 +134,22 @@ button:disabled { opacity: 0.5; cursor: default; }
 }
 
 .go { background: #10331a; color: var(--ok); border: 1px solid #1d5b2e; }
+.low { background: #332a10; color: #f2c14e; border: 1px solid #5b4a1d; }
 .nogo { background: #33101a; color: var(--bad); border: 1px solid #5b1d2a; }
 
 .kv { color: var(--dim); font-size: 12px; }
+
+.reco {
+  border: 1px solid #23303f;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--dim);
+  background: #0a1119;
+}
+
+.kv b { color: var(--ink); font-weight: 600; }
 
 .note {
   margin-top: auto;
