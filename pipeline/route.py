@@ -91,23 +91,29 @@ def plan_routes(dem, slope, rough, cell_m, start, end, budget_s, science_s,
             sec = float(np.sum(seconds_per_meter(grades, edge_rough, k=0.2) * lengths))
             avg_slope = (slope[rr[:-1], cc[:-1]] + slope[rr[1:], cc[1:]]) / 2
             distance = float(lengths.sum())
-            legs.append({"points": pts.tolist(), "time_s": round(sec, 1),
-                         "distance_m": round(distance, 1),
-                         "slope_max_deg": round(float(slope[rr, cc].max()), 2),
-                         "slope_exposure_m": round(float(lengths[avg_slope >= 15].sum()), 1),
-                         "rough_mean": round(float(np.dot(edge_rough, lengths) / distance), 3) if distance else 0.0})
+            edge_slope = np.maximum(avg_slope, np.abs(grades))
+            legs.append({"points": pts.tolist(), "time_s": sec,
+                         "distance_m": distance,
+                         "slope_max_deg": max(float(slope[rr, cc].max()),
+                                              float(np.abs(grades).max()) if grades.size else 0.0),
+                         "slope_exposure_m": float(lengths[edge_slope >= 15].sum()),
+                         "rough_mean": float(np.dot(edge_rough, lengths) / distance) if distance else 0.0})
         outbound, back = legs
-        duration = round(outbound["time_s"] + back["time_s"], 1)
-        length = round(outbound["distance_m"] + back["distance_m"], 1)
+        duration = outbound["time_s"] + back["time_s"]
+        length = outbound["distance_m"] + back["distance_m"]
         used = duration + science_stops * science_s
         reserve = budget_s * reserve_fraction
         result[name] = {"objective": "fastest" if name == "fast" else "conservative",
                         "points": outbound["points"], "outbound": outbound, "return": back,
-                        "time_s": duration, "distance_m": length,
-                        "slope_max_deg": max(outbound["slope_max_deg"], back["slope_max_deg"]),
+                        "time_s": round(duration, 1), "distance_m": round(length, 1),
+                        "slope_max_deg": round(max(outbound["slope_max_deg"], back["slope_max_deg"]), 2),
                         "slope_exposure_m": round(outbound["slope_exposure_m"] + back["slope_exposure_m"], 1),
                         "rough_mean": round((outbound["rough_mean"] * outbound["distance_m"] + back["rough_mean"] * back["distance_m"]) / length, 3) if length else 0.0,
                         "dose_msv": round(duration / 3600 * DOSE_MSV_PER_HOUR, 4),
                         "budget": {"used_s": round(used, 1), "margin_s": round(budget_s - used, 1),
                                    "reserve_s": round(reserve, 1), "fits_reserve": used + reserve <= budget_s}}
+        for leg in legs:
+            for key, digits in (("time_s", 1), ("distance_m", 1), ("slope_max_deg", 2),
+                                ("slope_exposure_m", 1), ("rough_mean", 3)):
+                leg[key] = round(leg[key], digits)
     return result

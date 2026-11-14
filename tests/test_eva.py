@@ -60,6 +60,24 @@ def test_same_endpoint_and_budget_boundary():
     assert route['budget']['fits_reserve'] is True
 
 
+def test_slope_metrics_include_directional_step_gradients():
+    dem = np.tile([0., 1.8, 0., 1.8, 0.], (5, 1))
+    routes = plan_routes(dem, slope_deg(dem, 4), np.zeros_like(dem), 4,
+                         (2, 1), (2, 3), 1000, 0, 0, 0)
+    for route in routes.values():
+        for leg in (route['outbound'], route['return']):
+            assert leg['slope_max_deg'] == pytest.approx(17.65, abs=.01)
+            assert leg['slope_exposure_m'] == pytest.approx(11.3, abs=.1)
+        assert route['slope_exposure_m'] == pytest.approx(22.6, abs=.1)
+
+
+def test_budget_decision_uses_unrounded_leg_times():
+    dem = np.zeros((3, 3))
+    routes = plan_routes(dem, dem, dem, 4, (1, 0), (1, 1), 14.25, 0, 0, 0)
+    for route in routes.values():
+        assert route['budget']['fits_reserve'] is False
+
+
 def test_cli_manifest_matches_recomputed_api(tmp_path):
     import json
     import subprocess

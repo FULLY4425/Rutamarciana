@@ -61,6 +61,8 @@ fórmula es `used = time_s + science_stops * science_s`,
 `margin = budget_s - used`, `reserve = budget_s * reserve_fraction` y
 `fits_reserve = used + reserve <= budget_s`. Por defecto: 240 min, 5 paradas,
 10 min/parada y reserva de 15% del presupuesto; la reserva no se suma dos veces.
+La decisión usa precisión completa; los números JSON están redondeados, así que
+recalcularla solo con los valores mostrados puede diferir cerca del límite.
 Estos valores son supuestos de planificación, no telemetría ni presupuesto real.
 La UI actual conserva sus propias etiquetas y cálculo; su integración y
 etiquetado correctos requieren actualización por su propietario.
@@ -90,7 +92,9 @@ no se usan para calcular ninguna de las rutas de la API nueva.
    conservadora no siempre será distinta ni tendrá menor exposición en cada métrica.
 6. Ningún extremo de paso puede superar 25° de pendiente de celda ni 25° de
    pendiente direccional; una diagonal no cruza esquinas bloqueadas. Sin camino,
-   se informa error. Exposición = metros de pasos con pendiente media ≥15°;
+   se informa error. El máximo incluye la pendiente de celda y la pendiente
+   absoluta de cada paso. Exposición = metros de pasos cuya pendiente absoluta
+   o pendiente media de sus celdas extremas sea ≥15°;
    rugosidad media está ponderada por longitud y es relativa a la ventana DEM.
 
 ## Procedencia (importante)
