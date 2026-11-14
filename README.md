@@ -1,7 +1,8 @@
 # Micor Field — MVP de mapa y presupuesto EVA
 
-Generador local de rutas para un paseo marciano: convierte un DEM en dos rutas
-(segura y rápida), las sirve por LAN y deja los tiles listos para el terminal.
+Generador local de rutas EVA simuladas: convierte un DEM en dos rutas de ida y
+regreso (conservadora y rápida), las sirve por LAN y genera tiles de pendiente.
+Ninguna ruta constituye una garantía o certificación de seguridad.
 
 **Apps incluidas:** 1) mapa por capas + rutas · 2) presupuesto EVA / GO-NO-GO.
 Las apps 3–5 (reloj dual, tarjeta de llegada, bitácora) no están en este MVP.
@@ -24,7 +25,8 @@ Abrir `http://localhost:8080/?demo=1` para la pantalla ya armada.
 curl -L -C - -o data/raw/jez_dtm_1m.tif \
   "https://planetarymaps.usgs.gov/mosaic/mars2020_trn/HiRISE/JEZ_hirise_soc_006_DTM_MOLAtopography_DeltaGeoid_1m_Eqc_latTs0_lon0_blend40.tif"
 
-python -m pipeline.build --dem data/raw/jez_dtm_1m.tif --rows 500 --cols 500 --out data/out
+python -m pipeline.build --dem data/raw/jez_dtm_1m.tif --rows 500 --cols 500 --out data/out \
+  --budget-h 4 --stops 5 --science-min 10 --reserve-fraction 0.15
 ```
 
 ## Endpoints del relay
@@ -33,20 +35,63 @@ python -m pipeline.build --dem data/raw/jez_dtm_1m.tif --rows 500 --cols 500 --o
 - `GET /api/routes` — rutas precalculadas y metadatos.
 - `POST /api/route` — `{"start":[row,col],"end":[row,col]}` → dos rutas nuevas.
 - `GET /preview.png` — mapa de pendiente de la zona.
-- `GET /api/tiles/<name>` — tiles BMP para el terminal.
+
+### Contrato para la UI
+
+`GET /api/routes` entrega metadatos y `routes.safe` / `routes.fast`;
+`POST /api/route` conserva `safe` / `fast` directamente en la respuesta. Cada
+una contiene:
+
+- `objective`: `fastest` o `conservative`; `safe` es solo el alias histórico,
+  **no** una certificación.
+- `outbound` (START→END) y `return` (END→START): `points` como pares `[row,col]`,
+  `time_s`, `distance_m`, `slope_max_deg`, `slope_exposure_m`, `rough_mean`.
+- `time_s` y `distance_m` superiores: **suma de ida y regreso**. `points`
+  superior conserva únicamente la ida para compatibilidad con el mapa anterior;
+  dibujar `return.points` explícitamente para mostrar el regreso. `dose_msv`
+  es una estimación solo durante desplazamiento, no una medición.
+- Métricas superiores: máximo de pendiente, suma de exposición y media de
+  rugosidad ponderada por distancia de ambos tramos.
+- `budget.used_s`, `margin_s`, `reserve_s`, `fits_reserve` calculados con los
+  parámetros de la generación. El cliente puede recalcularlos al cambiar inputs.
+
+Los metadatos `budget_s`, `science_s` (segundos **por parada**),
+`science_stops` (número de paradas) y `reserve_fraction` son explícitos. La
+fórmula es `used = time_s + science_stops * science_s`,
+`margin = budget_s - used`, `reserve = budget_s * reserve_fraction` y
+`fits_reserve = used + reserve <= budget_s`. Por defecto: 240 min, 5 paradas,
+10 min/parada y reserva de 15% del presupuesto; la reserva no se suma dos veces.
+Estos valores son supuestos de planificación, no telemetría ni presupuesto real.
+La UI actual conserva sus propias etiquetas y cálculo; su integración y
+etiquetado correctos requieren actualización por su propietario.
+
+El POST requiere `dem.npy`, `slope.npy`, `rough.npy` y `routes.json` del mismo
+build; con artefactos antiguos responde 503 y hay que regenerar. Coordenadas
+inválidas o una ruta imposible responden 400. `GET /api/routes` devuelve 503
+si falta el manifest de `schema_version: 2`; `/mock_routes.json` permanece
+disponible pero es antiguo y no garantiza este contrato.
+Los archivos históricos `cost_fast.npy` y `cost_safe.npy` se siguen generando
+por compatibilidad, pero son mapas escalares antiguos: no modelan dirección y
+no se usan para calcular ninguna de las rutas de la API nueva.
 
 ## Cómo se calcula (resumen)
 
-1. DEM → recorte → reproyección a metros → bloques de 4 m.
-2. Pendiente (gradiente; equivalente a Horn para este uso).
+1. DEM → recorte → promedio en bloques; supone CRS proyectado en metros o
+   convierte aproximadamente grados a metros marcianos; no reproyecta.
+2. Pendiente absoluta de celda por gradiente central.
 3. Rugosidad aproximada por percentiles (sin ortofoto: residuo del DEM).
-4. Costo en **segundos por metro**: Tobler `6·e^(−3.5|s+0.05|)` × factor de traje
-   (`0.4`, calibrado para reproducir el ~1 km/h de las caminatas Apolo) ×
-   `(1 + k·rugosidad)`. Celdas > 25° quedan intransitables.
-5. Ruta de costo mínimo con 8 vecinos y distancia geométrica (diagonal √2).
-6. Presupuesto: `margen = presupuesto − ciencia − tiempo`.
-
-Perfiles: `k = 1.0` (segura) y `k = 0.2` (rápida).
+4. Para cada paso dirigido entre 8 vecinos, gradiente firmado = diferencia de
+   elevación / distancia horizontal; velocidad Tobler `6·e^(−3.5|gradiente+0.05|)`
+   km/h × `0.4`. Tiempo = distancia / velocidad × `(1 + 0.2·rugosidad media)`.
+   El factor es un supuesto de aproximación, no calibración de un traje marciano.
+5. Dijkstra minimiza tiempo para `fast`; `safe` minimiza la suma de tiempo ×
+   `[1 + rugosidad media + (pendiente media/25°)²]`. El tiempo mostrado para
+   ambos usa el mismo modelo físico estimado, no el costo penalizado. La ruta
+   conservadora no siempre será distinta ni tendrá menor exposición en cada métrica.
+6. Ningún extremo de paso puede superar 25° de pendiente de celda ni 25° de
+   pendiente direccional; una diagonal no cruza esquinas bloqueadas. Sin camino,
+   se informa error. Exposición = metros de pasos con pendiente media ≥15°;
+   rugosidad media está ponderada por longitud y es relativa a la ventana DEM.
 
 ## Procedencia (importante)
 
@@ -71,7 +116,15 @@ Perfiles: `k = 1.0` (segura) y `k = 0.2` (rápida).
 
 ## Límites conocidos
 
-- La rugosidad es un **proxy** (residuo del DEM), no un mapa de rocas.
+- La rugosidad es un **proxy** (residuo del DEM): no detecta rocas ni arena,
+  ni peligros por debajo de la resolución; no valida seguridad EVA.
+- No hay ortofoto local en el contrato actual. Para una futura capa de imagen
+  haría falta `data/raw/jezero_orthophoto.tif`: GeoTIFF georreferenciado,
+  cobertura del recorte elegido, CRS marciano compatible y transformación
+  afín para registrarlo con el DEM; tamaño/resolución deben verificarse contra
+  esa cobertura. Es una ruta propuesta, no un asset disponible ni descargado.
+- El lector rellena nodata con la mediana del recorte: puede ocultar huecos;
+  inspeccionar la cobertura antes de interpretar una ruta.
 - Sin posicionamiento: Marte no tiene GPS; la posición es relativa al mapa.
 - La radiación no entra en la búsqueda: es tiempo × tasa, mostrada aparte.
 - Un solo corredor de ~2 km; no hay mosaico multi-hoja.

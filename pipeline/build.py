@@ -4,9 +4,9 @@ from pathlib import Path
 
 import numpy as np
 
-from pipeline.cost import cost_grid, DOSE_MSV_PER_HOUR
+from pipeline.cost import cost_grid
 from pipeline.manifest import write_manifest
-from pipeline.route import least_cost_route
+from pipeline.route import plan_routes
 from pipeline.synth import hills
 from pipeline.terrain import slope_deg
 from pipeline.roughness import rough_from_dem
@@ -59,16 +59,6 @@ def _load_dem(path, target_cell_m, rows, cols, at=None):
     return z.astype(np.float32), cell * f
 
 
-def _route_block(pts, seconds, cell_m, rough, dose_rate):
-    return {
-        "points": [[int(r), int(c)] for r, c in pts],
-        "time_s": round(seconds, 1),
-        "distance_m": round(len(pts) * cell_m, 1),
-        "rough_mean": round(float(np.mean([rough[r, c] for r, c in pts])), 3),
-        "dose_msv": round(seconds / 3600.0 * dose_rate, 4),
-    }
-
-
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--synth", action="store_true")
@@ -83,6 +73,7 @@ def main():
     ap.add_argument("--budget-h", type=float, default=4.0)
     ap.add_argument("--science-min", type=float, default=10.0)
     ap.add_argument("--stops", type=int, default=5)
+    ap.add_argument("--reserve-fraction", type=float, default=0.15)
     a = ap.parse_args()
 
     out = Path(a.out)
@@ -99,12 +90,11 @@ def main():
     start = tuple(a.start) if a.start else (2, 2)
     end = tuple(a.end) if a.end else (r - 3, c - 3)
 
-    routes = {}
-    for name, k in (("safe", 1.0), ("fast", 0.2)):
-        pts, sec = least_cost_route(cost_grid(slope, rough, k=k), start, end, cell_m)
-        routes[name] = _route_block(pts, sec, cell_m, rough, DOSE_MSV_PER_HOUR)
+    routes = plan_routes(dem, slope, rough, cell_m, start, end,
+                         a.budget_h * 3600, a.science_min * 60, a.stops, a.reserve_fraction)
 
     save_png(to_u8(slope), out / "preview.png")
+    np.save(out / "dem.npy", dem)
     np.save(out / "slope.npy", slope)
     np.save(out / "rough.npy", rough)
     np.save(out / "cost_safe.npy", cost_grid(slope, rough, k=1.0))
@@ -119,9 +109,10 @@ def main():
                    {"id": 2, "name": "END", "row": end[0], "col": end[1]}],
         layers=[{"id": "slope", "label": "Slope", "tile": "slope"}],
         routes=routes,
-        budget_s=int(a.budget_h * 3600),
-        science_s=int(a.science_min * 60),
+        budget_s=a.budget_h * 3600,
+        science_s=a.science_min * 60,
         science_stops=a.stops,
+        reserve_fraction=a.reserve_fraction,
         cell_m=cell_m,
         grid={"rows": int(r), "cols": int(c)},
     )

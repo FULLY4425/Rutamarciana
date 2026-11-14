@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.ndimage import uniform_filter
+from scipy.stats import rankdata
 
 
 def rough_from_dem(dem: np.ndarray, win: int = 3) -> np.ndarray:
@@ -8,5 +9,5 @@ def rough_from_dem(dem: np.ndarray, win: int = 3) -> np.ndarray:
     smooth = uniform_filter(d, win)
     res = np.abs(d - smooth)
     r = res.ravel()
-    order = r.argsort().argsort().astype(np.float32)
+    order = rankdata(r, method="min").astype(np.float32) - 1
     return (order / max(1, r.size - 1)).reshape(res.shape)

@@ -46,46 +46,48 @@ def create_app(data_dir: str):
     def routes():
         f = root / "routes.json"
         if not f.exists():
-            return send_from_directory(WEB, "mock_routes.json")
-        return jsonify(json.loads(f.read_text(encoding="utf-8")))
+            return jsonify(error="falta routes.json; ejecuta el pipeline"), 503
+        data = json.loads(f.read_text(encoding="utf-8"))
+        if data.get("schema_version") != 2:
+            return jsonify(error="routes.json antiguo; regenera el pipeline"), 503
+        return jsonify(data)
 
     @app.post("/api/route")
     def compute():
         import numpy as np
 
-        from pipeline.route import least_cost_route
+        from pipeline.route import plan_routes
 
         body = request.get_json(force=True, silent=True) or {}
+        if not isinstance(body, dict):
+            return jsonify(error="se requiere un objeto JSON"), 400
         start = body.get("start")
         end = body.get("end")
         if not (isinstance(start, list) and isinstance(end, list)):
             return jsonify(error="start y end deben ser [row, col]"), 400
 
-        cf = root / "cost_fast.npy"
-        cs = root / "cost_safe.npy"
-        if not (cf.exists() and cs.exists()):
-            return jsonify(error="faltan cost_fast.npy / cost_safe.npy"), 503
+        files = [root / f"{name}.npy" for name in ("dem", "slope", "rough")]
+        if not all(p.exists() for p in files):
+            return jsonify(error="faltan dem.npy / slope.npy / rough.npy; regenera el pipeline"), 503
 
-        meta = {}
         mf = root / "routes.json"
-        if mf.exists():
-            meta = json.loads(mf.read_text(encoding="utf-8"))
-        cell_m = meta.get("cell_m", 4.0)
-        rough = np.load(root / "rough.npy") if (root / "rough.npy").exists() else None
-
+        if not mf.exists():
+            return jsonify(error="falta routes.json; regenera el pipeline"), 503
+        meta = json.loads(mf.read_text(encoding="utf-8"))
+        if meta.get("schema_version") != 2 or "cell_m" not in meta:
+            return jsonify(error="routes.json antiguo o incompleto; regenera el pipeline"), 503
+        cell_m = meta["cell_m"]
         out = {"cell_m": cell_m, "grid": meta.get("grid", {}),
                "budget_s": meta.get("budget_s", 14400),
-               "science_s": meta.get("science_s", 600)}
-
-        for name, path in (("safe", cs), ("fast", cf)):
-            cost = np.load(path)
-            pts, sec = least_cost_route(cost, tuple(start), tuple(end), cell_m)
-            out[name] = {
-                "points": [[int(r), int(c)] for r, c in pts],
-                "time_s": round(sec, 1),
-                "distance_m": round(len(pts) * cell_m, 1),
-                "rough_mean": round(float(np.mean([rough[r, c] for r, c in pts])), 3) if rough is not None else None,
-            }
+               "science_s": meta.get("science_s", 600),
+               "science_stops": meta.get("science_stops", 5),
+               "reserve_fraction": meta.get("reserve_fraction", 0.15)}
+        try:
+            out.update(plan_routes(*(np.load(p, allow_pickle=False) for p in files),
+                                   cell_m, start, end, out["budget_s"], out["science_s"],
+                                   out["science_stops"], out["reserve_fraction"]))
+        except (ValueError, TypeError, IndexError) as exc:
+            return jsonify(error=str(exc)), 400
         return jsonify(out)
 
     return app
