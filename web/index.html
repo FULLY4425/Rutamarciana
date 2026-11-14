@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Micor Field — route planner</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<main>
+  <section class="mapwrap">
+    <canvas id="map" width="1000" height="1000"></canvas>
+    <div class="hint" id="hint">Click the start point, then the end point.</div>
+  </section>
+
+  <aside class="panel">
+    <h1>MICOR FIELD</h1>
+    <p class="sub">Marswalk route planner · offline terminal</p>
+
+    <div class="row">
+      <label for="budget">Suit budget</label>
+      <select id="budget">
+        <option value="3">3 h</option>
+        <option value="4" selected>4 h</option>
+        <option value="6">6 h</option>
+      </select>
+    </div>
+    <div class="row">
+      <label for="science">Science stops</label>
+      <select id="science">
+        <option value="10" selected>10 min</option>
+        <option value="20">20 min</option>
+        <option value="30">30 min</option>
+      </select>
+    </div>
+
+    <button id="compute">COMPUTE ROUTES</button>
+    <button id="reset" class="ghost">RESET POINTS</button>
+
+    <div id="cards"></div>
+
+    <p class="note">EVA budget is <b>simulated</b> from the planned route.
+    No suit telemetry. No GPS on Mars: position is map-relative.</p>
+  </aside>
+</main>
+<script src="/app.js"></script>
+</body>
+</html>

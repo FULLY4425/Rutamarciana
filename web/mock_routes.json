@@ -1,0 +1,25 @@
+{
+  "site": "Jezero",
+  "cell_m": 4.0,
+  "grid": { "rows": 500, "cols": 500 },
+  "budget_s": 14400,
+  "science_s": 600,
+  "waypoints": [
+    { "id": 1, "name": "LANDING", "row": 20, "col": 18 },
+    { "id": 2, "name": "BOXWORK", "row": 300, "col": 420 }
+  ],
+  "routes": {
+    "safe": {
+      "points": [[20, 18], [120, 90], [220, 200], [300, 420]],
+      "time_s": 2810,
+      "distance_m": 1980,
+      "rough_mean": 0.22
+    },
+    "fast": {
+      "points": [[20, 18], [140, 160], [260, 330], [300, 420]],
+      "time_s": 2340,
+      "distance_m": 1860,
+      "rough_mean": 0.41
+    }
+  }
+}
