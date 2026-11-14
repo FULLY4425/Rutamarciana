@@ -23,6 +23,8 @@ def _load_dem(path, target_cell_m, rows, cols, at=None):
     with rasterio.open(path) as ds:
         tr = ds.transform
         geo = bool(ds.crs and ds.crs.is_geographic)
+        if tr.b != 0 or tr.d != 0 or tr.a <= 0 or tr.e >= 0:
+            raise SystemExit("DEM requiere rejilla norte-arriba sin rotación")
         if geo:
             cy = (ds.bounds.top + ds.bounds.bottom) / 2.0
             cell_x = abs(tr.a) * MARS_KM_PER_DEG * 1000.0 * np.cos(np.radians(cy))
@@ -33,6 +35,8 @@ def _load_dem(path, target_cell_m, rows, cols, at=None):
         cell = float(np.mean([cell_x, cell_y]))
         f = max(1, int(round(target_cell_m / cell)))
         win_h, win_w = rows * f, cols * f
+        if win_h > ds.height or win_w > ds.width:
+            raise SystemExit("la ventana solicitada excede el DEM")
 
         if at:
             r0, c0 = int(at[0]), int(at[1])
@@ -42,7 +46,22 @@ def _load_dem(path, target_cell_m, rows, cols, at=None):
         r0 = max(0, min(r0, max(0, ds.height - win_h)))
         c0 = max(0, min(c0, max(0, ds.width - win_w)))
 
-        z = ds.read(1, window=Window(c0, r0, win_w, win_h)).astype(np.float32)
+        window = Window(c0, r0, win_w, win_h)
+        bounds = list(ds.window_bounds(window))
+        latitude = None
+        if geo:
+            latitude = (bounds[1] + bounds[3]) / 2
+            cell_x = abs(tr.a) * MARS_KM_PER_DEG * 1000.0 * np.cos(np.radians(latitude))
+            cell_y = abs(tr.e) * MARS_KM_PER_DEG * 1000.0
+        elif ds.crs and ds.crs.to_authority() == ('ESRI', '103885'):
+            # shortcut: escala constante en el centro; para áreas grandes usar escala por fila.
+            latitude = np.degrees((bounds[1] + bounds[3]) / (2 * 3396190.0))
+            cell_x = abs(tr.a) * np.cos(np.radians(latitude))
+            cell_y = abs(tr.e)
+        spatial = {"crs": str(ds.crs) if ds.crs else None, "bounds": bounds,
+                   "source_window": {"row": r0, "col": c0, "height": win_h, "width": win_w},
+                   "latitude_center_deg": float(latitude) if latitude is not None else None}
+        z = ds.read(1, window=window).astype(np.float32)
         nod = ds.nodata
 
     # El centinela de "sin dato" es ~ -3.4e38 (no un umbral: en Marte las
@@ -56,7 +75,7 @@ def _load_dem(path, target_cell_m, rows, cols, at=None):
         raise SystemExit("la ventana no tiene datos: prueba otro --at")
 
     z = z.reshape(z.shape[0] // f, f, z.shape[1] // f, f).mean(axis=(1, 3))
-    return z.astype(np.float32), cell * f
+    return z.astype(np.float32), cell_y * f, cell_x * f, spatial
 
 
 def main():
@@ -79,19 +98,21 @@ def main():
     out = Path(a.out)
     if a.synth:
         dem, cell_m = hills(size=a.rows, cell_m=a.cell)
+        cell_x_m, spatial = cell_m, {}
     else:
         if not a.dem:
             raise SystemExit("falta --dem o --synth")
-        dem, cell_m = _load_dem(a.dem, a.cell, a.rows, a.cols, a.at)
+        dem, cell_m, cell_x_m, spatial = _load_dem(a.dem, a.cell, a.rows, a.cols, a.at)
 
-    slope = slope_deg(dem, cell_m)
+    slope = slope_deg(dem, cell_m, cell_x_m)
     rough = rough_from_dem(dem)
     r, c = dem.shape
     start = tuple(a.start) if a.start else (2, 2)
     end = tuple(a.end) if a.end else (r - 3, c - 3)
 
     routes = plan_routes(dem, slope, rough, cell_m, start, end,
-                         a.budget_h * 3600, a.science_min * 60, a.stops, a.reserve_fraction)
+                         a.budget_h * 3600, a.science_min * 60, a.stops, a.reserve_fraction,
+                         cell_x_m=cell_x_m)
 
     save_png(to_u8(slope), out / "preview.png")
     np.save(out / "dem.npy", dem)
@@ -114,6 +135,8 @@ def main():
         science_stops=a.stops,
         reserve_fraction=a.reserve_fraction,
         cell_m=cell_m,
+        cell_x_m=cell_x_m,
+        spatial=spatial,
         grid={"rows": int(r), "cols": int(c)},
     )
 

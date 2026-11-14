@@ -8,7 +8,7 @@ def test_route_api_requires_dem_and_returns_roundtrip(tmp_path):
     np.save(tmp_path / 'dem.npy', np.tile(np.arange(7) * .6, (7, 1)))
     np.save(tmp_path / 'slope.npy', np.full((7, 7), np.degrees(np.arctan(.15))))
     np.save(tmp_path / 'rough.npy', np.zeros((7, 7)))
-    (tmp_path / 'routes.json').write_text(json.dumps({'schema_version': 2, 'cell_m': 4, 'science_stops': 3, 'reserve_fraction': .2}))
+    (tmp_path / 'routes.json').write_text(json.dumps({'schema_version': 2, 'cell_m': 4, 'cell_x_m': 4, 'science_stops': 3, 'reserve_fraction': .2}))
     client = create_app(str(tmp_path)).test_client()
     response = client.post('/api/route', json={'start': [3, 1], 'end': [3, 5]})
     assert response.status_code == 200

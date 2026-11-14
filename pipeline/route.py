@@ -25,12 +25,14 @@ def least_cost_route(cost_s_per_m, start, end, cell_m):
 
 
 def plan_routes(dem, slope, rough, cell_m, start, end, budget_s, science_s,
-                science_stops, reserve_fraction):
+                science_stops, reserve_fraction, cell_x_m=None):
     """Busca ambos tramos sobre el mismo modelo temporal dirigido y dos objetivos."""
     dem, slope, rough = (np.asarray(a, dtype=float) for a in (dem, slope, rough))
+    cell_x_m = cell_m if cell_x_m is None else cell_x_m
     if (dem.ndim != 2 or dem.shape != slope.shape or dem.shape != rough.shape
             or not all(np.isfinite(a).all() for a in (dem, slope, rough))
-            or not np.isfinite(cell_m) or cell_m <= 0):
+            or not np.isfinite(cell_m) or cell_m <= 0
+            or not np.isfinite(cell_x_m) or cell_x_m <= 0):
         raise ValueError("raster o tamaño de celda inválido")
     if (not np.isfinite(budget_s) or budget_s < 0 or not np.isfinite(science_s)
             or science_s < 0 or not isinstance(science_stops, int) or science_stops < 0
@@ -54,7 +56,7 @@ def plan_routes(dem, slope, rough, cell_m, start, end, budget_s, science_s,
             cs = slice(max(0, -dc), min(cols, cols - dc))
             rt = slice(max(0, dr), min(rows, rows + dr))
             ct = slice(max(0, dc), min(cols, cols + dc))
-            length = cell_m * np.hypot(dr, dc)
+            length = np.hypot(dr * cell_m, dc * cell_x_m)
             grade = np.degrees(np.arctan((dem[rt, ct] - dem[rs, cs]) / length))
             valid = ((slope[rs, cs] <= MAX_SLOPE_DEG)
                      & (slope[rt, ct] <= MAX_SLOPE_DEG)
@@ -84,7 +86,7 @@ def plan_routes(dem, slope, rough, cell_m, start, end, budget_s, science_s,
             nodes.reverse()
             pts = np.array(np.unravel_index(nodes, dem.shape)).T
             delta = np.diff(pts, axis=0)
-            lengths = np.hypot(delta[:, 0], delta[:, 1]) * cell_m
+            lengths = np.hypot(delta[:, 0] * cell_m, delta[:, 1] * cell_x_m)
             rr, cc = pts[:, 0], pts[:, 1]
             grades = np.degrees(np.arctan(np.diff(dem[rr, cc]) / lengths))
             edge_rough = (rough[rr[:-1], cc[:-1]] + rough[rr[1:], cc[1:]]) / 2

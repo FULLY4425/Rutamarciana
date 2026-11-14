@@ -2,9 +2,9 @@ import numpy as np
 from scipy.ndimage import uniform_filter
 
 
-def slope_deg(dem: np.ndarray, cell_m: float) -> np.ndarray:
-    """Pendiente en grados. `dem` en metros, `cell_m` en metros."""
-    gy, gx = np.gradient(dem.astype(np.float32), cell_m, cell_m)
+def slope_deg(dem: np.ndarray, cell_m: float, cell_x_m: float | None = None) -> np.ndarray:
+    """Pendiente en grados; cell_m es el paso N–S, cell_x_m el E–O."""
+    gy, gx = np.gradient(dem.astype(np.float32), cell_m, cell_m if cell_x_m is None else cell_x_m)
     return np.degrees(np.arctan(np.hypot(gx, gy))).astype(np.float32)
 
 

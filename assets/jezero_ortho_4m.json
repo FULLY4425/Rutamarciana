@@ -1,0 +1,20 @@
+{
+  "image": "jezero_ortho_4m.png",
+  "image_sha256": "69a0bfee3ff0cd7d72db06b86a5a072cc113e90d2f931975272803e608cf6b52",
+  "source": "jezero_ortho_2km_05m.jpg, adjunto t_d9eac6cb",
+  "source_sha256": "e1d060accf73baa2c07d890313fa8d3859cbd59cdc4a47a1859fe8081403cc37",
+  "source_dimensions": [4000, 4000],
+  "resampling": "Pillow BOX, 8x8 pixels JPEG per output pixel",
+  "dimensions": [500, 500],
+  "crs": "ESRI:103885",
+  "bounds_m": [4587066.0, 1094874.0, 4589066.0, 1096874.0],
+  "transform": [4.0, 0.0, 4587066.0, 0.0, -4.0, 1096874.0],
+  "pixel_interpretation": "area; north up; bounds are outer edges",
+  "dem_source_window": {"row": 9744, "col": 9700, "height": 2000, "width": 2000},
+  "coverage_assumption": "JPEG has the full crop coverage given by crop_metadata.json; JPEG has no embedded CRS or transform",
+  "output_zero_rows": 0,
+  "output_zero_pixels": 0,
+  "usage": "visual context only; not a hazard map",
+  "credit": "NASA/JPL-Caltech/University of Arizona/USGS; HiRISE Jezero TRN mosaic, Fergason et al. 2020",
+  "license": "CC0 1.0 Universal; attribution recommended (per t_d9eac6cb report)"
+}

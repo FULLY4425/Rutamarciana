@@ -70,7 +70,7 @@ etiquetado correctos requieren actualización por su propietario.
 El POST requiere `dem.npy`, `slope.npy`, `rough.npy` y `routes.json` del mismo
 build; con artefactos antiguos responde 503 y hay que regenerar. Coordenadas
 inválidas o una ruta imposible responden 400. `GET /api/routes` devuelve 503
-si falta el manifest de `schema_version: 2`; `/mock_routes.json` permanece
+si falta el manifest de `schema_version: 2` con `cell_x_m`; `/mock_routes.json` permanece
 disponible pero es antiguo y no garantiza este contrato.
 Los archivos históricos `cost_fast.npy` y `cost_safe.npy` se siguen generando
 por compatibilidad, pero son mapas escalares antiguos: no modelan dirección y
@@ -78,8 +78,14 @@ no se usan para calcular ninguna de las rutas de la API nueva.
 
 ## Cómo se calcula (resumen)
 
-1. DEM → recorte → promedio en bloques; supone CRS proyectado en metros o
-   convierte aproximadamente grados a metros marcianos; no reproyecta.
+1. DEM → recorte → promedio en bloques; no reproyecta. `cell_m` es el paso
+   físico N–S y `cell_x_m` el paso físico E–O. `spatial` registra CRS, extensión,
+   latitud central y ventana de origen. En Jezero (`ESRI:103885`, esfera de
+   radio 3 396 190 m, equirectangular `lat_ts=0`) se usa el coseno de la
+   latitud central para convertir el paso proyectado E–O a suelo. El N–S no
+   cambia. Para grados se utiliza una conversión marciana aproximada; para
+   otros CRS proyectados se asume que sus unidades son metros físicos, sin
+   corrección de escala de proyección. No usar esa suposición sin verificarla.
 2. Pendiente absoluta de celda por gradiente central.
 3. Rugosidad aproximada por percentiles (sin ortofoto: residuo del DEM).
 4. Para cada paso dirigido entre 8 vecinos, gradiente firmado = diferencia de
@@ -122,11 +128,22 @@ no se usan para calcular ninguna de las rutas de la API nueva.
 
 - La rugosidad es un **proxy** (residuo del DEM): no detecta rocas ni arena,
   ni peligros por debajo de la resolución; no valida seguridad EVA.
-- No hay ortofoto local en el contrato actual. Para una futura capa de imagen
-  haría falta `data/raw/jezero_orthophoto.tif`: GeoTIFF georreferenciado,
-  cobertura del recorte elegido, CRS marciano compatible y transformación
-  afín para registrarlo con el DEM; tamaño/resolución deben verificarse contra
-  esa cobertura. Es una ruta propuesta, no un asset disponible ni descargado.
+- `assets/jezero_ortho_4m.png` es contexto visual, **no mapa de peligros** y
+  no se utiliza para calcular rutas. Solo corresponde a la ventana Jezero
+  central de 500×500, no a un `--at` arbitrario. Véase el sidecar JSON para
+  extensión, afín, CRS, hashes y atribución. El PNG no lleva georreferencia
+  interna; el JPEG de origen tampoco: se asignó la extensión documentada en el
+  informe/metadata del recorte adjunto t_d9eac6cb. Su registro depende de esa
+  procedencia y de que el JPEG no haya sido recortado o deformado. Reproducir:
+  `python -c "from PIL import Image; Image.open('jezero_ortho_2km_05m.jpg').resize((500,500), Image.Resampling.BOX).save('jezero_ortho_4m.png')"`.
+  El JPEG tiene compresión con pérdida; no sirve para análisis de textura fino.
+- Crédito: NASA/JPL-Caltech/University of Arizona/USGS, ortomosaico HiRISE
+  Jezero TRN, Fergason et al. 2020. Licencia CC0 1.0 Universal, atribución
+  recomendada según el informe; no es el mapa de peligros TRN.
+- La escala E–O es constante en la latitud central del recorte: es una
+  aproximación local; para regiones grandes debe variar por fila. El recorte
+  predeterminado cubre 2 000 m proyectados por eje pero ~1 896.8 m físicos E–O
+  por 2 000 m N–S. La rejilla registra las distancias sin reproyectar la imagen.
 - El lector rellena nodata con la mediana del recorte: puede ocultar huecos;
   inspeccionar la cobertura antes de interpretar una ruta.
 - Sin posicionamiento: Marte no tiene GPS; la posición es relativa al mapa.
