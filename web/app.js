@@ -8,60 +8,132 @@ bg.src = "/preview.png";
 
 const state = {
   grid: { rows: 500, cols: 500 },
+  cellM: 4.0,
+  cellXM: 4.0,
   start: null,
   end: null,
-  data: null,
-  budgetMin: 180,
-  sciencePerStop: 10,
-  stops: 5,
+  stops: [],        // science waypoints in visit order (grid [row,col])
+  data: null,       // last server response
+  budgetMin: 240,
+  sciencePerStop: 20,
+  nStops: 0,
+  viaServer: true,  // false when the mock fallback is used
 };
 
-function plan(route) {
-  const budget = state.budgetMin * 60;
-  const science = state.sciencePerStop * 60 * state.stops;
-  const used = route.time_s + science;
-  const margin = budget - used;
-  const reserve = budget * 0.15;
-  const status = margin <= 0 ? "NO-GO" : margin < reserve ? "LOW MARGIN" : "GO";
-  return { budget, science, used, margin, reserve, status };
+const STATUS_LABEL = { cabe: "CABE ✓", justo: "JUSTO", no_cabe: "NO CABE ✗" };
+
+function meters(a, b) {
+  const dr = Math.abs(a[0] - b[0]) * state.cellM;
+  const dc = Math.abs(a[1] - b[1]) * state.cellXM;
+  return Math.hypot(dr, dc);
 }
 
-function statusClass(status) {
-  return status === "GO" ? "go" : status === "LOW MARGIN" ? "low" : "nogo";
+function fmtMin(s) { return (s / 60).toFixed(0); }
+function fmtKm(m) { return (m / 1000).toFixed(2); }
+
+function legPath(p, legStart) {
+  // "A → S1" style labels for the outbound legs; return is B → A.
+  const names = ["A", "S1", "S2", "S3", "S4", "S5", "B"];
+  if (legStart === "return") return "B → A";
+  const from = names[legStart];
+  const to = names[legStart + 1];
+  return `${from} → ${to}`;
+}
+
+function legCard(leg, label) {
+  if (!leg) return "";
+  return `
+    <div class="leg">
+      <div class="leg-t">${label}</div>
+      <div class="kv">${fmtMin(leg.time_s)} min · ${fmtKm(leg.distance_m)} km ·
+        slope ≤ ${leg.slope_max_deg === null || leg.slope_max_deg === undefined ? "—" : leg.slope_max_deg.toFixed(1)}°</div>
+    </div>`;
+}
+
+function contingencyLine(b) {
+  const c = b && b.return_contingency;
+  if (!c || !c.waypoint_returns || !c.waypoint_returns.length) return "";
+  const wr = c.waypoint_returns;
+  const bad = wr.some(w => w.distance_status === "exceeds_limit" || w.time_status === "exceeds_limit");
+  const worstD = Math.max(...wr.map(w => w.distance_m));
+  const worstT = Math.max(...wr.map(w => w.time_s));
+  const cls = bad ? "bad" : "";
+  const verdict = bad
+    ? "EMERGENCY RETURN OVER LIMIT"
+    : "Emergency return within 60 min / 2 km";
+  return `<div class="kv cont ${cls}">${verdict} · worst stop ${fmtKm(worstD)} km / ${fmtMin(worstT)} min${c.status === "not_verified" && !bad ? " (model check, not field-verified)" : ""}</div>`;
+}
+
+function budgetLine(b) {
+  return `
+    <div class="kv">ida ${fmtMin(b.outbound_travel_s)} + science ${fmtMin(b.science_total_s)}
+      (${b.science_stops} stops) + regreso ${fmtMin(b.return_travel_s)} + overhead ${fmtMin(b.overhead_s)}
+      = <b>${fmtMin(b.operational_s)} min</b> · reserve ${fmtMin(b.reserve_fixed_s)} min held apart</div>`;
+}
+
+function stopList() {
+  if (!state.stops.length) return "";
+  return `<div class="kv">stops in order: ${state.stops
+    .map((s, i) => `S${i + 1}(${s[0]},${s[1]})`)
+    .join(" → ")}</div>`;
 }
 
 function renderCards() {
-  if (!state.data) return;
   cards.innerHTML = "";
   const fits = [];
-  for (const name of ["safe", "fast"]) {
-    const r = state.data[name];
-    if (!r) continue;
-    const p = plan(r);
-    if (p.status !== "NO-GO") fits.push(name);
-    const el = document.createElement("div");
-    el.className = "card";
-    el.innerHTML = `
-      <h2>${name === "safe" ? "SAFE ROUTE" : "FAST ROUTE"}</h2>
-      <div class="big">${(r.time_s / 60).toFixed(0)} min</div>
-      <div class="kv">${(r.distance_m / 1000).toFixed(2)} km ·
-        roughness ${r.rough_mean === null ? "—" : r.rough_mean.toFixed(2)} ·
-        dose ${r.dose_msv === undefined ? "—" : r.dose_msv.toFixed(3)} mSv</div>
-      <div class="kv">route ${(r.time_s / 60).toFixed(0)} + science
-        ${(p.science / 60).toFixed(0)} = <b>${(p.used / 60).toFixed(0)} min</b>
-        of ${(p.budget / 60).toFixed(0)}</div>
-      <div class="verdict ${statusClass(p.status)}">
-        ${p.status} · margin ${(p.margin / 60).toFixed(0)} min
-      </div>`;
-    cards.appendChild(el);
+  if (state.data) {
+    const d = state.data;
+    if (d.cell_m) state.cellM = d.cell_m;
+    if (d.cell_x_m) state.cellXM = d.cell_x_m;
+    const direct = state.start && state.end ? meters(state.start, state.end) : null;
+
+    for (const name of ["safe", "fast"]) {
+      const r = d[name];
+      if (!r) continue;
+      const b = r.budget || {};
+      const status = b.status || "no_cabe";
+      if (status === "cabe") fits.push(name);
+      const statusCls = status === "cabe" ? "go" : status === "justo" ? "low" : "nogo";
+      const legs = (r.outbound && r.outbound.legs) || [];
+      const legHtml = legs.length
+        ? legs.map((l, i) => {
+            const from = i === 0 ? "A" : `S${i}`;
+            const to = i === legs.length - 1 ? "B" : `S${i + 1}`;
+            return `<div class="leg">
+              <div class="leg-t">${from} → ${to}</div>
+              <div class="kv">${fmtMin(l.time_s)} min · ${fmtKm(l.distance_m)} km</div>
+            </div>`;
+          }).join("")
+        : "";
+      const el = document.createElement("div");
+      el.className = "card";
+      el.innerHTML = `
+        <h2>${name === "safe" ? "SAFE ROUTE" : "FAST ROUTE"}</h2>
+        <div class="big">${fmtMin(r.total_s)} min <span class="of">of ${fmtMin(state.budgetMin * 60)} budget</span></div>
+        <div class="kv">route ${fmtKm(r.distance_m)} km${direct !== null ? ` · straight A–B ${fmtKm(direct)} km (flat)` : ""} ·
+          roughness ${r.rough_mean === null || r.rough_mean === undefined ? "—" : r.rough_mean.toFixed(2)} ·
+          dose ${r.dose_msv === null || r.dose_msv === undefined ? "—" : r.dose_msv.toFixed(3)} mSv</div>
+        ${stopList()}
+        <div class="legs">
+          ${legHtml || legCard(r.outbound, "IDA (outbound)")}
+          ${legCard(r.return, "REGRESO (return)")}
+        </div>
+        ${budgetLine(b)}
+        ${contingencyLine(b)}
+        <div class="verdict ${statusCls}">
+          ${STATUS_LABEL[status] || status} · slack ${fmtMin(b.slack_s || 0)} min
+          (limiting: ${(b.limiting_terms || []).join(", ") || "—"})
+        </div>`;
+      cards.appendChild(el);
+    }
   }
 
   const reco = document.getElementById("reco");
+  if (!state.data) { reco.textContent = "—"; return; }
   if (!fits.length) {
-    reco.textContent = "NO ROUTE FITS — do not leave the habitat";
+    reco.textContent = "NO ROUTE FITS under scenario assumptions — do not leave the habitat";
   } else if (fits.length === 2) {
-    reco.textContent = "BOTH FIT — take the SAFE route (" +
-      (state.sciencePerStop * state.stops) + " min of science)";
+    reco.textContent = "BOTH FIT — take the SAFE route";
   } else {
     reco.textContent = "ONLY THE " + fits[0].toUpperCase() + " ROUTE FITS";
   }
@@ -102,6 +174,20 @@ function draw() {
     }
   }
 
+  state.stops.forEach((pt, i) => {
+    const [x, y] = g2c(pt);
+    ctx.beginPath();
+    ctx.arc(x, y, 8, 0, Math.PI * 2);
+    ctx.fillStyle = "#314fe8";
+    ctx.fill();
+    ctx.strokeStyle = "#05070b";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.fillStyle = "#e8eef7";
+    ctx.font = "bold 11px ui-monospace, monospace";
+    ctx.fillText("S" + (i + 1), x + 10, y - 8);
+  });
+
   for (const [pt, color] of [[state.start, "#4bcc31"], [state.end, "#cc314b"]]) {
     if (!pt) continue;
     const [x, y] = g2c(pt);
@@ -115,6 +201,14 @@ function draw() {
   }
 }
 
+function nextHint() {
+  if (!state.start) return "Click the START point.";
+  if (!state.end) return "Now click the END point.";
+  const need = state.nStops - state.stops.length;
+  if (need > 0) return `Place science stop S${state.stops.length + 1} (${need} left in visit order).`;
+  return "Ready — press COMPUTE ROUTES.";
+}
+
 async function compute() {
   if (!state.start || !state.end) {
     hint.textContent = "Pick a start and an end point first.";
@@ -125,19 +219,32 @@ async function compute() {
     const res = await fetch("/api/route", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ start: state.start, end: state.end }),
+      body: JSON.stringify({
+        schema_version: 3,
+        start: state.start,
+        end: state.end,
+        science_waypoints: state.stops,
+        scenario_assumptions: {
+          suit_budget_s: state.budgetMin * 60,
+          science_stop_s: state.sciencePerStop * 60,
+        },
+      }),
     });
     if (!res.ok) throw new Error(await res.text());
     const json = await res.json();
+    state.viaServer = true;
     if (json.grid && json.grid.rows) state.grid = json.grid;
+    if (json.cell_m) state.cellM = json.cell_m;
+    if (json.cell_x_m) state.cellXM = json.cell_x_m;
     state.data = json;
-    hint.textContent = "Routes computed. Orange = fast, yellow = safe.";
+    hint.textContent = "Routes computed. Orange = fast, yellow = safe. Verdict = scenario feasibility, not NASA GO/NO-GO.";
   } catch (err) {
-    // Fallback: mock routes so the page never looks broken in a demo.
-    const mock = await fetch("/mock_routes.json").then((r) => r.json());
+    // Mock fallback keeps the page usable, but the labels say so loudly.
+    state.viaServer = false;
+    const mock = await fetch("/mock_routes.json").then(r => r.json());
     const m = mock.routes || {};
-    state.data = { safe: m.safe, fast: m.fast };
-    hint.textContent = "Using precomputed routes (server has no cost grids).";
+    state.data = { safe: m.safe, fast: m.fast, mock: true };
+    hint.textContent = "⚠ Server route failed — showing PRECOMPUTED routes, not a live calculation.";
   }
   draw();
   renderCards();
@@ -151,16 +258,16 @@ cvs.addEventListener("click", (ev) => {
     Math.max(0, Math.min(state.grid.rows - 1, Math.round(y * (state.grid.rows - 1)))),
     Math.max(0, Math.min(state.grid.cols - 1, Math.round(x * (state.grid.cols - 1)))),
   ];
-  if (!state.start || (state.start && state.end)) {
+  if (!state.start) {
     state.start = pt;
-    state.end = null;
-    state.data = null;
-    cards.innerHTML = "";
-    hint.textContent = "Now pick the end point.";
-  } else {
+  } else if (!state.end) {
     state.end = pt;
-    hint.textContent = "Press COMPUTE ROUTES.";
+  } else if (state.stops.length < state.nStops) {
+    state.stops.push(pt);
   }
+  state.data = null;
+  cards.innerHTML = "";
+  hint.textContent = nextHint();
   draw();
 });
 
@@ -169,20 +276,31 @@ document.getElementById("compute").addEventListener("click", compute);
 document.getElementById("reset").addEventListener("click", () => {
   state.start = null;
   state.end = null;
+  state.stops = [];
   state.data = null;
   cards.innerHTML = "";
-  hint.textContent = "Click the start point, then the end point.";
+  hint.textContent = nextHint();
   draw();
 });
 
 document.getElementById("budget").addEventListener("change", (e) => {
   state.budgetMin = Number(e.target.value);
-  renderCards();
+  if (state.data && !state.data.mock) compute();
 });
 
 document.getElementById("science").addEventListener("change", (e) => {
   state.sciencePerStop = Number(e.target.value);
-  renderCards();
+  if (state.data && !state.data.mock) compute();
+});
+
+document.getElementById("nstops").addEventListener("change", (e) => {
+  state.nStops = Number(e.target.value);
+  state.stops = state.stops.slice(0, state.nStops);
+  if (state.nStops === 0) state.stops = [];
+  state.data = null;
+  cards.innerHTML = "";
+  hint.textContent = nextHint();
+  draw();
 });
 
 bg.onload = draw;
@@ -191,8 +309,9 @@ bg.onload = draw;
   try {
     const meta = await fetch("/api/routes").then((r) => r.json());
     if (meta.grid && meta.grid.rows) state.grid = meta.grid;
+    if (meta.cell_m) state.cellM = meta.cell_m;
+    if (meta.cell_x_m) state.cellXM = meta.cell_x_m;
     if (meta.budget_s) state.budgetMin = Math.round(meta.budget_s / 60);
-    if (meta.science_stops) state.stops = meta.science_stops;
     if (meta.science_s) state.sciencePerStop = Math.round(meta.science_s / 60);
     document.getElementById("budget").value = String(state.budgetMin);
     document.getElementById("science").value = String(state.sciencePerStop);
@@ -209,6 +328,12 @@ bg.onload = draw;
   if (new URLSearchParams(location.search).get("demo") === "1") {
     state.start = [Math.round(state.grid.rows * 0.08), Math.round(state.grid.cols * 0.08)];
     state.end = [Math.round(state.grid.rows * 0.92), Math.round(state.grid.cols * 0.92)];
+    state.stops = [
+      [Math.round(state.grid.rows * 0.45), Math.round(state.grid.cols * 0.35)],
+      [Math.round(state.grid.rows * 0.6), Math.round(state.grid.cols * 0.68)],
+    ];
+    state.nStops = 2;
+    document.getElementById("nstops").value = "2";
     draw();
     await compute();
   }

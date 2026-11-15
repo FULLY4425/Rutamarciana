@@ -10,7 +10,7 @@
 <main>
   <section class="mapwrap">
     <canvas id="map" width="1000" height="1000"></canvas>
-    <div class="hint" id="hint">Click the start point, then the end point.</div>
+    <div class="hint" id="hint">Click the START point.</div>
   </section>
 
   <aside class="panel">
@@ -21,16 +21,27 @@
       <label for="budget">Suit budget</label>
       <select id="budget">
         <option value="120">120 min</option>
-        <option value="180" selected>180 min</option>
-        <option value="240">240 min</option>
+        <option value="180">180 min</option>
+        <option value="240" selected>240 min</option>
         <option value="360">360 min</option>
+      </select>
+    </div>
+    <div class="row">
+      <label for="nstops">Number of science stops</label>
+      <select id="nstops">
+        <option value="0" selected>0</option>
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
       </select>
     </div>
     <div class="row">
       <label for="science">Science per stop</label>
       <select id="science">
-        <option value="10" selected>10 min</option>
-        <option value="20">20 min</option>
+        <option value="10">10 min</option>
+        <option value="20" selected>20 min</option>
         <option value="30">30 min</option>
       </select>
     </div>
@@ -42,8 +53,11 @@
 
     <div id="cards"></div>
 
-    <p class="note">EVA budget is <b>simulated</b> from the planned route.
-    No suit telemetry. No GPS on Mars: position is map-relative.</p>
+    <p class="note">Budget = scenario feasibility (walk 2 km/h, 20 min/stop,
+    30 min overhead, 30 min reserve held apart). <b>Not</b> a Mars suit
+    capacity and not a NASA GO/NO-GO rule. No suit telemetry. No GPS on Mars:
+    position is map-relative. Straight-line A–B is a flat approximation,
+    not the traversable distance.</p>
   </aside>
 </main>
 <script src="/app.js"></script>

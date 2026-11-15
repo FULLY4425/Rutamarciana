@@ -151,6 +151,35 @@ button:disabled { opacity: 0.5; cursor: default; }
 
 .kv b { color: var(--ink); font-weight: 600; }
 
+.legs {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.leg {
+  flex: 1;
+  border: 1px solid #1b2634;
+  border-radius: 6px;
+  padding: 6px 8px;
+  background: #0a1119;
+}
+
+.leg-t {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--dim);
+  margin-bottom: 2px;
+}
+
+.cont { margin-top: 4px; }
+.cont.bad { color: var(--bad); }
+
+.of {
+  font-size: 12px;
+  color: var(--dim);
+}
+
 .note {
   margin-top: auto;
   color: var(--dim);
