@@ -90,6 +90,14 @@ def create_app(data_dir: str):
     def reference_image():
         return send_from_directory(ROOT / "assets", "jezero_ortho_4m.png")
 
+    @app.get("/navigation.js")
+    def navigation_js():
+        return send_from_directory(WEB, "navigation.js")
+
+    @app.get("/guidance.js")
+    def guidance_js():
+        return send_from_directory(WEB, "guidance.js")
+
     @app.get("/terrain.js")
     def terrain_js():
         return send_from_directory(WEB, "terrain.js")

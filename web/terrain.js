@@ -80,8 +80,12 @@ function drawTerrain() {
     const sample=samplePath(path,progress);
     line([...path.slice(0,sample.index),sample.point],'#ffffff',4);
     marker(sample.point,'EVA · SIMULACIÓN','#ffffff');
+    window.MissionGuidance?.update(state.data,byId('trackroute').value,sample,running,{x:state.cellXM,y:state.cellM});
     byId('trackinfo').textContent=`${(progress*100).toFixed(0)}% · ${(sample.distance/1000).toFixed(2)} / ${(sample.total/1000).toFixed(2)} km · fila ${sample.point[0].toFixed(0)}, col ${sample.point[1].toFixed(0)}`;
-  } else byId('trackinfo').textContent='Calcula una ruta para explorar el recorrido.';
+  } else {
+    window.MissionGuidance?.update(state.data,byId('trackroute').value,null,false,{x:state.cellXM,y:state.cellM});
+    byId('trackinfo').textContent='Calcula una ruta para explorar el recorrido.';
+  }
 }
 window.drawTerrain=drawTerrain;
 let pointer=null, moved=false;
@@ -110,9 +114,9 @@ cvs.addEventListener('wheel',ev=>{if(flat)return;ev.preventDefault();zoom=Math.m
 byId('viewmode').onclick=()=>{flat=!flat;byId('viewmode').textContent=flat?'Vista 3D':'Vista 2D';draw();};
 byId('camerareset').onclick=()=>{yaw=-0.35;tilt=0.85;zoom=1;draw();};
 byId('relief').oninput=ev=>{exaggeration=Number(ev.target.value);document.querySelector('.meta').textContent=`${state.grid.rows} × ${state.grid.cols} · RELIEVE ×${exaggeration} · ARRASTRA PARA GIRAR`;draw();};
-byId('progress').oninput=ev=>{running=false;byId('play').textContent='Continuar';progress=Number(ev.target.value)/1000;draw();};
+byId('progress').oninput=ev=>{window.MissionGuidance?.stop();running=false;byId('play').textContent='Continuar';progress=Number(ev.target.value)/1000;draw();};
 byId('trackroute').onchange=()=>{running=false;progress=0;byId('progress').value=0;byId('play').textContent='Iniciar';draw();};
-byId('play').onclick=()=>{if(trackingPath().length<2)return;if(progress>=1)progress=0;running=!running;byId('play').textContent=running?'Pausar':'Continuar';};
+byId('play').onclick=()=>{if(trackingPath().length<2)return;if(progress>=1)progress=0;running=!running;byId('play').textContent=running?'Pausar':'Continuar';draw();};
 byId('export').onclick=()=>{
   if(!state.data){hint.textContent='Calcula una misión antes de exportar.';return;}
   const blob=new Blob([JSON.stringify({simulation:true,terrain_site:terrain?.site,...state.data},null,2)],{type:'application/json'}),url=URL.createObjectURL(blob);

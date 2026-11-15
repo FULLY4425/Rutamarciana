@@ -72,12 +72,19 @@
       </div>
     </section>
 
-    <section class="tracking"><div class="sectionlabel">SEGUIMIENTO DE RECORRIDO</div><div class="row"><select id="trackroute" aria-label="Ruta a seguir"><option value="safe">SAFE · conservadora</option><option value="fast">FAST · rápida</option></select><button id="play">Iniciar</button></div><input id="progress" type="range" min="0" max="1000" value="0" aria-label="Avance del recorrido"><output id="trackinfo" aria-live="polite">Calcula una ruta para explorar el recorrido.</output><p>Simulación de ida y regreso · posición relativa al mapa · sin telemetría.</p><button id="export" class="ghost">Exportar misión JSON</button></section><div id="cards"></div>
+    <section class="tracking"><div class="sectionlabel">SEGUIMIENTO DE RECORRIDO</div><div class="row"><select id="trackroute" aria-label="Ruta a seguir"><option value="safe">SAFE · conservadora</option><option value="fast">FAST · rápida</option></select><button id="play">Iniciar</button></div><input id="progress" type="range" min="0" max="1000" value="0" aria-label="Avance del recorrido"><output id="trackinfo" aria-live="polite">Calcula una ruta para explorar el recorrido.</output><p>Simulación de ida y regreso · posición relativa al mapa · sin telemetría.</p><button id="export" class="ghost">Exportar misión JSON</button></section><section class="guidance" aria-label="Indicaciones de navegación">
+      <div class="sectionlabel">GUÍA PASO A PASO · SIMULACIÓN</div>
+      <div class="direction"><span id="directionsymbol" aria-hidden="true">↑</span><div><strong id="directiondistance">—</strong><p id="directiontext">Calcula una ruta para recibir indicaciones.</p></div></div>
+      <p id="directionremaining"></p>
+      <div class="row"><button id="voice" class="ghost" aria-pressed="false">Activar voz</button><button id="repeatdirection" class="ghost" disabled>Repetir indicación</button></div>
+      <p id="voicestatus" role="status"></p>
+      <details><summary>Próximas indicaciones</summary><ol id="directionslist"></ol></details>
+    </section><div id="cards"></div>
 
     <details class="reference"><summary>Ortofoto de referencia · Jezero</summary><img src="/reference-image" alt="Ortofoto HiRISE de Jezero incluida en el repositorio"><p>Referencia visual de un recorte de 2 × 2 km. No se superpone a un DEM de otra ventana ni a la demo sintética. NASA/JPL-Caltech/University of Arizona/USGS · CC0.</p></details>
     <p class="note"><span class="note-t">Alcance del modelo</span>Presupuesto de escenario: marcha 2 km/h, ciencia 20 min/parada, entrada y salida 30 min y reserva fija de 30 min aparte. No representa capacidad certificada de un traje ni un criterio NASA GO/NO-GO. La rugosidad del DEM no detecta rocas o arena. Marte no tiene GPS: posición relativa al mapa.</p>
   </aside>
 </main>
-<script src="/app.js"></script><script src="/terrain.js"></script>
+<script src="/app.js"></script><script src="/navigation.js"></script><script src="/guidance.js"></script><script src="/terrain.js"></script>
 </body>
 </html>

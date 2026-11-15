@@ -595,3 +595,13 @@ select {border-radius:5px;font-family:monospace;}
 .note {font-size:11px;}
 @media(max-width:960px){main{height:auto;grid-template-columns:1fr;}.missionbar{height:auto;min-height:76px;padding:18px;flex-wrap:wrap;}.missionbar span{display:none;}.mapwrap{padding:12px;}.panel{overflow:visible;}.stage{max-width:760px;}.maptools{top:35px;}.hint{font-size:10px;bottom:4px;}.meta{top:8px;font-size:8px;}.maptools button{font-size:9px;padding:5px;}.maptools label{font-size:9px;padding:4px;}}
 .reference {color:var(--dim);font-size:11px;}.reference summary {cursor:pointer;}.reference img{width:100%;margin-top:12px;border-radius:6px;}.reference p{line-height:1.6;}input[type=range]{cursor:pointer;}button:disabled{cursor:not-allowed;}.tracking button{letter-spacing:.03em;}
+.guidance {padding:16px;border:1px solid #36544f;border-radius:8px;background:#172b29;display:grid;gap:12px;}
+.direction {display:flex;align-items:center;gap:16px;min-height:85px;}
+#directionsymbol {font:48px/1 system-ui;color:#a6e1cf;min-width:48px;text-align:center;}
+#directiondistance {font-size:23px;font-weight:600;}
+#directiontext {margin:6px 0 0;font-size:14px;line-height:1.5;}
+#directionremaining,#voicestatus {margin:0;color:#b0c5be;font-size:11px;line-height:1.6;}
+.guidance button {letter-spacing:0;font-size:10px;}
+.guidance button[aria-pressed=true] {background:#b1dfce;color:#153029;border-color:#b1dfce;}
+.guidance details {font-size:12px;color:#c8d6cf;}.guidance summary {cursor:pointer;}
+#directionslist {padding-left:20px;margin-bottom:0;}#directionslist li {padding:6px 0;line-height:1.5;}

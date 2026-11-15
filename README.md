@@ -135,3 +135,33 @@ Validación adicional de la lógica del visor (Node.js):
 ```bash
 node tests/frontend.cjs
 ```
+
+### Indicaciones paso a paso y voz
+
+La sección **Guía paso a paso** muestra giros a izquierda/derecha, cambios de
+sentido, llegadas a S1…SN, destino B y retorno a A. La distancia hasta la
+siguiente maniobra y la distancia restante siguen el avance de la simulación.
+Las indicaciones usan la escala física por eje del mismo recorrido FAST/SAFE;
+una simplificación visual de 10 m evita anunciar cada escalón de la rejilla y
+no modifica la ruta calculada. Los giros menores de 30° no se anuncian.
+
+Pulsa **Activar voz** y después **Iniciar** para escuchar indicaciones en
+español, con un aviso adicional a 30 m de la siguiente maniobra. **Repetir
+indicación** reproduce la posición actual incluso con la simulación pausada.
+Al pausar, cambiar de ruta, borrar puntos o mover el avance, se cancela la voz
+pendiente. La voz usa `speechSynthesis` del navegador: su disponibilidad,
+pronunciación y funcionamiento sin conexión dependen del navegador y las voces
+instaladas en el dispositivo. No requiere claves de servicios de voz. Si no se
+admite síntesis, las indicaciones escritas siguen disponibles.
+
+Son instrucciones geométricas de una simulación: no existe ubicación en vivo,
+detección de desvíos ni recálculo a partir de GPS. Las paradas se anuncian sin
+simular el tiempo dedicado a ciencia.
+
+`web/navigation.js` calcula maniobras sin dependencias de interfaz;
+`web/guidance.js` adapta esas maniobras a la interfaz y a la voz del navegador.
+El motor Python de planificación y presupuesto EVA permanece sin cambios.
+
+```bash
+node --test tests/navigation.cjs
+```
