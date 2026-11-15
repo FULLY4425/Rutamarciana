@@ -37,21 +37,21 @@ test('HiRISE texture requires matching real DEM footprint and source window',()=
 
 test('surface adapter places eye above rendered ground, steps and closes without changing route',()=>{
   const vm=require('node:vm'),fs=require('node:fs');
-  const elements=new Map(),events=[],draws=[],camera=[];
+  const elements=new Map(),events=[],draws=[],camera=[],actorCalls=[];
   const gl=new Proxy({
     getShaderParameter:()=>true,getProgramParameter:()=>true,getAttribLocation:()=>0,getUniformLocation:(_,key)=>key,
     uniform3f:(name,...values)=>{if(name==='camera')camera.push(values);},
     drawElements:(...args)=>draws.push(args),
   },{get:(obj,key)=>obj[key] || (()=>{})});
   function element(id){if(!elements.has(id))elements.set(id,{disabled:false,hidden:true,style:{},setAttribute(){},focus(){},addEventListener(){},getContext:()=>gl,getBoundingClientRect:()=>({width:800,height:600})});return elements.get(id);}
-  const window={addEventListener(){},dispatchEvent:event=>events.push(event)};
+  const window={addEventListener(){},dispatchEvent:event=>events.push(event),FieldActors:{geometry(...args){actorCalls.push(args);return [];}}};
   const sandbox={window,document:{getElementById:element},fetch:()=>new Promise(()=>{}),Image:class{},CustomEvent:class{constructor(type,options){this.type=type;this.detail=options?.detail;}}};
   vm.runInNewContext(fs.readFileSync('web/streetview.js','utf8'),sandbox);
   const sample={point:[0.5,0.5],distance:1,total:10};
-  window.SurfaceView.update({terrain,path:[[0,0],[1,1]],sample,ahead:{point:[0.9,0.9]}});
+  window.SurfaceView.update({terrain,path:[[0,0],[1,1]],sample,ahead:{point:[0.9,0.9]},actors:[{index:1,world:[1.5,0,2],point:sample.point,heading:0,phase:0},{index:0,world:[1.5,0,2],point:sample.point,heading:0,phase:0},{index:1,world:[2.5,0,2],point:sample.point,heading:0,phase:0}]});
   element('surfaceopen').onclick();
   assert.equal(window.SurfaceView.isOpen(),true);assert.ok(draws.length>0);
-  assert.deepEqual(camera.at(-1),[1.5,1.7,2]);
+  assert.deepEqual(camera.at(-1),[1.5,1.7,2]);assert.equal(actorCalls.length,1,'Only companion is visible from the astronaut camera');assert.equal(actorCalls[0][0][0],2.5);
   element('surfaceforward').onclick();assert.equal(events.at(-1).detail,5);
   element('surfaceback').onclick();assert.equal(events.at(-1).detail,-5);
   window.SurfaceView.update({terrain,path:[],sample:null});

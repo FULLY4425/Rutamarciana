@@ -231,3 +231,5 @@ textarea {width:100%;min-height:65px;resize:vertical;border:1px solid var(--line
  .mobile-nav a {display:flex;justify-content:center;align-items:center;text-align:center;min-height:44px;padding:5px;text-decoration:none;font-size:12px;color:var(--ink);border:1px solid var(--line-strong);border-radius:6px;}
  .mobile-nav a:active {background:#294c3f;}
 }
+
+.psion-exchange {max-width:900px;margin:24px auto;padding:16px;border:1px solid var(--line);border-radius:8px;}.psion-exchange details[open] {display:grid;gap:12px;}.psion-exchange p,.psion-exchange small {line-height:1.6;}.psion-exchange input {max-width:150px;min-height:44px;}

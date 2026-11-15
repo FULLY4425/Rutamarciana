@@ -1,3 +1,8 @@
 # Preserve the supplied sketch line endings and treat filesystem pixels as binary.
 firmware/psion-micor-spaceapps/psion-micor-spaceapps.ino whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 firmware/psion-micor-spaceapps/data/pov/*.bin binary
+
+# Keep the supplied dual-screen driver/font bytes.
+firmware/psion-marte-os/font5x7.h whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+firmware/psion-marte-os/oled240.h whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+firmware/psion-marte-os/extras/mars_relay/start_mars_relay.bat whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

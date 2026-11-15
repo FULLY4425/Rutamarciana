@@ -95,5 +95,9 @@
  el('targetselect').onchange=event=>{selected=targets.find(t=>t.id===event.target.value)||null;el('targetadd').disabled=!selected;root.ChemistryLayer?.select(selected?.id);el('targetfacts').textContent=selected?`${selected.name} · sol ${selected.sol} · ${selected.formation} / ${selected.member} · vetas: ${selected.veins?'sí':'no'} · nódulos: ${selected.nodules?'sí':'no'} · ${selected.lat.toFixed(6)}°, ${selected.lon.toFixed(6)}° E`:'Selecciona un objetivo.';draw();};
  el('targetadd').onclick=()=>{if(!selected||!terrain)return;const point=geoToGrid(selected.lat,selected.lon,terrain);if(point)add(point,selected.name,'NASA/PDS ChemCam',selected);else el('pointstatus').textContent='El objetivo está fuera de la rejilla actual.';};
  el('openglen').onclick=()=>{root.MarsAtlas?.close();root.dispatchEvent(new CustomEvent('mission-region',{detail:{region:'glen-torridon'}}));};
- root.FieldPoints={update,paint,namedPoints,gridToGeo,geoToGrid,handlePick(point){if(!placing)return false;placing=false;create(point);return true;}};
+ function setMissionNames(names){
+  const points=mission();if(!Array.isArray(names)||names.length!==points.length||names.some(n=>typeof n!=='string'||!n.length||n.length>160))throw Error('Nombres de misión no válidos.');
+  points.forEach((point,i)=>labels.set(key(point),{name:names[i],source:'watch_mission'}));listSignature='';reflect();
+ }
+ root.FieldPoints={update,paint,namedPoints,setMissionNames,gridToGeo,geoToGrid,handlePick(point){if(!placing)return false;placing=false;create(point);return true;}};
 })(typeof window==='object'?window:globalThis);

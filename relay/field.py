@@ -9,7 +9,7 @@ def register_field(app):
     blueprint=Blueprint('field',__name__)
     @blueprint.get('/field/<name>.js')
     def script(name):
-        if name not in {'points','operations','actors','navigator','texture','mission','chemistry','mobile','map-touch'}:abort(404)
+        if name not in {'points','operations','actors','navigator','texture','mission','chemistry','mobile','map-touch','psion'}:abort(404)
         return send_from_directory(ROOT/'web',name+'.js')
     @blueprint.get('/api/science-targets')
     def targets():

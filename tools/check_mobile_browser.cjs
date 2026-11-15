@@ -43,6 +43,17 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
  await button('planetopen');assert.equal(await evaluate("getComputedStyle(document.getElementById('planetview')).position"),'fixed');
  await evaluate("document.getElementById('planetload').scrollIntoView({block:'center',behavior:'instant'})");assert.equal(await evaluate("(()=>{const r=document.getElementById('planetload').getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight;})()"),true,'Atlas selection can be reached');
  await button('planetclose');
+ if(process.env.RUTA_TEST_WATCH==='1'){
+  await wait('Boolean(window.ojoDeMarte)');
+  const shared=await evaluate(`(async()=>{const p=ojoDeMarte.plan(),r=await fetch('/api/psion/missions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)});if(!r.ok)throw Error(JSON.stringify(await r.json()));return r.json();})()`);
+  assert.equal(shared.region,'glen-torridon');assert.equal(shared.stops.length,3);shared.stops[0].name='Salida del reloj';
+  await evaluate('ojoDeMarte.setPlan('+JSON.stringify(shared)+')');assert.equal(await evaluate('state.stops.length'),1);assert.equal(await evaluate('ScienceMission.exclusions().length'),1);assert.equal(await evaluate('FieldPoints.namedPoints()[0].name'),'Salida del reloj');
+  for(const mode of ['terrain','follow','surface','globe']){
+   const size=await evaluate(`(async()=>{const s=await ojoDeMarte.view3d({mode:'${mode}',snapshot:true,p:.5});if(!s.image.startsWith('data:image/png;base64,'))throw Error('Missing image');return s.image.length;})()`);
+   assert.ok(size>2000,mode+' snapshot missing');
+  }
+  console.log('PASS: watch mission sharing, round trip, preserved exclusions and terrain/follow/surface/globe image snapshots.');
+ }
  assert.deepEqual(errors,[],'Browser runtime exceptions');console.log('PASS: real touch A/B, science stop, obstacle, Python route request, pinch, five viewport widths, atlas and no runtime errors.');console.log('Screenshot: /tmp/ruta-mobile-map.png');
  socket.close();await fetch(cdp+'/json/close/'+target.id);
 })().catch(error=>{console.error(error);process.exit(1);});

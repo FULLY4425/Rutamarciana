@@ -92,7 +92,7 @@
     const actions={ArrowLeft:()=>yaw-=.1,ArrowRight:()=>yaw+=.1,ArrowUp:()=>pitch=Math.min(Math.PI/2,pitch+.1),ArrowDown:()=>pitch=Math.max(-Math.PI/2,pitch-.1)};
     if(actions[event.key]){event.preventDefault();actions[event.key]();schedule();}
   });
-  root.MarsAtlas={close:()=>{if(open)setOpen(false);}};
+  root.MarsAtlas={snapshot(){setOpen(true);draw();return canvas.toDataURL('image/png');},close:()=>{if(open)setOpen(false);}};
   setOpen(!new URLSearchParams(location.search).has('region'));
   fetch('/api/mars/atlas').then(response=>{if(!response.ok)throw Error('No se pudo cargar el atlas global.');return response.json();}).then(value=>{
     data=value;

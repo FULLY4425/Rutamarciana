@@ -199,3 +199,9 @@ La planificación y la bitácora legada no tienen autenticación general ni cuot
 Las exclusiones pueden incluir `kind: manual_obstacle` o `kind: hypothetical_dust`, conservado en la respuesta; tipos desconocidos se rechazan. La interfaz reserva 7 áreas manuales y una de tormenta. La API mantiene el máximo total de 8.
 
 La exportación del navegador añade `mission_observations` (notas propias, no enviadas por la API de rutas) y `data_layers` (disponibilidad/procedencia de topografía, óptica y química). Ni esas notas ni la misión interactiva actualizan el manifiesto precalculado de la bitácora del ESP.
+
+## Misiones del reloj Mars OS
+
+`POST /api/psion/missions` recibe `stops` (2–10 nombres científicos o puntos `{name,lat,lon}`), `maxSlopeDegrees` (5–40) y `environment` (mismo formato de restricciones del planificador). Sin `region` se usa Glen Torridon; las demás regiones se rechazan para este intercambio. Devuelve un código público de cuatro caracteres, puntos normalizados, entorno y métricas de ida FAST del servicio existente, `pathCrc` CRC32 de bytes `(col,row)`, `planner` y advertencia de diferencias con el A* local.
+
+`GET /api/psion/missions/<code>` recupera esa misión. Los códigos caducan a las 24 h o al reiniciar, con capacidad de 128 misiones y respuesta 429 al llenarse. Errores de entrada: 400; cuerpo mayor de 12 KB: 413; inexistente/caducado: 404. No guarda GPS terrestre, notas ni tokens privados. `GET /api/health` identifica compatibilidad con este reloj. Consulta [Reloj Mars OS](RELOJ_MARS_OS.md) para el relay local y el adaptador web.

@@ -127,7 +127,8 @@
     attributes(routeBuffer);gl.uniform1i(uniform('route'),1);for(const [first,length] of strips)gl.drawArrays(gl.LINE_STRIP,first,length);
     if(root.FieldActors && latest.actors){
       gl.uniform1i(uniform('route'),0);gl.uniform1i(uniform('actor'),1);
-      for(const actor of latest.actors){if(actor.world[1]===null)continue;
+      // The followed astronaut is the camera; drawing its helmet would cover the view.
+      for(const actor of latest.actors){if(actor.index===0||actor.world[1]===null||Math.hypot(actor.world[0]-sample.point[1]*terrain.cell_x_m,actor.world[2]-sample.point[0]*terrain.cell_m)<1)continue;
         const vertices=root.FieldActors.geometry([actor.world[0],geometry.surfaceHeight(terrain,actor.point)??actor.world[1],actor.world[2]],actor.heading,actor.phase);
         gl.bindBuffer(gl.ARRAY_BUFFER,actorBuffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(vertices),gl.DYNAMIC_DRAW);attributes(actorBuffer);
         gl.uniform3f(uniform('suit'),...(actor.index?[.97,.61,.34]:[.93,.95,.87]));gl.drawArrays(gl.TRIANGLES,0,vertices.length/8);
@@ -153,7 +154,7 @@
   });
   canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();lost=true;status('Se perdió el contexto gráfico. Cierra la vista y recarga para recuperarlo.');});
   root.addEventListener('resize',render);
-  root.SurfaceView={close:()=>{if(open)setOpen(false);},isOpen:()=>open,update(value){latest=value;
+  root.SurfaceView={snapshot(){if(!latest?.sample||lost)throw Error('La superficie requiere ruta y WebGL disponible.');setOpen(true);render();return canvas.toDataURL('image/png');},close:()=>{if(open)setOpen(false);},isOpen:()=>open,update(value){latest=value;
     const region=value.terrain?.region||value.terrain?.site;
     if(region && region!==referenceRegion){referenceRegion=region;reference=null;textureReady=false;textureRequested=false;const request=++referenceRequest;
       fetch(typeof apiURL==='function'?apiURL('/reference-metadata'):'/reference-metadata').then(response=>response.ok?response.json():null).then(meta=>{if(request!==referenceRequest)return;reference=meta;textureRequested=false;render();}).catch(()=>{});

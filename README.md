@@ -89,6 +89,8 @@ Para GPS en un celular usa la versión HTTPS de Render o un servidor HTTPS propi
 
 En celular, los botones **Salida A**, **Destino B**, **Parada** y **Zona a evitar** están junto al mapa. Un toque coloca el punto; arrastrar explora el terreno y dos dedos acercan o desplazan sin añadir puntos. **Mover mapa** permite desplazar con un dedo también en 3D. El mapa comienza en 2D en pantallas táctiles pequeñas; puedes cambiar a 3D. La barra inferior lleva a **Mapa / trazar**, **Plan**, **Guía** y **Resultados**. Las capas avanzadas se despliegan en **Capas y opciones de vista**.
 
+El nuevo [reloj Mars OS de dos pantallas](docs/RELOJ_MARS_OS.md) está en `firmware/psion-marte-os`: TFT 320×240 y ST7789 secundaria 240×240, mapa local de Glen Torridon, guía privada del celular, misiones por código y relay opcional para sincronización e imágenes 3D. Su A* local difiere de FAST/SAFE; conserva el firmware anterior como alternativa.
+
 ## Desarrollo y comprobaciones
 
 ```sh

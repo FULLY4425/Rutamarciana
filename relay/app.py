@@ -57,11 +57,11 @@ def create_app(data_dir: str):
             return False
         return True
 
-    def read_manifest():
+    def read_manifest(directory=None):
         def invalid_constant(value):
             raise ValueError(f'constante JSON inválida: {value}')
         try:
-            data = json.loads((dataset_root() / 'routes.json').read_text(encoding='utf-8'), parse_constant=invalid_constant)
+            data = json.loads(((directory or dataset_root()) / 'routes.json').read_text(encoding='utf-8'), parse_constant=invalid_constant)
             return data if isinstance(data, dict) else None
         except RegionError:
             raise
@@ -221,12 +221,15 @@ def create_app(data_dir: str):
 
     @app.post("/api/route")
     def compute():
+        return compute_body(request.get_json(force=True, silent=True))
+
+    def compute_body(body, directory=None):
         import numpy as np
 
         from pipeline.route import plan_routes
         from pipeline.scenario import scenario, metadata
 
-        body = request.get_json(force=True, silent=True) or {}
+        directory = directory or dataset_root()
         if not isinstance(body, dict):
             return jsonify(error="se requiere un objeto JSON"), 400
         if "schema_version" in body and (type(body["schema_version"]) is not int or body["schema_version"] != 3):
@@ -247,14 +250,14 @@ def create_app(data_dir: str):
                 or len(p["name"])>160 for p in named)):
             return jsonify(error="named_points: máximo 20 nombres de hasta 160 caracteres"), 400
 
-        files = [dataset_root() / f"{name}.npy" for name in ("dem", "slope", "rough")]
+        files = [directory / f"{name}.npy" for name in ("dem", "slope", "rough")]
         if not all(p.exists() for p in files):
             return jsonify(error="faltan dem.npy / slope.npy / rough.npy; regenera el pipeline"), 503
 
-        mf = dataset_root() / "routes.json"
+        mf = directory / "routes.json"
         if not mf.exists():
             return jsonify(error="falta routes.json; regenera el pipeline"), 503
-        meta = read_manifest()
+        meta = read_manifest(directory)
         if (meta is None or meta.get("schema_version") != 3 or "cell_m" not in meta or "cell_x_m" not in meta
                 or meta.get("dem_validity") != "nodata-preserved-v1"
                 or not valid_scenario(meta)):
@@ -328,6 +331,9 @@ def create_app(data_dir: str):
             if name and os.path.exists(name):
                 os.unlink(name)
         return jsonify(ok=True)
+
+    from relay.psion import register_psion
+    register_psion(app, compute_body)
 
     return app
 

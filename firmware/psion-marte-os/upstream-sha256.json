@@ -1,0 +1,13 @@
+{
+  "archive_sha256": "321918e020a2f6b94c40b2748fe782bb4bb60b3b028f1c036a819bb9e5e76669",
+  "files": {
+    "psion-marte-os.ino": "fc2e4946e59f4e42cfc79072ea675c37f2bb32c4375eea17674a611baf621923",
+    "marte_core.h": "62f145d9f27b388b28f6eb4b5bcedfb5aeca789283f96e85a3f489e221bc7a8d",
+    "font5x7.h": "7752cb9f5fc448f8acd731ebc9462926257bc3652b00638aafc1d724872025b6",
+    "oled240.h": "3796a0b666d92325cce670b6b82cb18e3b1faedcebf9bbd404e70f15b6e5d9a8",
+    "extras/make_marte_data.py": "b0c02d64a66fedd1c45295b7f1f72a89ef5fd7db478dded533d20bdc721b205b",
+    "extras/mars_relay/mars_relay.py": "74811804b469b40248e40e6655fe7965f06ea670b0adf612fed72094aeb4cd90",
+    "extras/mars_relay/mars_relay_panel.pyw": "9c6f10acd5c3d37d893ccdf0711cb5415ead59a1d2285c941beb1abe25bf5861",
+    "extras/mars_relay/start_mars_relay.bat": "c13e4f71a1b6944c87e7b3450d0919cdf5d083254efd5e9270881a9b849b3c2a"
+  }
+}

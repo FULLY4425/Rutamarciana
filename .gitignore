@@ -6,3 +6,7 @@ data/out/
 .impeccable/
 
 .server-venv/
+
+# Watch relay state stays local.
+firmware/psion-marte-os/extras/mars_relay/mars_relay_config.json
+firmware/psion-marte-os/extras/mars_relay/mars_relay.log

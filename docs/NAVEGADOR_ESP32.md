@@ -15,6 +15,8 @@ Las coordenadas terrestres se procesan en el navegador; no se envían al servido
 
 Si la señal tiene más de 15 s, su precisión supera ±25 m, sales del recorte o te separas más de 30 m del tramo activo, se suspenden las instrucciones de avance. Revisa el celular y recupera la señal o recalcula. El navegador solicita mantener la pantalla encendida cuando el dispositivo lo permite; no garantiza GPS en segundo plano.
 
+Para el nuevo firmware de reloj con **dos pantallas ST7789**, consulta [Reloj Mars OS](RELOJ_MARS_OS.md). Usa el mismo vínculo privado de guía; el driver y las instrucciones de compilación de ese sistema difieren de la base con OLED descrita a continuación.
+
 ## ESP32 de la bitácora
 
 Se integra el firmware del ZIP suministrado en `firmware/psion-micor-spaceapps/`. `forest.ino`, `bitacora_core.h`, `eva_budget.h` y `mision_map_contract.h` conservan sus bytes originales; el sketch principal añade los enganches del módulo ROVER. `upstream-sha256.json` registra los hashes. El espacio Misión → Mapa muestra el navegador y registra un proveedor del presupuesto; se añaden `navigator_core.h`, `navigator_link.h`, `navigator_tft.h` y `navigator_ca.h`. El firmware anterior de `psion_micor_stable` permanece disponible.
