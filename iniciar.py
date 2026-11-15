@@ -17,11 +17,16 @@ def options(argv=None):
     parser = argparse.ArgumentParser(description='Ruta Marciana · servidor local')
     parser.add_argument('--host', default='0.0.0.0', help='Interfaz de escucha (default: todas)')
     parser.add_argument('--port', type=int, default=8080, help='Puerto (default: 8080)')
-    parser.add_argument('--data', type=Path, default=ROOT / 'data' / 'out', help='Carpeta de terreno existente')
+    terrain = parser.add_mutually_exclusive_group()
+    terrain.add_argument('--data', type=Path, help='Carpeta de terreno existente')
+    terrain.add_argument('--demo', action='store_true', help='Usar terreno sintético en lugar del Jezero incluido')
     parser.add_argument('--check', action='store_true', help='Preparar y verificar sin iniciar el servidor')
     args = parser.parse_args(argv)
     if not 1 <= args.port <= 65535:
         parser.error('El puerto debe estar entre 1 y 65535.')
+    if args.data is None:
+        bundled = ROOT / 'assets' / 'jezero'
+        args.data = ROOT / 'data' / 'demo' if args.demo else (bundled if (bundled / 'routes.json').exists() else ROOT / 'data' / 'out')
     if not args.data.is_absolute():
         args.data = ROOT / args.data
     return args

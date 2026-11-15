@@ -1,6 +1,7 @@
 /* Offline software 3D renderer. Elevations come exclusively from the active DEM. */
 let terrain = null, triangles = [], projected = [], flat = false;
 let yaw = -0.35, tilt = 0.85, zoom = 1, exaggeration = 3;
+let overviewCache=null, overviewTerrain=null, overviewKey='';
 let running = false, progress = 0, lastFrame = 0, activeData = null;
 const byId = id => document.getElementById(id);
 function elevation(pt) {
@@ -46,6 +47,9 @@ function drawTerrain() {
   if (activeData !== state.data) { activeData=state.data;running=false;progress=0;byId('progress').value=0;byId('play').textContent='Iniciar'; }
   if(flat) draw2d();
   else if (!window.SurfaceView?.isOpen()) {
+    const cacheKey=[yaw,tilt,zoom,exaggeration,byId('terrainpalette').value].join(':');
+    if(overviewCache && overviewTerrain===terrain && overviewKey===cacheKey){ctx.drawImage(overviewCache,0,0);}
+    else {
     ctx.fillStyle='#0d1215';ctx.fillRect(0,0,1000,1000);triangles=[];
     if(terrain) {
       projected=terrain.rows.map((r,i)=>terrain.cols.map((c,j)=>project([r,c],terrain.elevations[i][j])));
@@ -61,11 +65,16 @@ function drawTerrain() {
       triangles.sort((a,b)=>a.depth-b.depth);
       for(const t of triangles) {
         ctx.beginPath(); t.pts.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.closePath();
-        ctx.fillStyle=`rgb(${Math.round(183*t.shade)},${Math.round(115*t.shade)},${Math.round(78*t.shade)})`;ctx.fill();ctx.strokeStyle=ctx.fillStyle;ctx.lineWidth=0.6;ctx.stroke();
+        ctx.fillStyle=window.ScienceView?.triangleColor(terrain,t.ids,byId('terrainpalette').value) || `rgb(${Math.round(183*t.shade)},${Math.round(115*t.shade)},${Math.round(78*t.shade)})`;ctx.fill();ctx.strokeStyle=ctx.fillStyle;ctx.lineWidth=0.6;ctx.stroke();
       }
       // Sparse contour grid makes the physical terrain readable without invented imagery.
       for(let i=0;i<terrain.rows.length;i+=8) line(terrain.cols.map(c=>[terrain.rows[i],c]),'#efd2b320',0.8);
     } else {ctx.fillStyle='#b4a79a';ctx.font='20px monospace';ctx.fillText('Esperando el DEM del proyecto…',280,500);}
+    if(terrain){
+      if(!overviewCache){overviewCache=document.createElement('canvas');overviewCache.width=1000;overviewCache.height=1000;}
+      overviewCache.getContext('2d').drawImage(cvs,0,0);overviewTerrain=terrain;overviewKey=cacheKey;
+    }
+    }
     for(const [name,color] of [['fast','#ff985f'],['safe','#e7d08b']]) {
       const r=state.data?.[name];if(!r)continue;
       line(r.points,'#151819',8);line(r.points,color,4,name==='fast'?[8,7]:[]);
@@ -78,6 +87,7 @@ function drawTerrain() {
   const path=trackingPath();
   if(path.length>1) {
     const sample=samplePath(path,progress);
+    window.ScienceView?.update({terrain,data:state.data,name:byId('trackroute').value,path,sample,elevation});
     line([...path.slice(0,sample.index),sample.point],'#ffffff',4);
     marker(sample.point,'EVA · SIMULACIÓN','#ffffff');
     const lookDistance=sample.distance<sample.total?Math.min(sample.total,sample.distance+8):Math.max(0,sample.distance-8);
@@ -85,11 +95,21 @@ function drawTerrain() {
     window.MissionGuidance?.update(state.data,byId('trackroute').value,sample,running,{x:state.cellXM,y:state.cellM});
     byId('trackinfo').textContent=`${(progress*100).toFixed(0)}% · ${(sample.distance/1000).toFixed(2)} / ${(sample.total/1000).toFixed(2)} km · fila ${sample.point[0].toFixed(0)}, col ${sample.point[1].toFixed(0)}`;
   } else {
+    window.ScienceView?.update({terrain,data:state.data,name:byId('trackroute').value,path,sample:null,elevation});
     window.SurfaceView?.update({terrain,path,sample:null});
     window.MissionGuidance?.update(state.data,byId('trackroute').value,null,false,{x:state.cellXM,y:state.cellM});
     byId('trackinfo').textContent='Calcula una ruta para explorar el recorrido.';
   }
 }
+function updateBasemap(){
+  bg.src=byId('orthophoto').checked?'/reference-image':'/api/terrain-image?layer='+byId('terrainpalette').value;
+}
+byId('terrainpalette').onchange=()=>{updateBasemap();draw();};
+window.addEventListener('terrain-photo',event=>{
+  updateBasemap();
+  if(event.detail){flat=true;document.querySelector('.zoomctl').hidden=false;byId('viewmode').textContent='Vista 3D';}
+  draw();
+});
 window.addEventListener('surface-close',()=>draw());
 window.addEventListener('surface-step',event=>{
   const path=trackingPath();
@@ -141,9 +161,18 @@ byId('export').onclick=()=>{
 };
 function animate(t){if(running){progress=Math.min(1,progress+Math.min((t-lastFrame)/1000,0.1)/60);byId('progress').value=Math.round(progress*1000);draw();if(progress>=1){running=false;byId('play').textContent='Repetir';}}lastFrame=t;requestAnimationFrame(animate);}
 requestAnimationFrame(animate);
-(async()=>{try{
-  const response=await fetch('/api/terrain');if(!response.ok)throw Error('Ejecuta make demo para cargar un terreno.');terrain=await response.json();
+let terrainLoad=0;
+async function loadTerrain(){
+ const request=++terrainLoad;
+ try{
+  const response=await fetch('/api/terrain?detail='+byId('terraindetail').value);if(!response.ok)throw Error('No se pudo cargar el DEM. Revisa el servidor.');
+  const loaded=await response.json();if(request!==terrainLoad)return;terrain=loaded;
   terrain.base=Math.min(...terrain.elevations.flat().filter(z=>z!==null));state.grid=terrain.grid;state.cellM=terrain.cell_m;state.cellXM=terrain.cell_x_m;
-  byId('source').textContent=terrain.site==='synth'?'● DEMO · TERRENO SINTÉTICO':`● DEM · ${terrain.site}`;
+  byId('source').textContent=terrain.site==='synth'?'● DEMO · TERRENO SINTÉTICO':terrain.provenance?.doi==='10.5066/P9REJ9JN'?`● JEZERO · HiRISE ${terrain.cellM.toFixed(0)} M`:`● DEM · ${terrain.site}`;
   document.querySelector('.meta').textContent=`${state.grid.rows} × ${state.grid.cols} · RELIEVE ×${exaggeration} · ARRASTRA PARA GIRAR`;
-}catch(e){byId('source').textContent='● SIN DEM';hint.textContent=e.message;}draw();})();
+  updateBasemap();
+ }catch(error){if(request!==terrainLoad)return;byId('source').textContent=terrain?'● DETALLE ANTERIOR CONSERVADO':'● SIN DEM';hint.textContent=error.message;}
+ draw();
+}
+byId('terraindetail').onchange=loadTerrain;
+loadTerrain();

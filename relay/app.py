@@ -94,6 +94,14 @@ def create_app(data_dir: str):
     def reference_metadata():
         return send_from_directory(ROOT / "assets", "jezero_ortho_4m.json")
 
+    @app.get("/science.js")
+    def science_js():
+        return send_from_directory(WEB, "science.js")
+
+    @app.get("/api/science-sources")
+    def science_sources():
+        return send_from_directory(ROOT / "assets", "science_sources.json")
+
     @app.get("/streetview.js")
     def streetview_js():
         return send_from_directory(WEB, "streetview.js")
@@ -110,6 +118,29 @@ def create_app(data_dir: str):
     def terrain_js():
         return send_from_directory(WEB, "terrain.js")
 
+    @app.get("/api/terrain-image")
+    def terrain_image():
+        import io
+        import numpy as np
+        from PIL import Image
+        from pipeline.visualization import terrain_rgba
+        layer = request.args.get("layer", "natural")
+        if layer not in ("natural", "slope", "elevation"):
+            return jsonify(error="Capa desconocida"), 400
+        meta = read_manifest()
+        if meta is None or not (root / "dem.npy").exists() or not (root / "slope.npy").exists():
+            return jsonify(error="Faltan datos del terreno"), 503
+        try:
+            image = terrain_rgba(np.load(root / "dem.npy", allow_pickle=False),
+                                 np.load(root / "slope.npy", allow_pickle=False),
+                                 meta["cell_m"], meta["cell_x_m"], layer)
+        except ValueError as error:
+            return jsonify(error=str(error)), 503
+        buffer = io.BytesIO()
+        Image.fromarray(image).save(buffer, format="PNG")
+        buffer.seek(0)
+        return send_file(buffer, mimetype="image/png")
+
     @app.get("/api/terrain")
     def terrain():
         import numpy as np
@@ -119,10 +150,24 @@ def create_app(data_dir: str):
             return jsonify(error="Genera el terreno con make demo o pipeline.build --dem"), 503
         dem = np.load(path, allow_pickle=False)
         # Include both edges and bound payload / rendering cost.
-        rows = np.unique(np.linspace(0, dem.shape[0] - 1, min(75, dem.shape[0])).astype(int))
-        cols = np.unique(np.linspace(0, dem.shape[1] - 1, min(75, dem.shape[1])).astype(int))
+        try:
+            detail = int(request.args.get("detail", "75"))
+        except ValueError:
+            return jsonify(error="detail debe ser un entero entre 25 y 150"), 400
+        if not 25 <= detail <= 150:
+            return jsonify(error="detail debe estar entre 25 y 150"), 400
+        rows = np.unique(np.linspace(0, dem.shape[0] - 1, min(detail, dem.shape[0])).astype(int))
+        cols = np.unique(np.linspace(0, dem.shape[1] - 1, min(detail, dem.shape[1])).astype(int))
         z = dem[np.ix_(rows, cols)]
-        return jsonify(rows=rows.tolist(), cols=cols.tolist(),
+        slope_path = root / "slope.npy"
+        slope = np.load(slope_path, allow_pickle=False)[np.ix_(rows, cols)] if slope_path.exists() else None
+        finite = dem[np.isfinite(dem)]
+        return jsonify(
+                       slopes=[[float(v) if np.isfinite(v) else None for v in row] for row in slope] if slope is not None else None,
+                       statistics={"elevation_min_m": float(finite.min()) if finite.size else None,
+                                   "elevation_max_m": float(finite.max()) if finite.size else None,
+                                   "valid_cells": int(finite.size), "total_cells": int(dem.size)},
+                       provenance=meta.get("provenance"),rows=rows.tolist(), cols=cols.tolist(),
                        elevations=[[float(v) if np.isfinite(v) else None for v in row] for row in z],
                        grid=meta["grid"], cell_m=meta["cell_m"], cell_x_m=meta["cell_x_m"],
                        site=meta.get("site", "unknown"), spatial=meta.get("spatial", {}))

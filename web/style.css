@@ -145,3 +145,20 @@ canvas {display:block;width:100%;height:auto;background:var(--bg-deep);cursor:cr
 @media(max-width:1000px){.workspace {grid-template-columns:260px minmax(0,1fr);grid-template-areas:'toolbar toolbar' 'plan map' 'details details';}.details-panel {border-left:0;border-top:1px solid var(--line);max-height:none;display:grid;grid-template-columns:1fr 1fr;align-items:start;}.details-panel .head {grid-column:1/-1;}.details-panel .note {grid-column:1/-1;}.mapwrap {min-height:560px;}.panel {max-height:none;}.workspace-toolbar {align-items:flex-start;}.maptools {max-width:360px;}.location strong {font-size:17px;}}
 @media(max-width:700px){.missionbar {align-items:flex-start;gap:14px;padding:16px;flex-direction:column;}.brand {font-size:15px;}.emblem {font-size:34px;}.missionbar nav {gap:14px;font-size:10px;width:100%;}#source {font-size:8px;margin-left:auto;max-width:100%;}.intro {padding:26px 18px;}.location {display:none;}h1 {font-size:32px;}.workspace {margin:0 12px;grid-template-columns:1fr;grid-template-areas:'toolbar' 'map' 'plan' 'details';}.workspace-toolbar {flex-direction:column;gap:14px;}.maptools {max-width:none;justify-content:flex-start;gap:6px;}.maptools button {min-height:36px;}.mapwrap {min-height:0;padding:0 0 55px;}.stage {max-width:none;}.plan-panel {border-right:0;border-top:1px solid var(--line);}.panel {padding:20px;}.details-panel {display:flex;}.map-caption {font-size:7px;left:12px;right:12px;bottom:14px;}.map-caption span:last-child {text-align:right;max-width:45%;}.meta {font-size:7px;top:43px;}.legend {font-size:8px;gap:10px;}.hint {font-size:9px;bottom:10px;}.controls .row {grid-template-columns:1fr 1fr;align-items:center;}.tracking .row {flex-wrap:nowrap;}.mission-footer {flex-direction:column;gap:8px;padding:22px 18px;font-size:8px;}.surface-top,.surface-bottom {padding:10px;}.surface-top strong {font-size:8px;}#surfaceheading {font-size:7px;}.surface-top button {font-size:8px;padding:6px;}.surface-bottom p {font-size:8px;}.surface-bottom small {font-size:8px;}.surface-actions button {font-size:8px;padding:6px;}}
 @media(prefers-reduced-motion:reduce){html {scroll-behavior:auto;}* {transition:none!important;}}
+/* Source provenance and visual analysis use the same mission components. */
+.terrain-facts {display:grid;gap:9px;padding:13px;border:1px solid #3b5145;border-radius:6px;background:#18261e;}
+.terrain-facts p:not(.sectionlabel),.terrain-facts label {font-size:10px;line-height:1.8;color:var(--dim);}
+.photo-toggle {display:flex;gap:8px;align-items:center;}.photo-toggle input {accent-color:var(--teal);}
+#photostatus {font-size:9px!important;}
+.maptools select {font-size:10px;min-height:34px;padding:6px;max-width:150px;}
+.elevation-profile {display:grid;gap:9px;color:var(--teal);padding-top:16px;border-top:1px solid var(--line);}
+#elevationchart {width:100%;height:auto;background:#101b16;border:1px solid var(--line);border-radius:5px;}
+#elevationinfo,.elevation-profile small {font-size:10px;color:var(--dim);}.elevation-profile small {font-size:9px;}
+.science-sources {border-top:1px solid var(--line);padding-top:17px;}
+#sourcesstatus {font-size:10px;color:var(--dim);margin-top:10px;}
+#sciencesources {list-style:none;padding:0;margin:10px 0 0;}
+#sciencesources li {padding:12px 0;border-bottom:1px solid var(--line);}
+#sciencesources a {color:var(--teal);font-size:11px;text-decoration:none;}
+#sciencesources a:hover {text-decoration:underline;}
+#sciencesources p {font-size:10px;line-height:1.8;color:var(--dim);margin-top:6px;}
+@media(min-width:1001px){.workspace-toolbar .maptools {max-width:75%;}}

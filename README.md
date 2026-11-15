@@ -23,7 +23,7 @@ python iniciar.py
 ```
 
 Requiere Python 3.10+ e internet en la primera instalación. El lanzador prepara
-su entorno aislado, genera la demo sintética si no hay terreno y sirve la app
+su entorno aislado, carga el recorte real de Jezero incluido y sirve la app
 con Waitress en `http://127.0.0.1:8080/`. No requiere Git, Node.js o Make.
 Guía para Windows/Linux, acceso desde la red y datos reales:
 [INICIAR_SERVIDOR.md](INICIAR_SERVIDOR.md).
@@ -138,9 +138,9 @@ NoData se conserva como `null`; la malla omite triángulos sin elevación.
 El muestreo es solo visual: el cálculo de rutas conserva la resolución completa.
 La visualización no añade alturas a partir de la intensidad de la ortofoto.
 
-`make demo` usa el generador sintético de este repositorio, identificado en la
-cabecera. Para relieve real se requiere generar los datos con `pipeline.build
---dem ...`. La ortofoto HiRISE incluida se puede consultar como referencia
+`python iniciar.py` usa el recorte real de Jezero incluido en `assets/jezero`.
+`make demo` y `python iniciar.py --demo` usan el generador sintético, identificado
+en la cabecera. Otros terrenos reales se preparan con `pipeline.build --dem ...`. La ortofoto HiRISE incluida se puede consultar como referencia
 independiente; no se superpone a otra ventana del DEM ni al terreno sintético.
 Un error de cálculo se informa sin sustituir la ruta por datos precalculados.
 
@@ -214,3 +214,47 @@ seguimiento existente, reutiliza sus controles y no altera la planificación.
 ```bash
 node --test tests/streetview.cjs tests/navigation.cjs
 ```
+
+
+## Datos NASA / USGS y capas científicas
+
+Se incluye un recorte real HiRISE de **Jezero**, del producto USGS Mars 2020
+Terrain Relative Navigation DTM (Fergason et al., 2020; DOI 10.5066/P9REJ9JN).
+Rejilla derivada: 500×500, paso norte-sur 4 m y este-oeste ≈3,79356 m físicos
+por la corrección de latitud. La ventana proyectada mide 2×2 km y coincide con
+la declarada en `assets/jezero_ortho_4m.json`. Elevación del recorte: aproximadamente
+−2494 a −2409 m en la referencia vertical del producto. No es altura sobre el suelo.
+
+- **Relieve iluminado, elevación y pendiente**: capas derivadas del DEM activo,
+  tanto en 2D como en el relieve 3D. La pendiente no clasifica rocas ni arena.
+- **Ortofoto HiRISE en 2D**: se habilita únicamente cuando CRS, límites y ventana
+  de origen coinciden. La vista de superficie usa la misma comprobación.
+- **Detalle estándar / alto**: 75×75 o 150×150 muestras visuales. El cálculo de
+  rutas siempre usa la rejilla completa de 500×500. La resolución de origen
+  no debe confundirse con la resolución reducida de visualización.
+- **Perfil de elevación**: muestra alturas muestreadas a lo largo de ida y regreso
+  y la posición actual de reproducción. Es una vista de la malla reducida, no
+  una nueva métrica del presupuesto EVA.
+- **Catálogo de fuentes**: enlaces, cobertura y uso de las cinco fuentes propuestas,
+  distinguiendo datos incorporados de referencias externas. Mars Trek ofrece
+  contexto global y servicios WMTS; el archivo de Perseverance ofrece imágenes
+  reales de Jezero, pero no se usa como una textura arbitraria o posición en vivo.
+  Curiosity/Mount Sharp pertenece a Gale. Worldview muestra la Tierra y queda
+  excluido como fuente de terreno marciano.
+
+La descarga ZIP ya incluye los datos preparados (≈3,7 MB), sin descargas NASA
+al arrancar. `python iniciar.py --demo` mantiene disponible la demo sintética.
+El importador reproducible descarga por rangos HTTP las filas necesarias,
+valida la ventana y guarda hashes de los productos derivados:
+
+```bash
+# Requiere las dependencias completas, incluido rasterio.
+python -m pipeline.fetch_jezero --out data/jezero-nuevo
+python iniciar.py --data data/jezero-nuevo
+```
+
+El distribuidor sirve filas completas: preparar el recorte transfiere unos
+171 MB, aunque el resultado es pequeño. El importador no descarga el TIFF
+completo de 1,8 GB ni reemplaza una carpeta existente. Es necesario internet
+para regenerar esos datos. Ver `assets/jezero/provenance.json` y
+`assets/science_sources.json` para trazabilidad y alcance por fuente.

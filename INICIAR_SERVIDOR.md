@@ -15,7 +15,7 @@
 
 5. Abre **http://127.0.0.1:8080/** en el navegador del servidor. Deja la terminal abierta. Para detenerlo, pulsa **Ctrl+C**.
 
-La primera ejecución crea `.server-venv`, instala las dependencias y genera datos de demostración. Necesita internet para instalar los paquetes, espacio libre y permisos de escritura en la carpeta extraída. Los siguientes arranques reutilizan el entorno y los datos. No necesitas Git, Node.js, Make ni activar manualmente un entorno virtual. La aplicación funciona con Waitress; no uses `python -m http.server`, porque el cálculo de rutas necesita la API de Python.
+La primera ejecución crea `.server-venv`, instala las dependencias y usa el recorte real de Jezero incluido en `assets/jezero`. Necesita internet para instalar los paquetes, espacio libre y permisos de escritura en la carpeta extraída. Los siguientes arranques reutilizan el entorno y los datos. No necesitas Git, Node.js, Make ni activar manualmente un entorno virtual. La aplicación funciona con Waitress; no uses `python -m http.server`, porque el cálculo de rutas necesita la API de Python.
 
 ## Abrir desde otra computadora o teléfono de tu red
 
@@ -39,7 +39,17 @@ python iniciar.py --port 8090
 
 ## Qué terreno incluye el ZIP de GitHub
 
-Los datos generados (`data/out`) y el DEM real no se guardan en Git. Por eso, si no encuentra un terreno, el lanzador genera la **demo sintética**, identificada en la interfaz. No presenta ese relieve como Marte real. La ortofoto de referencia de Jezero sí está incluida en el repositorio.
+El ZIP incluye **un recorte real de Jezero**: DEM HiRISE de USGS, rejilla 500 × 500 con celdas de 4 m, y su procedencia con hashes SHA-256. El producto original tiene resolución de 1 m; las alturas se promedian en bloques de 4 × 4. No se incluye el TIFF original de 1,8 GB.
+
+`python iniciar.py` selecciona ese paquete por defecto. No reemplaza datos anteriores de `data/out`. Para seguir usando una carpeta existente, indícala con `--data data/out`.
+
+Para ensayar con terreno sintético explícitamente:
+
+```bash
+python iniciar.py --demo
+```
+
+La demo se guarda por separado en `data/demo` y se identifica en pantalla. Si eliges una carpeta vacía con `--data`, el lanzador conserva el comportamiento de generar una demo; una carpeta no vacía e incompatible se rechaza.
 
 Para usar un build real ya preparado, copia su carpeta completa al servidor y ejecuta:
 
@@ -55,7 +65,7 @@ Se requieren `routes.json`, `dem.npy`, `slope.npy` y `rough.npy`, generados con 
 python iniciar.py --check
 ```
 
-Prepara el entorno, genera la demo si falta y comprueba rutas y malla. Los errores se muestran en la terminal. Si el puerto está ocupado, usa `--port` con otro número.
+Prepara el entorno y comprueba las rutas y la malla del terreno seleccionado. Los errores se muestran en la terminal. Si el puerto está ocupado, usa `--port` con otro número.
 
 ## Navegador
 
