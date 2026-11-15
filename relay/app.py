@@ -48,7 +48,8 @@ def create_app(data_dir: str):
         if not f.exists():
             return jsonify(error="falta routes.json; ejecuta el pipeline"), 503
         data = json.loads(f.read_text(encoding="utf-8"))
-        if data.get("schema_version") != 3 or "cell_m" not in data or "cell_x_m" not in data:
+        if (data.get("schema_version") != 3 or "cell_m" not in data or "cell_x_m" not in data
+                or data.get("dem_validity") != "nodata-preserved-v1"):
             return jsonify(error="routes.json antiguo; regenera el pipeline"), 503
         return jsonify(data)
 
@@ -81,7 +82,8 @@ def create_app(data_dir: str):
         if not mf.exists():
             return jsonify(error="falta routes.json; regenera el pipeline"), 503
         meta = json.loads(mf.read_text(encoding="utf-8"))
-        if meta.get("schema_version") != 3 or "cell_m" not in meta or "cell_x_m" not in meta:
+        if (meta.get("schema_version") != 3 or "cell_m" not in meta or "cell_x_m" not in meta
+                or meta.get("dem_validity") != "nodata-preserved-v1"):
             return jsonify(error="routes.json legado o incompleto; regenera a schema_version 3 y selecciona waypoints"), 503
         cell_m = meta["cell_m"]
         out = {"schema_version": 3, "start": start, "end": end,

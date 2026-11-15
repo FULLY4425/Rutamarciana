@@ -25,7 +25,7 @@ def to_u8(a: np.ndarray) -> np.ndarray:
     lo, hi = float(np.nanmin(a)), float(np.nanmax(a))
     if not np.isfinite(lo) or hi - lo < 1e-9:
         return np.zeros(a.shape, dtype=np.uint8)
-    return np.clip((a - lo) / (hi - lo) * 255.0, 0, 255).astype(np.uint8)
+    return np.nan_to_num(np.clip((a - lo) / (hi - lo) * 255.0, 0, 255)).astype(np.uint8)
 
 
 def save_tile_bmp(img_u8: np.ndarray, palette: str, path: Path) -> Path:

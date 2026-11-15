@@ -30,7 +30,6 @@ def plan_routes(dem, slope, rough, cell_m, start, end, budget_s, science_s,
     dem, slope, rough = (np.asarray(a, dtype=float) for a in (dem, slope, rough))
     cell_x_m = cell_m if cell_x_m is None else cell_x_m
     if (dem.ndim != 2 or dem.shape != slope.shape or dem.shape != rough.shape
-            or not all(np.isfinite(a).all() for a in (dem, slope, rough))
             or not np.isfinite(cell_m) or cell_m <= 0
             or not np.isfinite(cell_x_m) or cell_x_m <= 0):
         raise ValueError("raster o tamaño de celda inválido")
@@ -38,6 +37,8 @@ def plan_routes(dem, slope, rough, cell_m, start, end, budget_s, science_s,
             or science_s < 0 or not isinstance(science_waypoints, (list, tuple))
             or not np.isfinite(reserve_fraction) or not 0 <= reserve_fraction <= 1):
         raise ValueError("presupuesto, waypoints o reserva inválidos")
+    valid_cells = np.isfinite(dem) & np.isfinite(slope) & np.isfinite(rough) & (slope <= MAX_SLOPE_DEG)
+    dem, slope, rough = (np.where(valid_cells, a, 0.0) for a in (dem, slope, rough))
     rows, cols = dem.shape
     stops = [start, *science_waypoints, end]
     for p in stops:
@@ -45,7 +46,7 @@ def plan_routes(dem, slope, rough, cell_m, start, end, budget_s, science_s,
                 or any(isinstance(v, (bool, np.bool_)) or not isinstance(v, (int, np.integer)) for v in p)
                 or not (0 <= p[0] < rows and 0 <= p[1] < cols)):
             raise ValueError("coordenadas de ruta inválidas")
-        if slope[tuple(p)] > MAX_SLOPE_DEG:
+        if not valid_cells[tuple(p)]:
             raise ValueError("waypoint de ruta intransitable")
     if len({tuple(p) for p in stops}) != len(stops):
         raise ValueError("coordenadas duplicadas")
@@ -62,11 +63,12 @@ def plan_routes(dem, slope, rough, cell_m, start, end, budget_s, science_s,
             ct = slice(max(0, dc), min(cols, cols + dc))
             length = np.hypot(dr * cell_m, dc * cell_x_m)
             grade = np.degrees(np.arctan((dem[rt, ct] - dem[rs, cs]) / length))
-            valid = ((slope[rs, cs] <= MAX_SLOPE_DEG)
-                     & (slope[rt, ct] <= MAX_SLOPE_DEG)
+            valid = (valid_cells[rs, cs]
+                     & valid_cells[rt, ct]
                      & (np.abs(grade) <= MAX_SLOPE_DEG))
             if dr and dc:
-                valid &= (slope[rt, cs] <= MAX_SLOPE_DEG) & (slope[rs, ct] <= MAX_SLOPE_DEG)
+                valid &= valid_cells[rt, cs] & valid_cells[rs, ct]
+            grade = np.where(valid, grade, 0.0)
             avg_rough = (rough[rs, cs] + rough[rt, ct]) / 2
             avg_slope = (slope[rs, cs] + slope[rt, ct]) / 2
             travel = seconds_per_meter(grade, avg_rough, k=0.2) * length

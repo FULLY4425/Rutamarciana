@@ -4,10 +4,11 @@ from pathlib import Path
 
 def write_manifest(path: Path, *, site, waypoints, layers, routes, budget_s, science_s,
                    cell_m=4.0, grid=None, science_waypoints=None, reserve_fraction=0.15,
-                   cell_x_m=None, spatial=None):
+                   cell_x_m=None, spatial=None, dem_validity=None):
     science_waypoints = [] if science_waypoints is None else science_waypoints
     doc = {
         "schema_version": 3,
+        "dem_validity": dem_validity,
         "site": site,
         "cell_m": cell_m,
         "cell_x_m": cell_m if cell_x_m is None else cell_x_m,

@@ -86,7 +86,10 @@ La decisión usa precisión completa. La UI mantiene sus etiquetas y cálculos
 hasta que su propietario los integre; no se cambian reglas GO/NO-GO aquí.
 
 **Migración explícita:** `GET /api/routes` y POST requieren artefactos del mismo
-build con manifiesto `schema_version: 3`, `cell_m`, `cell_x_m` y los tres NPY.
+build con manifiesto `schema_version: 3`, `cell_m`, `cell_x_m`,
+`dem_validity: "nodata-preserved-v1"` y los tres NPY. Versiones v3 anteriores
+sin ese marcador también devuelven 503: hay que regenerar todos los artefactos
+juntos desde el DEM original, no añadir el marcador a mano. No comprueba hashes.
 Los manifiestos v2 devuelven 503: regenerar el pipeline y elegir cada parada
 con `--science-waypoint ROW COL` repetido en orden (o ninguna). El antiguo
 `--stops` ya no se acepta: su contador no contiene ubicaciones. La petición
@@ -106,6 +109,10 @@ no modelan dirección ni se usan para calcular estas rutas.
    cambia. Para grados se utiliza una conversión marciana aproximada; para
    otros CRS proyectados se asume que sus unidades son metros físicos, sin
    corrección de escala de proyección. No usar esa suposición sin verificarla.
+   Si cualquier píxel de un bloque es NoData o no finito, todo el bloque se
+   marca inválido. Se excluyen también los vecinos afectados por el cálculo
+   de pendiente y rugosidad (ventana 3×3): no se aceptan como paradas ni se
+   atraviesan. La vista previa no distingue explícitamente esas celdas.
 2. Pendiente absoluta de celda por gradiente central.
 3. Rugosidad aproximada por percentiles (sin ortofoto: residuo del DEM).
 4. Para cada paso dirigido entre 8 vecinos, gradiente firmado = diferencia de

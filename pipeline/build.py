@@ -61,20 +61,17 @@ def _load_dem(path, target_cell_m, rows, cols, at=None):
         spatial = {"crs": str(ds.crs) if ds.crs else None, "bounds": bounds,
                    "source_window": {"row": r0, "col": c0, "height": win_h, "width": win_w},
                    "latitude_center_deg": float(latitude) if latitude is not None else None}
-        z = ds.read(1, window=window).astype(np.float32)
-        nod = ds.nodata
+        z = ds.read(1, window=window, masked=True).astype(np.float32).filled(np.nan)
 
     # El centinela de "sin dato" es ~ -3.4e38 (no un umbral: en Marte las
     # elevaciones son negativas, p. ej. -2400 m en Jezero).
-    if nod is not None:
-        z[z == np.float32(nod)] = np.nan
     z[~np.isfinite(z)] = np.nan
-    if np.isfinite(z).any():
-        z = np.nan_to_num(z, nan=float(np.nanmedian(z)))
-    else:
+    if not np.isfinite(z).any():
         raise SystemExit("la ventana no tiene datos: prueba otro --at")
 
     z = z.reshape(z.shape[0] // f, f, z.shape[1] // f, f).mean(axis=(1, 3))
+    if not np.isfinite(z).any():
+        raise SystemExit("la ventana no tiene datos utilizables tras agregar bloques")
     return z.astype(np.float32), cell_y * f, cell_x * f, spatial
 
 
@@ -105,8 +102,14 @@ def main():
             raise SystemExit("falta --dem o --synth")
         dem, cell_m, cell_x_m, spatial = _load_dem(a.dem, a.cell, a.rows, a.cols, a.at)
 
-    slope = slope_deg(dem, cell_m, cell_x_m)
-    rough = rough_from_dem(dem)
+    # Las métricas dependen de vecinos: excluir también celdas afectadas por NoData.
+    from scipy.ndimage import maximum_filter
+    invalid = ~np.isfinite(dem)
+    filled = np.where(invalid, np.nanmedian(dem), dem) if invalid.any() else dem
+    affected = maximum_filter(invalid, size=3)
+    slope = slope_deg(filled, cell_m, cell_x_m)
+    rough = rough_from_dem(filled, valid=~affected)
+    slope[affected] = np.nan
     r, c = dem.shape
     start = tuple(a.start) if a.start else (2, 2)
     end = tuple(a.end) if a.end else (r - 3, c - 3)
@@ -139,6 +142,7 @@ def main():
         cell_x_m=cell_x_m,
         spatial=spatial,
         grid={"rows": int(r), "cols": int(c)},
+        dem_validity="nodata-preserved-v1",
     )
 
     print(json.dumps({

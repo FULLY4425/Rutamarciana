@@ -49,7 +49,7 @@ def test_jezero_projection_window_and_relay(tmp_path):
         np.save(tmp_path / f'{name}.npy', value)
     write_manifest(tmp_path / 'routes.json', site='test', waypoints=[], layers=[], routes=result,
                    budget_s=14400, science_s=0, science_waypoints=[], reserve_fraction=0,
-                   cell_m=y, cell_x_m=x, spatial=spatial)
+                   cell_m=y, cell_x_m=x, spatial=spatial, dem_validity='nodata-preserved-v1')
     client = create_app(str(tmp_path)).test_client()
     response = client.post('/api/route', json={'start': [0, 0], 'end': [4, 4]})
     assert response.status_code == 200
