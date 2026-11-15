@@ -4,7 +4,7 @@ function fixture(){
  const elements=new Map();const drawing=new Proxy({measureText:()=>({width:10})},{get:(obj,key)=>obj[key]||(()=>{})});
  function element(id){if(!elements.has(id))elements.set(id,{value:id==='trackroute'?'safe':id==='terraindetail'?'75':id==='terrainpalette'?'natural':'0',style:{},dataset:{},setAttribute(){},removeAttribute(){},addEventListener(){},appendChild(){},getContext:()=>drawing,width:1000,height:1000,textContent:''});return elements.get(id);}
  const context={document:{getElementById:element,querySelector:element,createElement:element},window:{addEventListener(){},history:{replaceState(){}},MissionGuidance:{stop(){},update(){}}},Image:class{},fetch:()=>new Promise(()=>{}),location:{search:''},URLSearchParams,requestAnimationFrame(){},setTimeout(){}};
- vm.createContext(context);for(const file of ['web/app.js','web/terrain.js'])vm.runInContext(fs.readFileSync(file,'utf8'),context);
+ vm.createContext(context);for(const file of ['web/app.js','web/map-touch.js','web/terrain.js'])vm.runInContext(fs.readFileSync(file,'utf8'),context);
  return {context,element,run:code=>vm.runInContext(code,context)};
 }
 function terrain(region){return {site:region==='jezero'?'jez_dtm_1m':'mola-global',region,grid:{rows:81,cols:81},rows:[0,80],cols:[0,80],elevations:[[0,0],[0,0]],cell_m:5000,cell_x_m:5000,spatial:{center_latitude_deg:0,center_longitude_deg:0}};}

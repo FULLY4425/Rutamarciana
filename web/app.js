@@ -397,7 +397,8 @@ function missionChanged(options={}) {
 }
 
 function selectPoint(pt) {
-  if(window.ScienceMission?.handlePick(pt) || window.FieldPoints?.handlePick(pt) || window.FieldOperations?.handlePick(pt))return;
+  if(window.ScienceMission?.handlePick(pt) || window.FieldPoints?.handlePick(pt) || window.FieldOperations?.handlePick(pt)){window.MapEditor?.finishPick();return;}
+  if(window.MapEditor?.handlePick(pt))return;
   if (!state.start) {
     state.start = pt;
   } else if (!state.end) {

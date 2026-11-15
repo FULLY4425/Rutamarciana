@@ -5,7 +5,7 @@ const ctx=new Proxy({measureText:()=>({width:10})},{get:(o,k)=>o[k]||(()=>{})});
 function element(id){if(!elements.has(id))elements.set(id,{value:id==='trackroute'?'safe':id==='terraindetail'?'75':id==='terrainpalette'?'natural':'0',style:{},dataset:{},addEventListener(){},focus(){},appendChild(){},removeAttribute(){},setAttribute(){},replaceChildren(){},getContext:()=>ctx,width:1000,height:1000,textContent:'',getBoundingClientRect:()=>({left:0,top:0,width:1000,height:1000})});return elements.get(id);}
 const sandbox={console,document:{getElementById:element,querySelector:element,addEventListener(){},createElement:()=>element('new')},Image:class{},window:{addEventListener(){},dispatchEvent(){}},CustomEvent:class{},fetch:()=>new Promise(()=>{}),navigator:{},location:{search:''},URLSearchParams,requestAnimationFrame(){},setTimeout(){}};
 vm.createContext(sandbox);
-for(const file of ['web/app.js','web/navigation.js','web/guidance.js','web/science.js','web/planet.js','web/points.js','web/operations.js','web/actors.js','web/texture.js','web/navigator.js','web/chemistry.js','web/mission.js','web/terrain.js'])vm.runInContext(fs.readFileSync(file,'utf8'),sandbox);
+for(const file of ['web/app.js','web/navigation.js','web/guidance.js','web/science.js','web/planet.js','web/points.js','web/operations.js','web/actors.js','web/texture.js','web/navigator.js','web/chemistry.js','web/mission.js','web/map-touch.js','web/mobile.js','web/terrain.js'])vm.runInContext(fs.readFileSync(file,'utf8'),sandbox);
 vm.runInContext(`
 terrain={rows:[0,10],cols:[0,10],elevations:[[0,10],[10,20]],base:0,grid:{rows:11,cols:11},cell_m:4,cell_x_m:3,site:"synth"};
 state.grid={rows:11,cols:11};state.cellM=4;state.cellXM=3;

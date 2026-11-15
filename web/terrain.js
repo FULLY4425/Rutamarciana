@@ -1,5 +1,5 @@
 /* Offline software 3D renderer. Elevations come exclusively from the active DEM. */
-let terrain = null, triangles = [], projected = [], flat = false;
+let terrain = null, triangles = [], projected = [], flat = window.matchMedia?.('(max-width:700px), (max-width:1000px) and (pointer:coarse)').matches || false;
 let yaw = -0.35, tilt = 0.85, zoom = 1, exaggeration = 3, panX=0, panY=0;
 let overviewCache=null, overviewTerrain=null, overviewKey='';
 let running = false, progress = 0, lastFrame = 0, activeData = null;
@@ -51,6 +51,7 @@ function drawTerrain() {
     if(flat){state.view.ox=cvs.width/2-sample.point[1]/(state.grid.cols-1)*cvs.width*state.view.k;state.view.oy=cvs.height/2-sample.point[0]/(state.grid.rows-1)*cvs.height*state.view.k;clampView();}
     else{panX=0;panY=0;const point=project(sample.point);panX=Math.round(500-point[0]);panY=Math.round(510-point[1]);}
   }
+  window.MapEditor?.update();
   window.FieldPoints?.update(terrain);
   window.ScienceMission?.update(terrain);window.ChemistryLayer?.update(terrain);
   window.FieldOperations?.update({terrain,data:state.data,profile:byId('trackroute').value,path,sample,running});
@@ -133,23 +134,9 @@ window.addEventListener('surface-step',event=>{
   byId('progress').value=Math.round(progress*1000);byId('play').textContent='Continuar';draw();
 });
 window.drawTerrain=drawTerrain;
-let pointer=null, moved=false;
-cvs.style.touchAction='none';
-cvs.addEventListener('pointerdown',ev=>{pointer={x:ev.clientX,y:ev.clientY,startX:ev.clientX,startY:ev.clientY,pan:ev.button===1};moved=false;cvs.setPointerCapture(ev.pointerId);});
-cvs.addEventListener('pointermove',ev=>{
-  if(!pointer)return;
-  if(Math.hypot(ev.clientX-pointer.startX,ev.clientY-pointer.startY)>5)moved=true;
-  if(flat){
-    if(moved && state.view.k>1){const rect=cvs.getBoundingClientRect();state.view.ox+=(ev.clientX-pointer.x)/rect.width*cvs.width;state.view.oy+=(ev.clientY-pointer.y)/rect.height*cvs.height;clampView();draw();}
-    pointer.x=ev.clientX;pointer.y=ev.clientY;return;
-  }
-  if(moved && (ev.shiftKey||pointer.pan)){const rect=cvs.getBoundingClientRect();panX+=(ev.clientX-pointer.x)/rect.width*1000;panY+=(ev.clientY-pointer.y)/rect.height*1000;byId('followcamera').checked=false;draw();}
-  else if(moved){yaw+=(ev.clientX-pointer.x)*0.006;tilt=Math.max(0.15,Math.min(1.35,tilt+(ev.clientY-pointer.y)*0.004));draw();}
-  pointer.x=ev.clientX;pointer.y=ev.clientY;
-});
-cvs.addEventListener('pointercancel',()=>{pointer=null;});
-cvs.addEventListener('pointerup',ev=>{
-  if(!pointer)return;pointer=null;if(moved)return;
+function pickMapAt(ev){
+  const bounds=cvs.getBoundingClientRect();
+  if(ev.clientX<bounds.left||ev.clientX>bounds.left+bounds.width||ev.clientY<bounds.top||ev.clientY>bounds.top+bounds.height)return;
   const rect=cvs.getBoundingClientRect(), x=(ev.clientX-rect.left)/rect.width*1000,y=(ev.clientY-rect.top)/rect.height*1000;
   if(flat){selectPoint(c2g(ev.clientX,ev.clientY));return;}
   // Hit-test frontmost visible triangle, interpolate original grid coordinates.
@@ -159,9 +146,35 @@ cvs.addEventListener('pointerup',ev=>{
     const v=((c[1]-a[1])*(x-c[0])+(a[0]-c[0])*(y-c[1]))/den,w=1-u-v;
     if(u>=0&&v>=0&&w>=0){const ids=t.ids;selectPoint([Math.round(u*terrain.rows[ids[0][0]]+v*terrain.rows[ids[1][0]]+w*terrain.rows[ids[2][0]]),Math.round(u*terrain.cols[ids[0][1]]+v*terrain.cols[ids[1][1]]+w*terrain.cols[ids[2][1]])]);break;}
   }
+}
+const mapGestures=new window.MapGestures.Gesture({
+ tap:pickMapAt,
+ drag({dx,dy,pan}){
+  byId('followcamera').checked=false;
+  const rect=cvs.getBoundingClientRect();
+  if(flat){state.view.ox+=dx/rect.width*cvs.width;state.view.oy+=dy/rect.height*cvs.height;clampView();}
+  else if(pan||window.MapEditor?.isPan()){panX+=dx/rect.width*1000;panY+=dy/rect.height*1000;}
+  else{yaw+=dx*.006;tilt=Math.max(.15,Math.min(1.35,tilt+dy*.004));}
+  draw();
+ },
+ pinch({x,y,dx,dy,factor}){
+  byId('followcamera').checked=false;const rect=cvs.getBoundingClientRect();
+  if(flat){zoomAt(x-dx,y-dy,factor);state.view.ox+=dx/rect.width*cvs.width;state.view.oy+=dy/rect.height*cvs.height;clampView();}
+  else{zoom=Math.max(.5,Math.min(10,zoom*factor));panX+=dx/rect.width*1000;panY+=dy/rect.height*1000;}
+  draw();
+ }
 });
+cvs.style.touchAction='none';
+cvs.addEventListener('pointerdown',ev=>{if(mapGestures.down(ev))cvs.setPointerCapture?.(ev.pointerId);});
+cvs.addEventListener('pointermove',ev=>mapGestures.move(ev));
+cvs.addEventListener('pointerup',ev=>mapGestures.up(ev));
+cvs.addEventListener('pointercancel',()=>mapGestures.cancel());
+cvs.addEventListener('lostpointercapture',event=>{if(mapGestures.points.has(event.pointerId))mapGestures.cancel();});
 cvs.addEventListener('wheel',ev=>{if(flat){ev.preventDefault();zoomAt(ev.clientX,ev.clientY,ev.deltaY<0?1.25:1/1.25);return;}ev.preventDefault();zoom=Math.max(0.5,Math.min(10,zoom*Math.exp(-ev.deltaY*0.001)));draw();},{passive:false});
 byId('viewmode').onclick=()=>{flat=!flat;document.querySelector('.zoomctl').hidden=!flat;clampView();byId('viewmode').textContent=flat?'Vista 3D':'Vista 2D';draw();};
+byId('viewmode').textContent=flat?'Vista 3D':'Vista 2D';document.querySelector('.zoomctl').hidden=!flat;
+window.MissionMapControls={isFlat:()=>flat,zoom(factor){if(flat)setZoom(factor);else{zoom=Math.max(.5,Math.min(10,zoom*factor));draw();}}};
+window.MapEditor?.update();
 byId('camerareset').onclick=()=>{yaw=-0.35;tilt=0.85;zoom=1;panX=panY=0;byId('followcamera').checked=false;resetView();};
 byId('followcamera').onchange=()=>draw();
 cvs.addEventListener('keydown',event=>{if(flat)return;const actions={ArrowLeft:()=>panX+=25,ArrowRight:()=>panX-=25,ArrowUp:()=>panY+=25,ArrowDown:()=>panY-=25,'+':()=>zoom=Math.min(10,zoom*1.2),'-':()=>zoom=Math.max(.5,zoom/1.2),'0':()=>byId('camerareset').onclick()};if(actions[event.key]){event.preventDefault();byId('followcamera').checked=false;actions[event.key]();draw();}});

@@ -87,6 +87,8 @@ Para GPS en un celular usa la versión HTTPS de Render o un servidor HTTPS propi
 5. Para caminar realmente, abre **Reloj / celular**, activa GPS y pulsa **Vincular aquí** en una ruta corta HiRISE. Mantén visible la página.
 6. Para el ESP, compila el [firmware integrado](firmware/psion-micor-spaceapps/README.md), conéctalo a Wi-Fi y usa el código temporal de vinculación del celular.
 
+En celular, los botones **Salida A**, **Destino B**, **Parada** y **Zona a evitar** están junto al mapa. Un toque coloca el punto; arrastrar explora el terreno y dos dedos acercan o desplazan sin añadir puntos. **Mover mapa** permite desplazar con un dedo también en 3D. El mapa comienza en 2D en pantallas táctiles pequeñas; puedes cambiar a 3D. La barra inferior lleva a **Mapa / trazar**, **Plan**, **Guía** y **Resultados**. Las capas avanzadas se despliegan en **Capas y opciones de vista**.
+
 ## Desarrollo y comprobaciones
 
 ```sh
@@ -97,6 +99,8 @@ pip install -r requirements.txt
 python -m pytest -q
 node --test tests/*.cjs
 ```
+
+La comprobación opcional `node tools/check_mobile_browser.cjs` usa Chromium con depuración CDP en `http://127.0.0.1:9227` y el servidor en `http://127.0.0.1:8094` (variables `RUTA_CDP_URL` y `RUTA_TEST_BASE`). Prueba toques reales emulados, puntos, exclusiones, cálculo Python, zoom con dos dedos y tamaños desde 320×568 hasta 1280×800; guarda una captura en `/tmp/ruta-mobile-map.png`.
 
 Node.js se usa para pruebas, no para servir la aplicación. Las pruebas nativas C++ requieren `g++` con soporte de AddressSanitizer/UBSan; tampoco es necesario para utilizar el servidor. `requirements-server.txt` contiene las dependencias de ejecución; las completas añaden pytest y rasterio para pruebas e importación geoespacial. También existen `make demo` y `make serve` para el flujo de desarrollo con `data/out`.
 

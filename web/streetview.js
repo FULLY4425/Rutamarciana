@@ -153,7 +153,7 @@
   });
   canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();lost=true;status('Se perdió el contexto gráfico. Cierra la vista y recarga para recuperarlo.');});
   root.addEventListener('resize',render);
-  root.SurfaceView={isOpen:()=>open,update(value){latest=value;
+  root.SurfaceView={close:()=>{if(open)setOpen(false);},isOpen:()=>open,update(value){latest=value;
     const region=value.terrain?.region||value.terrain?.site;
     if(region && region!==referenceRegion){referenceRegion=region;reference=null;textureReady=false;textureRequested=false;const request=++referenceRequest;
       fetch(typeof apiURL==='function'?apiURL('/reference-metadata'):'/reference-metadata').then(response=>response.ok?response.json():null).then(meta=>{if(request!==referenceRequest)return;reference=meta;textureRequested=false;render();}).catch(()=>{});

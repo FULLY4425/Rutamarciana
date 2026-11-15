@@ -194,3 +194,40 @@ canvas {display:block;width:100%;height:auto;background:var(--bg-deep);cursor:cr
 textarea {width:100%;min-height:65px;resize:vertical;border:1px solid var(--line-strong);border-radius:4px;background:var(--bg-deep);color:var(--ink);padding:8px;font:12px var(--font);}
 #chemistrydetail {font:11px var(--mono);line-height:1.7;overflow-wrap:anywhere;}#chemistrydetail dl {display:grid;grid-template-columns:1fr 1fr;gap:4px;}#chemistrydetail dd {margin:0;}
 #obstaclelist,#notelist {padding:0;list-style:none;display:grid;gap:8px;}#notelist li,#obstaclelist li {border-bottom:1px solid var(--line);padding:6px 0;font-size:11px;overflow-wrap:anywhere;}#notelist button,#obstaclelist button {margin-left:8px;padding:4px;}
+/* Route editing stays beside the map at every size; no duplicate form controls. */
+.mapwrap {flex-direction:column;gap:12px;padding-top:16px;}
+.map-editor {width:100%;max-width:780px;padding:12px;border:1px solid var(--line-strong);border-radius:8px;background:var(--panel);display:grid;gap:10px;}
+.map-pick-actions {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;}.map-pick-actions button {min-width:0;min-height:44px;white-space:normal;}
+#mapcompute {background:var(--orange);color:#20180e;font-weight:600;}#mapeditstatus {font-size:13px;min-height:40px;color:var(--teal);}
+.map-view-actions {display:flex;gap:8px;}.map-view-actions button {min-height:44px;min-width:44px;}#mapdimension {margin-right:auto;}
+.map-editor small {font-size:11px;color:var(--dim);line-height:1.6;}#mapzones {border-top:1px solid var(--line);padding-top:10px;}#mapzones summary {padding:8px 0;min-height:44px;}#mapzones[open] {display:grid;gap:10px;}#mapzones input {max-width:150px;min-height:44px;}
+.map-options {max-width:100%;}.map-options summary {padding:10px;min-height:44px;border:1px solid var(--line);border-radius:6px;font-size:12px;}.map-options>div {display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding-top:8px;}
+.hint {pointer-events:none;}.mobile-nav {display:none;}section[id],aside[id] {scroll-margin-top:12px;}
+/* A readable single document on phones/tablets: no nested scrolling panels. */
+@media(max-width:1000px){
+ .panel {max-height:none;overflow:visible;min-width:0;}.mapwrap {padding:12px 8px 50px;}.details-panel>* {min-width:0;}
+ .maptools {max-width:none;}.workspace-toolbar {flex-wrap:wrap;}.map-options {flex-basis:100%;}
+}
+@media(max-width:700px), (max-width:1000px) and (pointer:coarse){
+ body {padding-bottom:calc(68px + env(safe-area-inset-bottom,0px));}
+ .intro {padding:18px 16px;}h1 {font-size:28px;}.intro p:not(.eyebrow) {font-size:14px;}.missionbar nav {font-size:13px;}
+ .workspace {margin:0 8px;overflow:visible;grid-template-columns:minmax(0,1fr);grid-template-areas:'toolbar' 'map' 'plan' 'details';}.workspace-toolbar {padding:12px;border-radius:8px 8px 0 0;flex-direction:column;}.explorer-brand {width:100%;}.maptools {width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}.maptools>* {min-width:0;}.map-options {grid-column:1/-1;}
+ .map-options>div {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));}.maptools label {flex-wrap:wrap;padding:0;gap:5px;}.maptools label>select {width:100%;max-width:none;}.maptools input[type=range] {width:100%;}
+ .mapwrap {padding:10px 6px 52px;gap:12px;}.map-editor {padding:10px;}.map-pick-actions {grid-template-columns:repeat(2,minmax(0,1fr));}.stage {max-width:none;}
+ .panel {padding:16px;overflow:visible;max-height:none;}.details-panel {display:flex;border-left:0;}.panel>section,.panel>details,.row>* {min-width:0;}
+ button,.maptools button,.point-tools button,.guidance button,.surface-actions button,.surface-top button {min-height:44px;font-size:14px;padding:10px;touch-action:manipulation;}
+ input:not([type=checkbox]):not([type=range]),select,textarea,.point-tools input,.point-tools select,.maptools select {font-size:16px;min-height:44px;width:100%;max-width:100%;}
+ input[type=range] {min-height:38px;}input[type=checkbox] {min-width:22px;min-height:22px;}
+ .controls .row {grid-template-columns:1fr;}.point-tools .row,.science-mission .row {grid-template-columns:repeat(2,minmax(0,1fr));}.tracking .row {flex-wrap:wrap;}#trackroute {min-width:0;}
+ .sub,.controls label,.point-tools label,.science-mission label,.chemistry-layer label,.mission-notebook label,.guidance label {font-size:14px;}.point-tools p:not(.sectionlabel),.field-operations p,.field-operations small,.terrain-facts p:not(.sectionlabel),.terrain-facts label {font-size:12px;}
+ #custompoints li,#missionpoints li {flex-wrap:wrap;font-size:13px;}#custompoints span,#missionpoints span {min-width:100px;}#custompoints button,#missionpoints button {min-height:44px;font-size:13px;}
+ .hint {font-size:11px;left:8px;right:8px;bottom:8px;padding:8px;}.zoomctl {right:8px;bottom:86px;}.zoomctl button {width:44px;min-height:44px;}.meta {font-size:8px;left:8px;right:8px;}.legend {left:8px;font-size:9px;}
+ .planetview,.surfaceview {position:fixed;inset:0;z-index:80;border-radius:0;max-height:100dvh;}.planetview {overflow-y:auto;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);}
+ .planet-top {position:sticky;top:0;z-index:1;min-height:64px;background:#101b17;padding:12px;align-items:center;}.planet-top strong {font-size:12px;}.planet-top p {font-size:11px;}.planet-top button {min-height:44px;font-size:13px;padding:10px;}
+ #planetcanvas {width:min(100%,460px,calc(100svh - 120px));height:auto;aspect-ratio:1;margin:auto;}.planet-selection {position:static;width:auto;margin:12px;}.planet-selection label,.planet-selection p,.planet-selection small {font-size:13px;}.planet-selection button {min-height:44px;font-size:14px;}
+ .surface-top {padding:calc(10px + env(safe-area-inset-top,0px)) 12px 10px;}.surface-top strong,#surfaceheading {font-size:11px;}.surface-bottom {padding:12px 12px calc(12px + env(safe-area-inset-bottom,0px));}.surface-bottom p {font-size:12px;}.surface-bottom small {font-size:11px;}.surface-actions {gap:8px;}
+ .navigator {padding:calc(16px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));}.navigator input {max-width:110px!important;}
+ .mobile-nav {position:fixed;z-index:50;inset:auto 0 0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:8px max(6px,env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(6px,env(safe-area-inset-left,0px));background:#15251ff5;border-top:1px solid #526b5a;}
+ .mobile-nav a {display:flex;justify-content:center;align-items:center;text-align:center;min-height:44px;padding:5px;text-decoration:none;font-size:12px;color:var(--ink);border:1px solid var(--line-strong);border-radius:6px;}
+ .mobile-nav a:active {background:#294c3f;}
+}
