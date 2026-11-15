@@ -1,5 +1,7 @@
 import json
+import os
 import sys
+import tempfile
 from pathlib import Path
 
 from flask import Flask, abort, jsonify, request, send_file, send_from_directory
@@ -53,6 +55,26 @@ def create_app(data_dir: str):
             return jsonify(error="routes.json antiguo; regenera el pipeline"), 503
         return jsonify(data)
 
+    @app.get("/api/manifest")
+    def manifest():
+        f = root / "routes.json"
+        if not f.exists():
+            abort(404)
+        try:
+            data = json.loads(f.read_text(encoding="utf-8"))
+        except ValueError:
+            return jsonify(error="routes.json inválido; regenera el pipeline"), 503
+        raw = data.get("routes") if isinstance(data.get("routes"), dict) else {}
+        out = {"site": data.get("site", "unknown"),
+               "waypoints": [{"id": w.get("id"), "name": w.get("name"), "row": w.get("row"), "col": w.get("col")}
+                             for w in data.get("waypoints", [])
+                             if isinstance(w, dict) and isinstance(w.get("name"), str) and w.get("name")],
+               "routes": {k: {"time_s": v.get("time_s"), "distance_m": v.get("distance_m"), "points": v.get("points")}
+                          for k, v in raw.items() if k in ("safe", "fast") and isinstance(v, dict)},
+               "budget_s": data.get("budget_s"), "science_s": data.get("science_s"),
+               "science_stops": data.get("science_stops")}
+        return jsonify(out)
+
     @app.post("/api/route")
     def compute():
         import numpy as np
@@ -101,6 +123,33 @@ def create_app(data_dir: str):
         except (ValueError, TypeError, IndexError) as exc:
             return jsonify(error=str(exc)), 400
         return jsonify(out)
+
+    @app.post("/api/bitacora")
+    def bitacora():
+        body = request.get_json(silent=True)
+        if not isinstance(body, dict):
+            return jsonify(error="se requiere un objeto JSON"), 400
+        ident = body.get("id")
+        if not ((type(ident) is int and ident >= 0) or
+                (isinstance(ident, str) and ident.isascii() and ident.isdecimal())):
+            return jsonify(error="id inválido"), 400
+        if not isinstance(body.get("fecha"), str) or not isinstance(body.get("entradas"), list):
+            return jsonify(error="fecha o entradas inválidas"), 400
+        directory = root / "bitacora"
+        directory.mkdir(parents=True, exist_ok=True)
+        name = None
+        try:
+            with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=directory,
+                                             prefix=".bitacora-", delete=False) as f:
+                name = f.name
+                json.dump(body, f, ensure_ascii=False)
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(name, directory / (str(ident) + ".json"))
+        finally:
+            if name and os.path.exists(name):
+                os.unlink(name)
+        return jsonify(ok=True)
 
     return app
 
