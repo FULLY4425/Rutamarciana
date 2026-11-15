@@ -29,6 +29,10 @@ def register_planet(app,default_root):
     def resolve():
         region=request.args.get('region','jezero')
         if region=='jezero':return default_root
+        if region=='glen-torridon':
+            directory=Path(__file__).resolve().parent.parent/'assets/glen-torridon'
+            if not (directory/'routes.json').is_file():raise RegionError('Falta el paquete de Glen Torridon.')
+            return directory
         if not hasattr(g,'planet_root'):
             lat,lon=parse_region(region)
             temporary=tempfile.TemporaryDirectory(prefix='mars-region-')

@@ -25,7 +25,7 @@ El servidor escucha por defecto en todas las interfaces. Obtén su dirección IP
 http://192.168.1.50:8080/
 ```
 
-Ambos equipos deben tener acceso a la misma red. Permite conexiones TCP al puerto 8080 en el firewall del servidor si hace falta. No expongas directamente el puerto a internet: esta aplicación local no incluye autenticación. Para escuchar solo en el propio equipo:
+Ambos equipos deben tener acceso a la misma red. Permite conexiones TCP al puerto 8080 en el firewall del servidor si hace falta. La aplicación no tiene autenticación general para planificación ni para el endpoint legado de bitácora. El enlace de guía ESP sí usa credenciales temporales; eso no protege el resto del servidor. Para publicar el servicio usa una configuración HTTPS apropiada. Para escuchar solo en el propio equipo:
 
 ```bash
 python iniciar.py --host 127.0.0.1
@@ -72,3 +72,13 @@ Prepara el entorno y comprueba las rutas y la malla del terreno seleccionado. Lo
 Usa un navegador moderno con WebGL para la vista de superficie. Pulsa **Activar voz** para habilitar las indicaciones habladas; las voces dependen del navegador y del dispositivo. En red local los datos salen del servidor, pero la voz se reproduce en el equipo que abre la página.
 
 Para actualizar, descarga otro ZIP y extráelo en otra carpeta. Si tienes un build real o bitácoras que quieres conservar, cópialos antes de retirar la instalación anterior; las bitácoras se guardan dentro de la carpeta de datos seleccionada.
+
+## Cobertura completa incluida
+
+Además del Jezero por defecto, el ZIP incluye Glen Torridon con DEM/ortofoto y 718 registros científicos, y el modelo global MOLA. Puedes elegirlos desde la interfaz sin volver a descargar NASA. [Inventario y procedencia](docs/DATOS_Y_FUENTES.md).
+
+## GPS en un celular y receptor ESP32
+
+Abrir el mapa por HTTP en la red local no garantiza geolocalización: los navegadores normalmente requieren HTTPS, salvo contextos de desarrollo como localhost en el mismo dispositivo. Para entrenar con GPS en un teléfono utiliza [la versión Render con HTTPS](https://rutamarciana.onrender.com) o configura HTTPS propio. La guía vincula desplazamientos terrestres a Marte; no navega por calles reales.
+
+El receptor ESP32 está configurado para HTTPS de Render y TFT de 320×240. El servidor local no instala ni flashea la placa automáticamente. [Compilación, hardware y vinculación](docs/NAVEGADOR_ESP32.md).

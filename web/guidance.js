@@ -12,8 +12,9 @@
     if(!supported)return;
     speech.cancel();
     const utterance=new window.SpeechSynthesisUtterance(text);
-    utterance.lang='es-MX';utterance.rate=1;
-    utterance.voice=speech.getVoices().find(v=>v.lang==='es-MX') || speech.getVoices().find(v=>v.lang.startsWith('es')) || null;
+    utterance.lang='es-MX';utterance.rate=Math.max(.8,Math.min(1.4,Number(el('voice-rate').value)||1));
+    const volume=Number(el('voice-volume').value);utterance.volume=Number.isFinite(volume)?Math.max(0,Math.min(1,volume)):1;
+    utterance.voice=speech.getVoices().find(v=>v.voiceURI===el('voice-choice').value&&/^es[-_]/i.test(v.lang)) || speech.getVoices().find(v=>v.lang==='es-MX') || speech.getVoices().find(v=>v.lang.startsWith('es')) || null;
     utterance.onerror=event=>{if(!['canceled','interrupted'].includes(event.error))el('voicestatus').textContent='No se pudo reproducir la voz. Las indicaciones escritas siguen disponibles.';};
     speech.speak(utterance);
   }
@@ -54,6 +55,14 @@
       if(key!==spokenKey) {spokenKey=key;speak(instruction());}
     }
   }
+  function listVoices(){
+    const current=el('voice-choice').value||'';el('voice-choice').replaceChildren();
+    const automatic=document.createElement('option');automatic.value='';automatic.textContent='Español · selección automática';el('voice-choice').appendChild(automatic);
+    if(supported)for(const voice of speech.getVoices().filter(v=>/^es(?:[-_]|$)/i.test(v.lang))){const option=document.createElement('option');option.value=voice.voiceURI;option.textContent=`${voice.name||voice.lang} · ${voice.lang}`;el('voice-choice').appendChild(option);}
+    el('voice-choice').value=current;el('voice-choice').disabled=!supported;
+  }
+  listVoices();speech?.addEventListener?.('voiceschanged',listVoices);
+  el('voice-test').disabled=!supported;el('voice-test').onclick=()=>speak('Guía de Ruta Marciana. En treinta metros, gira a la derecha.');
   el('voice').disabled=!supported;
   el('voice').setAttribute('aria-pressed','false');
   el('voicestatus').textContent=supported?'Voz en español del navegador. Actívala para escuchar durante la simulación.':'Este navegador no ofrece síntesis de voz. Usa las indicaciones escritas.';

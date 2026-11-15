@@ -27,7 +27,7 @@ def scenario(overrides=None):
 
 
 def site_profile(site):
-    return {'jez_dtm_1m': 'Jezero/Mars', 'mola-global': 'Mars/global', 'synth': 'synthetic'}.get(site, 'unknown')
+    return {'jez_dtm_1m': 'Jezero/Mars', 'mola-global': 'Mars/global', 'glen-torridon': 'GlenTorridon/Mars', 'synth': 'synthetic'}.get(site, 'unknown')
 
 
 def metadata(values, site='Jezero/Mars', build_overrides=None, request_overrides=None):

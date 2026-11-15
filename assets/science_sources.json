@@ -3,6 +3,15 @@
   "reviewed_on": "2026-11-15",
   "sources": [
     {
+      "id": "glen-chemcam",
+      "title": "NASA PDS · Curiosity ChemCam LIBS / Glen Torridon",
+      "url": "https://pds-geosciences.wustl.edu/msl/urn-nasa-pds-msl_gt_diagenesis_supplement/",
+      "region": "Glen Torridon / Gale",
+      "role": "chemistry",
+      "status": "integrated",
+      "description": "Óxidos cuantitativos en wt% y RMSEP de vetas/nódulos, emparejados por nombre y secuencia. Coordenadas del objetivo, no localización independiente del disparo. Datos históricos, sin interpolación fuera de observaciones."
+    },
+    {
       "id": "mola-global",
       "title": "NASA PDS · MOLA global",
       "url": "https://pds-geosciences.wustl.edu/missions/mgs/megdr.html",

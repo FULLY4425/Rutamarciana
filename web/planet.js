@@ -60,15 +60,15 @@
     event.preventDefault();
     const lat=Number(el('planetlat').value),lon=Number(el('planetlon').value);
     if(!Number.isFinite(lat)||!Number.isFinite(lon)||Math.abs(lat)>90){el('planetstatus').textContent='Revisa las coordenadas.';return;}
-    choose(selectedPreset==='jezero'?'jezero':`mola:${lat.toFixed(4)}:${lon.toFixed(4)}`);
+    choose(selectedPreset||`mola:${lat.toFixed(4)}:${lon.toFixed(4)}`);
   };
   el('planetbookmark').onchange=event=>{
     const bookmark=data?.bookmarks[Number(event.target.value)];if(!bookmark)return;
     selectedPreset=bookmark.region||null;
-    el('planetload').textContent=selectedPreset==='jezero'?'Abrir Jezero · HiRISE 4 m':'Abrir región MOLA · 400 km';
+    el('planetload').textContent=selectedPreset==='jezero'?'Abrir Jezero · HiRISE 4 m':selectedPreset==='glen-torridon'?'Abrir Glen Torridon · HiRISE':'Abrir región MOLA · 400 km';
     el('planetlat').value=bookmark.lat;el('planetlon').value=bookmark.lon;
     yaw=radians(bookmark.lon);pitch=radians(Math.max(-85,Math.min(85,bookmark.lat)));
-    el('planetstatus').textContent=bookmark.region==='jezero'?'El acceso Jezero abrirá el recorte HiRISE de 4 m.':`${bookmark.name}. Abre la región para explorar y ensayar un recorrido.`;schedule();
+    el('planetstatus').textContent=bookmark.region?`El acceso ${bookmark.name} abrirá su recorte de alta resolución.`:`${bookmark.name}. Abre la región para explorar y ensayar un recorrido.`;schedule();
   };
   for(const name of ['planetlat','planetlon'])el(name).oninput=()=>{selectedPreset=null;el('planetload').textContent='Abrir región MOLA · 400 km';schedule();};
   canvas.style.touchAction='none';
@@ -92,6 +92,7 @@
     const actions={ArrowLeft:()=>yaw-=.1,ArrowRight:()=>yaw+=.1,ArrowUp:()=>pitch=Math.min(Math.PI/2,pitch+.1),ArrowDown:()=>pitch=Math.max(-Math.PI/2,pitch-.1)};
     if(actions[event.key]){event.preventDefault();actions[event.key]();schedule();}
   });
+  root.MarsAtlas={close:()=>setOpen(false)};
   setOpen(!new URLSearchParams(location.search).has('region'));
   fetch('/api/mars/atlas').then(response=>{if(!response.ok)throw Error('No se pudo cargar el atlas global.');return response.json();}).then(value=>{
     data=value;

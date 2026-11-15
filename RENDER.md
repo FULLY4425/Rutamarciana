@@ -2,13 +2,23 @@
 
 La interfaz, el mapa y la API de cálculo se sirven desde un único **Web Service Python**.
 
+## Direcciones públicas
+
+- **Página web:** [https://rutamarciana.onrender.com](https://rutamarciana.onrender.com).
+- **Comprobación básica del servidor:** [https://rutamarciana.onrender.com/health](https://rutamarciana.onrender.com/health).
+- **Atlas global, API:** [https://rutamarciana.onrender.com/api/mars/atlas](https://rutamarciana.onrender.com/api/mars/atlas).
+
+Para utilizar la aplicación alojada basta un navegador con acceso a internet; no hay que instalar Python ni iniciar un servidor propio. En un celular, HTTPS permite solicitar los permisos de ubicación para el entrenamiento. El ESP usa esta misma dirección como servidor de guía y necesita Wi-Fi con internet. La ruta `/health` indica disponibilidad básica, no comprueba una placa ni toda la navegación.
+
+## Configuración del servicio
+
 - Repositorio: `FULLY4425/Rutamarciana`.
 - Rama con la implementación actual: `feat/ruta-marciana-servidor-local`.
 - Python: 3.12, fijado en `.python-version`.
 - Build command: `pip install -r requirements-server.txt`.
 - Start command: `python server.py`.
 - Puerto: variable `PORT` de Render, escuchando en `0.0.0.0`.
-- Datos: `assets/jezero` y modelo global `assets/mars`, incluidos en GitHub; sin descargar el TIFF al arrancar.
+- Datos: `assets/jezero`, `assets/glen-torridon` y modelo global `assets/mars`, incluidos en GitHub; sin descargar el TIFF al arrancar.
 - Comprobación HTTP disponible: `/health`.
 
 `server.py` reutiliza la aplicación y la validación del terreno del lanzador local,
@@ -44,3 +54,13 @@ lectura del modelo global mediante memoria mapeada. Los archivos temporales de
 cada ventana se eliminan tras la respuesta; no necesitan un disco persistente.
 No cambies `RUTA_DATA_DIR` a `assets/mars`: esa carpeta contiene el modelo global,
 no un build local del pipeline. El terreno local por defecto sigue siendo Jezero.
+
+## Navegación celular y ESP
+
+El mismo servicio sirve `/api/navigator/sessions` y su canal autenticado de guía. No requiere otro servicio, base de datos ni ElevenLabs. Las sesiones viven en RAM, caducan en 30 minutos y se pierden en cada reinicio/despliegue; el usuario debe volver a vincular. Una planificación larga puede retrasar publicaciones o lecturas; el receptor debe mostrar espera cuando se supera su límite de frescura.
+
+El navegador solicita GPS terrestre sobre HTTPS para entrenamiento vinculado a Marte. La voz y las coordenadas terrestres se procesan en el celular. Mantener visibles la página y sus permisos es necesario; el servidor no proporciona GPS.
+
+No hay `render.yaml` versionado: esta configuración está aplicada al servicio existente. Para reproducirla usa los comandos y variables de arriba. Antes de varios procesos/instancias haría falta un almacén compartido de sesiones; antes de conservar copias de bitácora en Render haría falta persistencia apropiada.
+
+Referencia: [API](docs/API.md), [arquitectura](docs/ARQUITECTURA.md) y [uso celular/ESP](docs/NAVEGADOR_ESP32.md).

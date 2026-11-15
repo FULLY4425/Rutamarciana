@@ -1,0 +1,11 @@
+{
+  "source": "psion-micor-spaceapps_entrega_2026-11-15.zip supplied by user",
+  "files_before_navigation_changes": {
+    "bitacora_core.h": "a3882fd28a6e793c1be2fe1e172869db24b48c25faa4f579caa65e54c0481265",
+    "eva_budget.h": "072d9c8801a05b909488f023bd6929c9de904b62103365ba5b0c37dda7d1f70e",
+    "psion-micor-spaceapps.ino": "5d754f66c443c19e1fff101f57f0a697afc4a7b7768fa95013945dc5e1295f96",
+    "spaceapps_apps.h": "db5e88f40846414a2e306439725ab53f7c8a392a57045089c7117e9c08ba991c",
+    "forest.ino": "d7549a36f982f93d22905ed8fe057df3cfaede00602ff9e980a3f44267a001af",
+    "mision_map_contract.h": "b6a283f3ea6a3b7db6c31d0b6b09e2cefe226334028f1c5682e2dfc637f2d8df"
+  }
+}

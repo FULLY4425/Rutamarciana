@@ -35,7 +35,7 @@
   const api={triangleColor,buildProfile};
   if(typeof module==='object' && module.exports){module.exports=api;return;}
   const el=id=>document.getElementById(id);
-  let currentTerrain=null,reference=null,profileData=null,profileName=null,profile=null;
+  let currentTerrain=null,reference=null,profileData=null,profileName=null,profile=null,referenceRegion=null,referenceRequest=0;
   function photoStatus(){
     const aligned=Boolean(root.SurfaceGeometry?.alignedTexture(currentTerrain,reference));
     el('orthophoto').disabled=!aligned;
@@ -44,7 +44,12 @@
   function update({terrain,data,name,path,sample,elevation}){
     if(!terrain)return;
     if(currentTerrain!==terrain){
-      currentTerrain=terrain;photoStatus();
+      currentTerrain=terrain;
+      if(referenceRegion!==state.region){
+       referenceRegion=state.region;reference=null;const request=++referenceRequest;
+       fetch(apiURL('/reference-metadata')).then(r=>r.ok?r.json():null).then(value=>{if(request!==referenceRequest)return;reference=value;photoStatus();}).catch(()=>{});
+      }
+      photoStatus();
       const stats=terrain.statistics,p=terrain.provenance;
       el('terrainfacts').textContent=terrain.site==='synth'?'Terreno sintético de demostración.':`${p?(terrain.site==='mola-global'?'MOLA / NASA PDS · ':'HiRISE / USGS · '):''}${terrain.grid.rows} × ${terrain.grid.cols} celdas · ${terrain.cell_x_m.toFixed(2)} × ${terrain.cell_m.toFixed(2)} m por celda. ${stats?.elevation_min_m!=null?`Elevación ${stats.elevation_min_m.toFixed(0)} a ${stats.elevation_max_m.toFixed(0)} m, referencia vertical del DEM.`:''}`;
       if(p)el('terrainfacts').textContent+=` Fuente nativa ${p.source_resolution_m} m; malla visual ${terrain.rows.length} × ${terrain.cols.length}.`;
@@ -71,7 +76,6 @@
     }
   }
   el('orthophoto').onchange=()=>root.dispatchEvent(new CustomEvent('terrain-photo',{detail:el('orthophoto').checked}));
-  fetch('/reference-metadata').then(r=>{if(!r.ok)throw Error();return r.json();}).then(value=>{reference=value;photoStatus();}).catch(()=>{el('photostatus').textContent='No se pudieron verificar los metadatos de la imagen.';});
   fetch('/api/science-sources').then(r=>{if(!r.ok)throw Error();return r.json();}).then(catalog=>{
     for(const source of catalog.sources){
       const item=document.createElement('li'),link=document.createElement('a'),note=document.createElement('p');
@@ -79,7 +83,7 @@
       note.textContent=`${source.region} · ${source.status==='integrated'?'DATOS INTEGRADOS':source.status==='excluded'?'NO APLICABLE A MARTE':'REFERENCIA'}. ${source.description}`;
       item.appendChild(link);item.appendChild(note);el('sciencesources').appendChild(item);
     }
-    el('sourcesstatus').textContent='MOLA global y HiRISE de Jezero incluidos; referencias diferenciadas por región.';
+    el('sourcesstatus').textContent='MOLA, HiRISE y ChemCam incorporados; cobertura y referencias diferenciadas por región.';
   }).catch(()=>{el('sourcesstatus').textContent='No se pudo cargar el catálogo. La planificación sigue disponible.';});
   root.ScienceView={...api,update};
 })(typeof window==='object'?window:globalThis);

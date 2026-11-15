@@ -1,6 +1,6 @@
 /* Offline software 3D renderer. Elevations come exclusively from the active DEM. */
 let terrain = null, triangles = [], projected = [], flat = false;
-let yaw = -0.35, tilt = 0.85, zoom = 1, exaggeration = 3;
+let yaw = -0.35, tilt = 0.85, zoom = 1, exaggeration = 3, panX=0, panY=0;
 let overviewCache=null, overviewTerrain=null, overviewKey='';
 let running = false, progress = 0, lastFrame = 0, activeData = null;
 const byId = id => document.getElementById(id);
@@ -19,7 +19,7 @@ function project(pt, z = elevation(pt)) {
   const span = Math.max(width,height), scale=680/span*zoom;
   const x=(pt[1]*state.cellXM-width/2), y=(pt[0]*state.cellM-height/2);
   const rx=x*Math.cos(yaw)-y*Math.sin(yaw), ry=x*Math.sin(yaw)+y*Math.cos(yaw);
-  return [500+rx*scale,510+(ry*Math.cos(tilt)-((z ?? terrain?.base ?? 0)-(terrain?.base ?? 0))*exaggeration*Math.sin(tilt))*scale,ry];
+  return [500+panX+rx*scale,510+panY+(ry*Math.cos(tilt)-((z ?? terrain?.base ?? 0)-(terrain?.base ?? 0))*exaggeration*Math.sin(tilt))*scale,ry];
 }
 function line(points,color,width,dash=[]) {
   if (!points?.length) return;
@@ -45,9 +45,18 @@ function samplePath(path,fraction) {
 }
 function drawTerrain() {
   if (activeData !== state.data) { activeData=state.data;running=false;progress=0;byId('progress').value=0;byId('play').textContent='Iniciar'; }
+  const path=trackingPath();let sample=path.length>1?samplePath(path,progress):null;
+  sample=window.FieldNavigator?.track({terrain,data:state.data,profile:byId('trackroute').value,path,sample,running})||sample;
+  if(terrain && sample && byId('followcamera').checked){
+    if(flat){state.view.ox=cvs.width/2-sample.point[1]/(state.grid.cols-1)*cvs.width*state.view.k;state.view.oy=cvs.height/2-sample.point[0]/(state.grid.rows-1)*cvs.height*state.view.k;clampView();}
+    else{panX=0;panY=0;const point=project(sample.point);panX=Math.round(500-point[0]);panY=Math.round(510-point[1]);}
+  }
+  window.FieldPoints?.update(terrain);
+  window.ScienceMission?.update(terrain);window.ChemistryLayer?.update(terrain);
+  window.FieldOperations?.update({terrain,data:state.data,profile:byId('trackroute').value,path,sample,running});
   if(flat) draw2d();
   else if (!window.SurfaceView?.isOpen()) {
-    const cacheKey=[yaw,tilt,zoom,exaggeration,byId('terrainpalette').value].join(':');
+    const cacheKey=[yaw,tilt,zoom,panX,panY,exaggeration,byId('terrainpalette').value,byId('orthophoto').checked,bg.src,bg.complete,bg.naturalWidth].join(':');
     if(overviewCache && overviewTerrain===terrain && overviewKey===cacheKey){ctx.drawImage(overviewCache,0,0);}
     else {
     ctx.fillStyle='#0d1215';ctx.fillRect(0,0,1000,1000);triangles=[];
@@ -64,6 +73,7 @@ function drawTerrain() {
       }
       triangles.sort((a,b)=>a.depth-b.depth);
       for(const t of triangles) {
+        if(byId("orthophoto").checked && window.TerrainTexture?.paint(ctx,bg,t,terrain))continue;
         ctx.beginPath(); t.pts.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.closePath();
         ctx.fillStyle=window.ScienceView?.triangleColor(terrain,t.ids,byId('terrainpalette').value) || `rgb(${Math.round(183*t.shade)},${Math.round(115*t.shade)},${Math.round(78*t.shade)})`;ctx.fill();ctx.strokeStyle=ctx.fillStyle;ctx.lineWidth=0.6;ctx.stroke();
       }
@@ -84,15 +94,16 @@ function drawTerrain() {
     if(state.end)marker(state.end,'B · DESTINO','#ff8d8d');
     state.stops.forEach((p,i)=>marker(p,`S${i+1}`,'#68d8d0'));
   }
-  const path=trackingPath();
+  const projectPoint=flat?g2c:project;
+  window.FieldPoints?.paint(ctx,projectPoint);window.FieldOperations?.paint(ctx,projectPoint);window.FieldNavigator?.paint(ctx,projectPoint);window.ChemistryLayer?.paint(ctx,projectPoint);
   if(path.length>1) {
-    const sample=samplePath(path,progress);
     window.ScienceView?.update({terrain,data:state.data,name:byId('trackroute').value,path,sample,elevation});
     line([...path.slice(0,sample.index),sample.point],'#ffffff',4);
-    marker(sample.point,'EVA · SIMULACIÓN','#ffffff');
+    const actors=terrain&&window.FieldActors?window.FieldActors.placements(path,sample,terrain,elevation,samplePath):[];
+    if(actors.length)window.FieldActors.paint(ctx,actors,projectPoint,running);else marker(sample.point,'EVA · SIMULACIÓN','#ffffff');
     const lookDistance=sample.distance<sample.total?Math.min(sample.total,sample.distance+8):Math.max(0,sample.distance-8);
-    window.SurfaceView?.update({terrain,path,sample,ahead:samplePath(path,lookDistance/(sample.total||1))});
-    window.MissionGuidance?.update(state.data,byId('trackroute').value,sample,running,{x:state.cellXM,y:state.cellM});
+    window.SurfaceView?.update({terrain,path,sample,ahead:samplePath(path,lookDistance/(sample.total||1)),actors,environment:state.data?.environment});
+    window.MissionGuidance?.update(state.data,byId('trackroute').value,window.FieldNavigator?window.FieldNavigator.guidanceSample(sample):sample,running||window.FieldNavigator?.isTracking(),{x:state.cellXM,y:state.cellM});
     byId('trackinfo').textContent=`${(progress*100).toFixed(0)}% · ${(sample.distance/1000).toFixed(2)} / ${(sample.total/1000).toFixed(2)} km · fila ${sample.point[0].toFixed(0)}, col ${sample.point[1].toFixed(0)}`;
   } else {
     window.ScienceView?.update({terrain,data:state.data,name:byId('trackroute').value,path,sample:null,elevation});
@@ -100,14 +111,14 @@ function drawTerrain() {
     window.MissionGuidance?.update(state.data,byId('trackroute').value,null,false,{x:state.cellXM,y:state.cellM});
     byId('trackinfo').textContent='Calcula una ruta para explorar el recorrido.';
   }
+  window.FieldNavigator?.update();
 }
 function updateBasemap(){
-  bg.src=byId('orthophoto').checked?'/reference-image':apiURL('/api/terrain-image?layer='+byId('terrainpalette').value);
+  bg.src=byId('orthophoto').checked?apiURL('/reference-image'):apiURL('/api/terrain-image?layer='+byId('terrainpalette').value);
 }
 byId('terrainpalette').onchange=()=>{updateBasemap();draw();};
 window.addEventListener('terrain-photo',event=>{
   updateBasemap();
-  if(event.detail){flat=true;document.querySelector('.zoomctl').hidden=false;byId('viewmode').textContent='Vista 3D';}
   draw();
 });
 window.addEventListener('atlas-open',()=>{running=false;window.MissionGuidance?.stop();byId('play').textContent='Continuar';});
@@ -124,7 +135,7 @@ window.addEventListener('surface-step',event=>{
 window.drawTerrain=drawTerrain;
 let pointer=null, moved=false;
 cvs.style.touchAction='none';
-cvs.addEventListener('pointerdown',ev=>{pointer={x:ev.clientX,y:ev.clientY,startX:ev.clientX,startY:ev.clientY};moved=false;cvs.setPointerCapture(ev.pointerId);});
+cvs.addEventListener('pointerdown',ev=>{pointer={x:ev.clientX,y:ev.clientY,startX:ev.clientX,startY:ev.clientY,pan:ev.button===1};moved=false;cvs.setPointerCapture(ev.pointerId);});
 cvs.addEventListener('pointermove',ev=>{
   if(!pointer)return;
   if(Math.hypot(ev.clientX-pointer.startX,ev.clientY-pointer.startY)>5)moved=true;
@@ -132,7 +143,8 @@ cvs.addEventListener('pointermove',ev=>{
     if(moved && state.view.k>1){const rect=cvs.getBoundingClientRect();state.view.ox+=(ev.clientX-pointer.x)/rect.width*cvs.width;state.view.oy+=(ev.clientY-pointer.y)/rect.height*cvs.height;clampView();draw();}
     pointer.x=ev.clientX;pointer.y=ev.clientY;return;
   }
-  if(moved){yaw+=(ev.clientX-pointer.x)*0.006;tilt=Math.max(0.15,Math.min(1.35,tilt+(ev.clientY-pointer.y)*0.004));draw();}
+  if(moved && (ev.shiftKey||pointer.pan)){const rect=cvs.getBoundingClientRect();panX+=(ev.clientX-pointer.x)/rect.width*1000;panY+=(ev.clientY-pointer.y)/rect.height*1000;byId('followcamera').checked=false;draw();}
+  else if(moved){yaw+=(ev.clientX-pointer.x)*0.006;tilt=Math.max(0.15,Math.min(1.35,tilt+(ev.clientY-pointer.y)*0.004));draw();}
   pointer.x=ev.clientX;pointer.y=ev.clientY;
 });
 cvs.addEventListener('pointercancel',()=>{pointer=null;});
@@ -148,21 +160,25 @@ cvs.addEventListener('pointerup',ev=>{
     if(u>=0&&v>=0&&w>=0){const ids=t.ids;selectPoint([Math.round(u*terrain.rows[ids[0][0]]+v*terrain.rows[ids[1][0]]+w*terrain.rows[ids[2][0]]),Math.round(u*terrain.cols[ids[0][1]]+v*terrain.cols[ids[1][1]]+w*terrain.cols[ids[2][1]])]);break;}
   }
 });
-cvs.addEventListener('wheel',ev=>{if(flat){ev.preventDefault();zoomAt(ev.clientX,ev.clientY,ev.deltaY<0?1.25:1/1.25);return;}ev.preventDefault();zoom=Math.max(0.5,Math.min(2.5,zoom*Math.exp(-ev.deltaY*0.001)));draw();},{passive:false});
+cvs.addEventListener('wheel',ev=>{if(flat){ev.preventDefault();zoomAt(ev.clientX,ev.clientY,ev.deltaY<0?1.25:1/1.25);return;}ev.preventDefault();zoom=Math.max(0.5,Math.min(10,zoom*Math.exp(-ev.deltaY*0.001)));draw();},{passive:false});
 byId('viewmode').onclick=()=>{flat=!flat;document.querySelector('.zoomctl').hidden=!flat;clampView();byId('viewmode').textContent=flat?'Vista 3D':'Vista 2D';draw();};
-byId('camerareset').onclick=()=>{yaw=-0.35;tilt=0.85;zoom=1;resetView();};
+byId('camerareset').onclick=()=>{yaw=-0.35;tilt=0.85;zoom=1;panX=panY=0;byId('followcamera').checked=false;resetView();};
+byId('followcamera').onchange=()=>draw();
+cvs.addEventListener('keydown',event=>{if(flat)return;const actions={ArrowLeft:()=>panX+=25,ArrowRight:()=>panX-=25,ArrowUp:()=>panY+=25,ArrowDown:()=>panY-=25,'+':()=>zoom=Math.min(10,zoom*1.2),'-':()=>zoom=Math.max(.5,zoom/1.2),'0':()=>byId('camerareset').onclick()};if(actions[event.key]){event.preventDefault();byId('followcamera').checked=false;actions[event.key]();draw();}});
 byId('relief').oninput=ev=>{exaggeration=Number(ev.target.value);document.querySelector('.meta').textContent=`${state.grid.rows} × ${state.grid.cols} · RELIEVE ×${exaggeration} · ARRASTRA PARA GIRAR`;draw();};
 byId('progress').oninput=ev=>{window.MissionGuidance?.stop();running=false;byId('play').textContent='Continuar';progress=Number(ev.target.value)/1000;draw();};
 byId('trackroute').onchange=()=>{running=false;progress=0;byId('progress').value=0;byId('play').textContent='Iniciar';draw();};
 byId('play').onclick=()=>{if(trackingPath().length<2)return;if(progress>=1)progress=0;running=!running;byId('play').textContent=running?'Pausar':'Continuar';draw();};
 byId('export').onclick=()=>{
   if(!state.data){hint.textContent='Calcula una misión antes de exportar.';return;}
-  const blob=new Blob([JSON.stringify({simulation:true,terrain_site:terrain?.site,...state.data},null,2)],{type:'application/json'}),url=URL.createObjectURL(blob);
+  const blob=new Blob([JSON.stringify({simulation:true,mission_observations:window.ScienceMission?.notes()||[],data_layers:window.ChemistryLayer?.metadata()||null,terrain_site:terrain?.site,sources:[terrain?.provenance?.source_url,terrain?.provenance?.target_source,terrain?.provenance?.product_url].filter(Boolean),...state.data},null,2)],{type:'application/json'}),url=URL.createObjectURL(blob);
   const a=document.createElement('a');a.href=url;a.download='ruta-marciana-mision.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 };
-function animate(t){if(running){progress=Math.min(1,progress+Math.min((t-lastFrame)/1000,0.1)/60);byId('progress').value=Math.round(progress*1000);draw();if(progress>=1){running=false;byId('play').textContent='Repetir';}}lastFrame=t;requestAnimationFrame(animate);}
+function animate(t){if(running){progress=Math.min(1,progress+Math.min((t-lastFrame)/1000,.25)/(byId('playbackspeed').value==='summary'?60:(state.data?.[byId('trackroute').value]?.time_s||60)/(Number(byId('playbackspeed').value)||1)));byId('progress').value=Math.round(progress*1000);draw();if(progress>=1){running=false;byId('play').textContent='Repetir';}}lastFrame=t;requestAnimationFrame(animate);}
 requestAnimationFrame(animate);
+window.MissionPlayback={pause(){running=false;window.MissionGuidance?.stop();byId('play').textContent='Continuar';},play(){if(!running)byId('play').onclick();},snapshot(){const path=trackingPath();return path.length>1?samplePath(path,progress):null;}};
 function terrainSourceLabel(data){
+ if(data.site==='glen-torridon')return '● GLEN TORRIDON · HiRISE ~12 M';
  if(data.site==='synth')return '● DEMO · TERRENO SINTÉTICO';
  if(data.site==='mola-global')return '● MARTE GLOBAL · MOLA ~3.7 KM';
  if(data.site==='jez_dtm_1m')return `● JEZERO · HiRISE ${data.cell_m.toFixed(0)} M`;
@@ -170,7 +186,7 @@ function terrainSourceLabel(data){
 }
 function updateRegionLabels(){
  const global=terrain?.site==='mola-global',synthetic=terrain?.site==='synth';
- const name=global?`Región ${terrain.spatial.center_latitude_deg.toFixed(2)}°, ${terrain.spatial.center_longitude_deg.toFixed(2)}°`:synthetic?'Demostración sintética':terrain?.site==='jez_dtm_1m'?'Jezero · HiRISE':terrain?.site||'Terreno local';
+ const name=global?`Región ${terrain.spatial.center_latitude_deg.toFixed(2)}°, ${terrain.spatial.center_longitude_deg.toFixed(2)}°`:synthetic?'Demostración sintética':terrain?.site==='glen-torridon'?'Glen Torridon · HiRISE / ChemCam':terrain?.site==='jez_dtm_1m'?'Jezero · HiRISE':terrain?.site||'Terreno local';
  byId('active-region-name').textContent=name;
  byId('region-scope').textContent=global?'MOLA global: resolución nativa ~3.7 km en el ecuador, con celdas interpoladas de 5 km en esta ventana de 400 km. No permite evaluar una caminata EVA, rocas, arena ni obstáculos pequeños. Las rutas y la voz son un ensayo regional.':synthetic?'Terreno sintético de demostración: esta ventana no representa un lugar real de Marte.':'Terreno local de mayor detalle. Las rutas son simulaciones de escenario; el DEM no detecta rocas ni arena.';
  byId('region-scope').dataset.coarse=String(global);
@@ -188,9 +204,9 @@ async function switchRegion(region){
   if(request!==regionSwitch)return;
   terrainLoad++;terrain=loaded;terrain.base=Math.min(...terrain.elevations.flat().filter(z=>z!==null));
   state.region=region;state.grid=loaded.grid;state.cellM=loaded.cell_m;state.cellXM=loaded.cell_x_m;
-  state.start=null;state.end=null;state.stops=[];state.nStops=0;state.data=null;
+  state.home=null;state.start=null;state.end=null;state.stops=[];state.nStops=0;state.data=null;
   byId('nstops').value='0';byId('orthophoto').checked=false;byId('orthophoto').disabled=true;
-  state.view={k:1,ox:0,oy:0};yaw=-.35;tilt=.85;zoom=1;progress=0;overviewTerrain=null;
+  state.view={k:1,ox:0,oy:0};yaw=-.35;tilt=.85;zoom=1;panX=panY=0;progress=0;overviewTerrain=null;
   if(meta.routes?.safe && meta.routes?.fast){
    state.data={...meta,safe:meta.routes.safe,fast:meta.routes.fast};
    state.start=state.data.safe.points[0];state.end=state.data.safe.points.at(-1);
@@ -198,6 +214,7 @@ async function switchRegion(region){
   byId('source').textContent=terrainSourceLabel(loaded);
   document.querySelector('.meta').textContent=`${state.grid.rows} × ${state.grid.cols} · RELIEVE ×${exaggeration} · ARRASTRA PARA GIRAR`;
   mockflag.hidden=true;hint.textContent=nextHint();updateRegionLabels();updateBasemap();renderCards();draw();
+  window.dispatchEvent(new CustomEvent('region-ready'));
   window.history?.replaceState(null,'','?region='+encodeURIComponent(region));
  }catch(error){if(request===regionSwitch)hint.textContent=error.message;}
  finally{if(request===regionSwitch){byId('compute').disabled=false;byId('terraindetail').disabled=false;}}

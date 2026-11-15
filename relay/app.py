@@ -19,6 +19,10 @@ def create_app(data_dir: str):
     from relay.planet import register_planet
     from pipeline.planet import RegionError
     dataset_root = register_planet(app, root)
+    from relay.field import register_field
+    register_field(app)
+    from relay.navigator import register_navigator
+    register_navigator(app)
 
     def valid_scenario(data):
         from pipeline.scenario import DEFAULTS, PROFILE, metadata, scenario, site_profile
@@ -26,7 +30,7 @@ def create_app(data_dir: str):
         if (data.get('budget_model') != PROFILE or not isinstance(profile, dict)
                 or profile.get('scenario_id') != PROFILE or profile.get('profile') != PROFILE
                 or profile.get('assumption_basis') != 'lunar_analogue'
-                or profile.get('site') not in ('Jezero/Mars', 'Mars/global', 'synthetic', 'unknown')
+                or profile.get('site') not in ('Jezero/Mars', 'Mars/global', 'GlenTorridon/Mars', 'synthetic', 'unknown')
                 or not isinstance(profile.get('values'), dict)
                 or set(profile['values']) != set(DEFAULTS)):
             return False
@@ -94,11 +98,11 @@ def create_app(data_dir: str):
 
     @app.get("/reference-image")
     def reference_image():
-        return send_from_directory(ROOT / "assets", "jezero_ortho_4m.png")
+        return send_from_directory(ROOT / "assets/glen-torridon", "ortho.png") if request.args.get("region")=="glen-torridon" else send_from_directory(ROOT / "assets", "jezero_ortho_4m.png")
 
     @app.get("/reference-metadata")
     def reference_metadata():
-        return send_from_directory(ROOT / "assets", "jezero_ortho_4m.json")
+        return send_from_directory(ROOT / "assets/glen-torridon", "imagery.json") if request.args.get("region")=="glen-torridon" else send_from_directory(ROOT / "assets", "jezero_ortho_4m.json")
 
     @app.get("/science.js")
     def science_js():
@@ -234,8 +238,14 @@ def create_app(data_dir: str):
         if "science_stops" in body:
             return jsonify(error="science_stops legado no define ubicaciones; envía science_waypoints"), 400
         waypoints = body.get("science_waypoints", [])
-        if not isinstance(waypoints, list):
-            return jsonify(error="science_waypoints debe ser una lista ordenada"), 400
+        if not isinstance(waypoints, list) or len(waypoints)>18:
+            return jsonify(error="science_waypoints debe ser una lista ordenada de hasta 18 paradas (20 puntos con A y B)"), 400
+
+        named = body.get("named_points", [])
+        if (not isinstance(named, list) or len(named)>20 or any(
+                not isinstance(p, dict) or not isinstance(p.get("name"), str)
+                or len(p["name"])>160 for p in named)):
+            return jsonify(error="named_points: máximo 20 nombres de hasta 160 caracteres"), 400
 
         files = [dataset_root() / f"{name}.npy" for name in ("dem", "slope", "rough")]
         if not all(p.exists() for p in files):
@@ -250,15 +260,30 @@ def create_app(data_dir: str):
                 or not valid_scenario(meta)):
             return jsonify(error="routes.json legado o incompleto; regenera a schema_version 3 y selecciona waypoints"), 503
         cell_m = meta["cell_m"]
+        arrays = tuple(np.load(path, allow_pickle=False) for path in files)
         try:
+            from pipeline.restrictions import apply_environment
+            arrays, environment = apply_environment(arrays, body.get('environment', {}), cell_m, meta['cell_x_m'])
+        except ValueError as exc:
+            return jsonify(error=str(exc)), 400
+        try:
+            from pipeline.mission import mission_context
+            mission = mission_context(body.get('mission'))
             base = scenario(meta.get('scenario', {}).get('values'))
             overrides = body.get('scenario_assumptions', {})
             if not isinstance(overrides, dict):
                 raise ValueError('scenario_assumptions debe ser un objeto')
             values = scenario({**base, **overrides})
+            speed_factor=environment['speed_factor']*mission['mobility_factor']
+            if speed_factor!=1:
+                overrides={**overrides, 'v_nom_flat_kmh': values['v_nom_flat_kmh']*speed_factor, 'v_return_flat_kmh': values['v_return_flat_kmh']*speed_factor}
+                values=scenario({**base, **overrides})
         except (ValueError, TypeError, AttributeError) as exc:
             return jsonify(error=str(exc)), 400
-        out = {"schema_version": 3, "start": start, "end": end,
+        out = {"schema_version": 3, "start": start, "end": end, "mission": mission,
+               "return_to": body.get("return_to") or start, "environment": environment,
+               "max_slope_deg": body.get("max_slope_deg", 25),
+               "named_points": body.get("named_points", []),
                "science_waypoints": waypoints, "science_stops": len(waypoints),
                "site": meta.get("site"), "region": meta.get("region", "jezero"),
                "spatial": meta.get("spatial", {}), "provenance": meta.get("provenance"),
@@ -268,10 +293,11 @@ def create_app(data_dir: str):
                "budget_s": values['suit_budget_s'],
                "science_s": values['science_stop_s']}
         try:
-            out.update(plan_routes(*(np.load(p, allow_pickle=False) for p in files),
+            out.update(plan_routes(*arrays,
                                    cell_m, start, end, out["budget_s"], out["science_s"],
                                    waypoints, 0,
-                                   cell_x_m=out["cell_x_m"], scenario_assumptions=values))
+                                   cell_x_m=out["cell_x_m"], scenario_assumptions=values,
+                                   max_slope_deg=out["max_slope_deg"], return_to=body.get("return_to")))
         except (ValueError, TypeError, IndexError) as exc:
             return jsonify(error=str(exc)), 400
         return jsonify(out)

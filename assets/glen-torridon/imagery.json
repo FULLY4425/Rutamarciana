@@ -1,0 +1,19 @@
+{
+  "crs": "MARS:GLEN_EQC",
+  "bounds_m": [
+    8142993.126958516,
+    -280885.6979717477,
+    8144474.324265782,
+    -280011.54874123103
+  ],
+  "dem_source_window": {
+    "row": 2799,
+    "col": 1399,
+    "height": 864,
+    "width": 1464
+  },
+  "credit": "NASA/JPL/University of Arizona",
+  "source": "https://www.uahirise.org/PDS/DTM/PSP/ORB_009100_009199/PSP_009149_1750_PSP_009294_1750/PSP_009149_1750_RED_C_01_ORTHO.JP2",
+  "native_resolution_m": 1.0117467945795,
+  "note": "RED-band grayscale observation. Matching PDS projection/window; absolute horizontal accuracy not independently verified."
+}

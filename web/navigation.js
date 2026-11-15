@@ -25,7 +25,7 @@
     if (!route) return {steps:[],total:0};
     const outbound=route.outbound;
     const legs=outbound?.legs?.length ? outbound.legs : [{points:outbound?.points || route.points || []}];
-    const segments=legs.map((leg,i)=>({points:leg.points,arrival:i===legs.length-1?'destination':'science',stop:i+1}));
+    const segments=legs.map((leg,i)=>({points:leg.points,arrival:i===legs.length-1?(route.end_is_home?'home':'destination'):'science',stop:i+1}));
     if (route.return?.points?.length>1) segments.push({points:route.return.points,arrival:'home'});
     const steps=[];
     let offset=0;
@@ -49,7 +49,7 @@
       }
       offset+=cumulative.at(-1);
       steps.push({at:offset,kind:arrival,symbol:arrival==='home'?'⌂':arrival==='science'?'⚑':'◎',
-        text:arrival==='home'?'Has regresado al punto A. Recorrido completado.':arrival==='science'?`Llegada a la parada científica S${stop}.`:'Llegada al destino B. Inicia el regreso por la ruta turquesa.'});
+        text:arrival==='home'?'Has llegado al punto de regreso. Recorrido completado.':arrival==='science'?`Llegada a la parada científica S${stop}.`:'Llegada al destino B. Inicia el regreso por la ruta turquesa.'});
     }
     return {steps,total:offset};
   }

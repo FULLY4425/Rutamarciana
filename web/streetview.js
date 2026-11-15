@@ -49,7 +49,8 @@
   const gl=canvas.getContext('webgl',{alpha:true,antialias:true});
   let open=false, lost=false, model=null, count=0, textureReady=false, textureRequested=false;
   let latest=null, yawOffset=0, pitch=0, fov=75, drag=null, reference=null;
-  let textureGeneration=0, program,vertexBuffer,indexBuffer,routeBuffer,texture;
+  let textureGeneration=0, program,vertexBuffer,indexBuffer,routeBuffer,texture,actorBuffer;
+  let referenceRegion=null,referenceRequest=0;
   function status(text){el('surfacestatus').textContent=text;}
   if(!gl){el('surfaceopen').disabled=true;status('La vista de superficie requiere WebGL. El mapa y las indicaciones siguen disponibles.');return;}
   const vertex=`attribute vec3 position;attribute vec3 normal;attribute vec2 uv;
@@ -61,22 +62,22 @@
       gl_Position=vec4(x*focal/aspect,y*focal,((far+near)*depth-2.0*far*near)/(far-near),depth);
       vNormal=normal;vUv=uv;vDepth=length(p);vWorld=position;}`;
   const fragment=`precision mediump float;varying vec3 vNormal;varying vec2 vUv;varying float vDepth;varying vec3 vWorld;
-    uniform sampler2D ortho;uniform bool textured;uniform bool route;
+    uniform sampler2D ortho;uniform bool textured;uniform bool route;uniform bool actor;uniform vec3 suit;uniform float fogDensity;
     void main(){
       vec3 haze=vec3(0.63,0.40,0.29);vec3 color;
-      if(route){color=vec3(0.40,0.94,0.88);}else{
+      if(actor){color=suit;}else if(route){color=vec3(0.40,0.94,0.88);}else{
         float light=0.38+0.62*max(0.0,dot(normalize(vNormal),normalize(vec3(-0.6,0.8,-0.3))));
         float grain=fract(sin(dot(floor(vWorld.xz*2.0),vec2(12.9898,78.233)))*43758.5453);
-        vec3 ground=textured?texture2D(ortho,vUv).rgb*vec3(1.12,0.83,0.66):vec3(0.65,0.39,0.24)*(0.94+grain*0.12);
+        vec3 ground=textured?texture2D(ortho,vUv).rgb:vec3(0.65,0.39,0.24)*(0.94+grain*0.12);
         color=ground*light;
       }
-      float fog=1.0-exp(-vDepth*0.0012);gl_FragColor=vec4(mix(color,haze,min(fog,0.94)),1.0);
+      float fog=1.0-exp(-vDepth*fogDensity);gl_FragColor=vec4(mix(color,haze,min(fog,0.94)),1.0);
     }`;
   function shader(type,source){const s=gl.createShader(type);gl.shaderSource(s,source);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw Error('No se pudo compilar la vista 3D.');return s;}
   try {
     program=gl.createProgram();gl.attachShader(program,shader(gl.VERTEX_SHADER,vertex));gl.attachShader(program,shader(gl.FRAGMENT_SHADER,fragment));gl.linkProgram(program);
     if(!gl.getProgramParameter(program,gl.LINK_STATUS))throw Error('No se pudo iniciar la vista 3D.');
-    vertexBuffer=gl.createBuffer();indexBuffer=gl.createBuffer();routeBuffer=gl.createBuffer();texture=gl.createTexture();
+    vertexBuffer=gl.createBuffer();indexBuffer=gl.createBuffer();routeBuffer=gl.createBuffer();actorBuffer=gl.createBuffer();texture=gl.createTexture();
     gl.useProgram(program);gl.enable(gl.DEPTH_TEST);gl.bindTexture(gl.TEXTURE_2D,texture);
     gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,1,1,0,gl.RGBA,gl.UNSIGNED_BYTE,new Uint8Array([160,100,60,255]));
     gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
@@ -91,7 +92,7 @@
     const generation=textureGeneration, image=new Image();
     image.onload=()=>{if(generation!==textureGeneration || lost)return;gl.bindTexture(gl.TEXTURE_2D,texture);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,image);textureReady=true;render();};
     image.onerror=()=>{if(generation===textureGeneration){textureReady=false;render();}};
-    image.src='/reference-image';
+    image.src=typeof apiURL==='function'?apiURL('/reference-image'):'/reference-image';
   }
   function render(){
     if(!open || lost || !latest)return;
@@ -112,6 +113,7 @@
     const routeHeading=heading(...direction,{x:terrain.cell_x_m,y:terrain.cell_m});
     gl.uniform3f(uniform('camera'),sample.point[1]*terrain.cell_x_m,altitude+1.7,sample.point[0]*terrain.cell_m);
     gl.uniform1f(uniform('yaw'),routeHeading+yawOffset);gl.uniform1f(uniform('pitch'),pitch);gl.uniform1f(uniform('focal'),1/Math.tan(fov*Math.PI/360));gl.uniform1f(uniform('aspect'),width/height);
+    gl.uniform1i(uniform('actor'),0);gl.uniform1f(uniform('fogDensity'),latest.environment?.weather==='storm'?.0036:latest.environment?.weather==='dust'?.0022:.0012);
     gl.uniform1i(uniform('textured'),textureReady?1:0);gl.uniform1i(uniform('route'),0);
     attributes(vertexBuffer);gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,indexBuffer);gl.drawElements(gl.TRIANGLES,count,gl.UNSIGNED_SHORT,0);
     const routeVertices=[],strips=[];let start=0;
@@ -123,9 +125,17 @@
     if(routeVertices.length/8>start)strips.push([start,routeVertices.length/8-start]);
     gl.bindBuffer(gl.ARRAY_BUFFER,routeBuffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(routeVertices),gl.DYNAMIC_DRAW);
     attributes(routeBuffer);gl.uniform1i(uniform('route'),1);for(const [first,length] of strips)gl.drawArrays(gl.LINE_STRIP,first,length);
+    if(root.FieldActors && latest.actors){
+      gl.uniform1i(uniform('route'),0);gl.uniform1i(uniform('actor'),1);
+      for(const actor of latest.actors){if(actor.world[1]===null)continue;
+        const vertices=root.FieldActors.geometry([actor.world[0],geometry.surfaceHeight(terrain,actor.point)??actor.world[1],actor.world[2]],actor.heading,actor.phase);
+        gl.bindBuffer(gl.ARRAY_BUFFER,actorBuffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(vertices),gl.DYNAMIC_DRAW);attributes(actorBuffer);
+        gl.uniform3f(uniform('suit'),...(actor.index?[.97,.61,.34]:[.93,.95,.87]));gl.drawArrays(gl.TRIANGLES,0,vertices.length/8);
+      }
+    }
     const degrees=((routeHeading+yawOffset)*180/Math.PI+360)%360;
     el('surfaceheading').textContent=`${Math.round(degrees)}° · CÁMARA A 1.70 M · RELIEVE ×1`;
-    status(`${terrain.site==='synth'?'DEMO SINTÉTICA':terrain.site==='mola-global'?'MOLA · CONTEXTO REGIONAL ~3.7 KM':textureReady?'JEZERO · ORTOFOTO HiRISE':'DEM · COLOR ILUSTRATIVO'} · Reconstrucción 3D, sin panoramas de superficie`);
+    status(`${terrain.site==='synth'?'DEMO SINTÉTICA':terrain.site==='mola-global'?'MOLA · CONTEXTO REGIONAL ~3.7 KM':textureReady?(terrain.site==='glen-torridon'?'GLEN TORRIDON · ORTOFOTO HiRISE':'JEZERO · ORTOFOTO HiRISE'):'DEM · COLOR ILUSTRATIVO'} · Reconstrucción 3D, sin panoramas de superficie`);
   }
   function setOpen(value){open=value;el('surfaceview').hidden=!open;el('surfaceopen').setAttribute('aria-pressed',String(open));if(open){render();canvas.focus();}else {el('surfaceopen').focus();root.dispatchEvent(new CustomEvent('surface-close'));}}
   el('surfaceopen').onclick=()=>setOpen(true);el('surfaceclose').onclick=()=>setOpen(false);
@@ -143,6 +153,9 @@
   });
   canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();lost=true;status('Se perdió el contexto gráfico. Cierra la vista y recarga para recuperarlo.');});
   root.addEventListener('resize',render);
-  fetch('/reference-metadata').then(response=>response.ok?response.json():null).then(value=>{reference=value;textureRequested=false;render();}).catch(()=>{});
-  root.SurfaceView={isOpen:()=>open,update(value){latest=value;el('surfaceopen').disabled=!value.sample || !value.terrain || lost;if(!value.sample && open)setOpen(false);render();}};
+  root.SurfaceView={isOpen:()=>open,update(value){latest=value;
+    const region=value.terrain?.region||value.terrain?.site;
+    if(region && region!==referenceRegion){referenceRegion=region;reference=null;textureReady=false;textureRequested=false;const request=++referenceRequest;
+      fetch(typeof apiURL==='function'?apiURL('/reference-metadata'):'/reference-metadata').then(response=>response.ok?response.json():null).then(meta=>{if(request!==referenceRequest)return;reference=meta;textureRequested=false;render();}).catch(()=>{});
+    }el('surfaceopen').disabled=!value.sample || !value.terrain || lost;if(!value.sample && open)setOpen(false);render();}};
 })(typeof window==='object'?window:globalThis);

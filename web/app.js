@@ -10,6 +10,7 @@ bg.src = "/preview.png";
 
 const state = {
   revision: 0,
+  home: null,
   region: new URLSearchParams(location.search).get("region") || "jezero",
   view: { k: 1, ox: 0, oy: 0 },
   grid: { rows: 500, cols: 500 },
@@ -128,6 +129,7 @@ function renderCards() {
         <div class="kv">route <b>${fmtKm(r.distance_m)} km</b>${direct !== null ? ` · recta A–B <b>${fmtKm(direct)} km</b> (plana)` : ""} ·
           rugosidad ${r.rough_mean === null || r.rough_mean === undefined ? "—" : r.rough_mean.toFixed(2)} ·
           dosis ${r.dose_msv === null || r.dose_msv === undefined ? "—" : r.dose_msv.toFixed(3)} mSv</div>
+        ${r.ascent_m !== undefined ? `<div class="kv">Ascenso acumulado: <b>${r.ascent_m.toFixed(1)} m</b> · descenso: ${r.descent_m.toFixed(1)} m</div>` : ""}
         ${stopList()}
         <div class="legs">
           ${legHtml || legCard(r.outbound, "IDA (outbound)")}
@@ -354,6 +356,11 @@ async function compute() {
         start: state.start,
         end: state.end,
         science_waypoints: state.stops,
+        return_to: state.home,
+        max_slope_deg: Number(document.getElementById("maxslope").value || 25),
+        environment: window.FieldOperations?.environment() || {},
+        named_points: window.FieldPoints?.namedPoints() || [],
+        mission: window.ScienceMission?.request() || {},
         scenario_assumptions: {
           suit_budget_s: state.budgetMin * 60,
           science_stop_s: state.sciencePerStop * 60,
@@ -380,9 +387,17 @@ async function compute() {
   }
   draw();
   renderCards();
+  return Boolean(state.data);
+}
+
+function missionChanged(options={}) {
+  if(!options.preserveHome)window.dispatchEvent(new CustomEvent("mission-edited"));
+  if(!options.preserveHome)state.home=state.start;
+  state.revision++;state.data=null;cards.innerHTML="";mockflag.hidden=true;hint.textContent=nextHint();renderCards();draw();
 }
 
 function selectPoint(pt) {
+  if(window.ScienceMission?.handlePick(pt) || window.FieldPoints?.handlePick(pt) || window.FieldOperations?.handlePick(pt))return;
   if (!state.start) {
     state.start = pt;
   } else if (!state.end) {
@@ -390,12 +405,7 @@ function selectPoint(pt) {
   } else if (state.stops.length < state.nStops) {
     state.stops.push(pt);
   } else { return; }
-  state.revision++;
-  state.data = null;
-  cards.innerHTML = "";
-  mockflag.hidden = true;
-  hint.textContent = nextHint();
-  draw();
+  missionChanged();
 }
 
 document.getElementById("zin").addEventListener("click", () => setZoom(1.3));
@@ -405,6 +415,8 @@ document.getElementById("zreset").addEventListener("click", resetView);
 document.getElementById("compute").addEventListener("click", compute);
 
 document.getElementById("reset").addEventListener("click", () => {
+  window.dispatchEvent(new CustomEvent("mission-edited"));
+  state.home = null;
   state.start = null;
   state.end = null;
   state.stops = [];

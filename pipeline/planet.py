@@ -105,7 +105,7 @@ def atlas():
       'longitudes':((cols+.5)*360/dem.shape[1]).tolist(),
       'elevations':dem[np.ix_(rows,cols)].tolist(),
       'metadata':json.loads((ASSETS/'metadata.json').read_text()),
-      'bookmarks':[{'name':'Jezero · HiRISE 4 m','region':'jezero','lat':18.4881,'lon':77.388},
+      'bookmarks':[{'name':'Glen Torridon · HiRISE / 718 objetivos','region':'glen-torridon','lat':-4.731,'lon':137.39},{'name':'Jezero · HiRISE 4 m','region':'jezero','lat':18.4881,'lon':77.388},
         {'name':'Gale / Curiosity · MOLA','lat':-5.4,'lon':137.8},
         {'name':'Olympus Mons · MOLA','lat':18.65,'lon':-133.8},
         {'name':'Valles Marineris · MOLA','lat':-13.9,'lon':-59.0},

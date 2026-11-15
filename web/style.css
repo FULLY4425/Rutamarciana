@@ -174,3 +174,23 @@ canvas {display:block;width:100%;height:auto;background:var(--bg-deep);cursor:cr
 .planet-selection .row {display:grid;grid-template-columns:1fr 1fr;gap:8px;}.planet-selection input {width:100%;min-width:0;padding:7px;border:1px solid var(--line);background:#172f23;color:var(--ink);border-radius:4px;}
 .planet-selection p {font-size:10px;line-height:1.6;color:var(--teal);}.planet-selection small {font-size:9px;line-height:1.6;color:var(--dim);}.planet-selection button {min-height:34px;padding:7px;font-size:10px;}#planetload {background:var(--teal);border-color:var(--teal);color:#12291c;}#planetjezero {color:var(--orange);}
 @media(max-width:700px){.planetview{overflow-y:auto;}#planetcanvas{height:auto;aspect-ratio:1;}.planet-selection{position:relative;bottom:auto;right:auto;margin:0 12px 12px;width:calc(100% - 24px);}.planet-top{padding:10px;}.planet-top strong{font-size:10px;}.planet-top p{font-size:8px;max-width:180px;}.planet-top button{font-size:8px;padding:6px;min-height:30px;}}
+.point-tools,.field-operations {display:grid;gap:10px;border-top:1px solid var(--line);padding-top:17px;}
+.point-tools p:not(.sectionlabel),.field-operations p,.field-operations small {font-size:10px;line-height:1.7;color:var(--dim);}
+.point-tools input,.point-tools select {min-width:0;width:100%;padding:8px;background:var(--panel-2);color:var(--ink);border:1px solid var(--line);border-radius:5px;font-size:11px;}
+.point-tools label,.field-operations label,.guidance label,.tracking>label {font-size:10px;color:var(--dim);}
+.point-tools .row {display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+#custompoints,#missionpoints {padding:0;list-style:none;margin:0;display:grid;gap:7px;}
+#custompoints li,#missionpoints li {display:flex;align-items:center;gap:5px;font-size:10px;padding:6px 0;border-bottom:1px solid var(--line);}
+#custompoints span,#missionpoints span {flex:1;overflow-wrap:anywhere;}#custompoints button,#missionpoints button {padding:4px 6px;min-height:27px;font-size:9px;}
+#replanstatus[data-blocked=true] {color:var(--red);}.field-operations {background:#27261b;border:1px solid #605940;border-radius:6px;padding:12px;}
+.weather-veil {position:absolute;inset:0;pointer-events:none;z-index:3;background:#bd8654;opacity:0;transition:opacity .3s;}
+/* Compact directions view; no map or camera rendering is required here. */
+.navigator {position:fixed;inset:0;z-index:100;background:#0b1918;color:#e4f3ed;overflow:auto;padding:20px max(20px,calc((100vw - 540px)/2));font-family:var(--font);}
+.navigator header,.nav-actions {display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;}.navigator header strong {font:12px var(--mono);letter-spacing:2px;}
+.navigator button {min-height:44px;}.navigator p {line-height:1.6;font-size:15px;}.navigator h2 {font-size:42px;margin:0;}.navigator details {border-top:1px solid #35524b;padding:18px 0;}.navigator summary {font-size:16px;cursor:pointer;}.navigator label {display:block;font-size:14px;}.navigator input {max-width:90px;min-height:40px;}.navigator output {display:block;overflow-wrap:anywhere;font:16px var(--mono);margin:14px 0;user-select:all;}
+#navsymbol {font-size:96px;line-height:1.2;color:#74e1c8;}#navmode {font:12px var(--mono);color:#e9bb76;}#navstatus[data-alert=true] {color:#ffb388;}
+.science-mission,.chemistry-layer,.mission-notebook {display:grid;gap:8px;border:1px solid var(--line);border-radius:6px;padding:12px;background:var(--panel-2);}
+.science-mission label,.chemistry-layer label,.mission-notebook label {display:grid;gap:5px;font-size:11px;color:var(--dim);}.science-mission .row {display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+textarea {width:100%;min-height:65px;resize:vertical;border:1px solid var(--line-strong);border-radius:4px;background:var(--bg-deep);color:var(--ink);padding:8px;font:12px var(--font);}
+#chemistrydetail {font:11px var(--mono);line-height:1.7;overflow-wrap:anywhere;}#chemistrydetail dl {display:grid;grid-template-columns:1fr 1fr;gap:4px;}#chemistrydetail dd {margin:0;}
+#obstaclelist,#notelist {padding:0;list-style:none;display:grid;gap:8px;}#notelist li,#obstaclelist li {border-bottom:1px solid var(--line);padding:6px 0;font-size:11px;overflow-wrap:anywhere;}#notelist button,#obstaclelist button {margin-left:8px;padding:4px;}
