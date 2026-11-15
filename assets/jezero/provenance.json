@@ -1,0 +1,25 @@
+{
+  "source_url": "https://asc-pds-services.s3.us-west-2.amazonaws.com/mosaic/mars2020_trn/HiRISE/JEZ_hirise_soc_006_DTM_MOLAtopography_DeltaGeoid_1m_Eqc_latTs0_lon0_blend40.tif",
+  "product_url": "https://astrogeology.usgs.gov/search/map/mars_2020_terrain_relative_navigation_hirise_dtm_mosaic",
+  "doi": "10.5066/P9REJ9JN",
+  "source_window": {
+    "row": 9744,
+    "col": 9700,
+    "height": 2000,
+    "width": 2000
+  },
+  "source_resolution_m": 1,
+  "transferred_bytes": 171462144,
+  "crop_sha256": "afc114c24eb024054c37f62418c555c6c7ed22f7fec01f493e1c71b013e01b0a",
+  "credit": "NASA/JPL-Caltech/University of Arizona/USGS; HiRISE Jezero TRN mosaic, Fergason et al. 2020",
+  "derived_resolution_m": 4,
+  "image_alignment": "Matching declared CRS, bounds and source window; absolute horizontal accuracy not independently verified.",
+  "derived_sha256": {
+    "dem.npy": "e5c86b6aa6ca3a8e048d6bbb0329df14f4c5e3fc8f2089a4ccb3e0e45be90731",
+    "slope.npy": "efcbb63df53b32497fd9f929976d0148b8e5592c6459718b3838786d5e97b364",
+    "rough.npy": "d7ee30edcfded2b870e660cd8c4e01028e65333bb6e3258ddd1e7153eab47a8d",
+    "preview.png": "443f76f087af7afcec3d9aeaa15ddd1082ab0ade1735ea5ff134346ca75bd32d",
+    "routes.json": "db8879a9d76067bf1f59c76ccbe2881af43014aa54b7a06d4373b9e74ccbac4d"
+  },
+  "retrieved_at": "2026-11-15T05:40:55.802927+00:00"
+}

@@ -2,8 +2,14 @@
 
 Documento de referencia del **modelo de presupuesto EVA** del backend y de la
 API. Describe qué mide, con qué números, qué estados emite y qué no puede
-afirmarse con ellos. Es documentación de backend/API: la UI (`web/`) no forma
-parte de este contrato y puede mostrar cálculos heredados.
+afirmarse con ellos. La UI actual consume el presupuesto del backend; las capacidades
+vigentes se documentan en [ESPECIFICACIONES.md](ESPECIFICACIONES.md) y [API.md](API.md).
+
+**Contexto histórico:** las secciones 13–15 conservan gaps, desconocidos y evidencia de
+una etapa anterior del backend. Sus observaciones sobre falta de commit, UI heredada,
+`data/out` y ausencia de hashes no describen el estado completo actual del repositorio.
+Jezero/Glen/MOLA incluyen procedencia y la interfaz fue actualizada después. Consultar
+[CAMBIOS_IMPLEMENTADOS.md](CAMBIOS_IMPLEMENTADOS.md) para el estado vigente.
 
 ## 1. Qué es y qué no es
 
@@ -340,7 +346,7 @@ python -m pipeline.build --synth --rows 40 --cols 40 --out <scratch> \
   --science-waypoint 10 10 --science-waypoint 20 30
 ```
 
-## 13. Gaps, límites y bloqueos
+## 13. Registro histórico: gaps, límites y bloqueos
 
 1. **`data/out` está obsoleto (v2).** `GET /api/routes` y POST devuelven 503
    hasta regenerar; verificado. No es un fallo del contrato, es un artefacto no
@@ -364,7 +370,7 @@ python -m pipeline.build --synth --rows 40 --cols 40 --out <scratch> \
 10. **Sin validación de terreno real** (ni ortofoto ni mapa de peligros): la
     rugosidad es un proxy del residuo del DEM.
 
-## 14. Unknowns / no verificado
+## 14. Registro histórico: desconocidos / no verificado
 
 - Comportamiento de la UI con el nuevo contrato (no se ejecutó ni modificó).
 - Correspondencia del DEM con el terreno actual de Jezero (procedencia por
@@ -376,7 +382,7 @@ python -m pipeline.build --synth --rows 40 --cols 40 --out <scratch> \
 - Umbrales de `justo` frente al informe: la regla del código prevalece y no se
   revalidó contra literatura.
 
-## 15. Evidencia de esta sesión
+## 15. Evidencia de la etapa de backend
 
 - `pytest -q -p no:cacheprovider` → `114 passed in 8.76s`; recolección: 114.
 - Build sintético 40×40 en scratch + `GET /api/routes` → 200; `budget` con

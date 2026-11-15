@@ -26,8 +26,13 @@ def least_cost_route(cost_s_per_m, start, end, cell_m):
 
 
 def plan_routes(dem, slope, rough, cell_m, start, end, budget_s, science_s,
-                science_waypoints, reserve_fraction, cell_x_m=None, scenario_assumptions=None):
+                science_waypoints, reserve_fraction, cell_x_m=None, scenario_assumptions=None,
+                max_slope_deg=MAX_SLOPE_DEG, return_to=None):
     """Busca rutas dirigidas; reserve_fraction legado se ignora, no determina la reserva."""
+    if (type(max_slope_deg) not in (int, float) or not np.isfinite(max_slope_deg)
+            or not 5 <= max_slope_deg <= 40):
+        raise ValueError("pendiente máxima debe estar entre 5 y 40 grados")
+    return_to = start if return_to is None else return_to
     dem, slope, rough = (np.asarray(a, dtype=float) for a in (dem, slope, rough))
     cell_x_m = cell_m if cell_x_m is None else cell_x_m
     if (dem.ndim != 2 or dem.shape != slope.shape or dem.shape != rough.shape
@@ -40,11 +45,11 @@ def plan_routes(dem, slope, rough, cell_m, start, end, budget_s, science_s,
         raise ValueError("presupuesto, waypoints o reserva inválidos")
     values = scenario({'suit_budget_s': budget_s, 'science_stop_s': science_s,
                        **(scenario_assumptions or {})})
-    valid_cells = np.isfinite(dem) & np.isfinite(slope) & np.isfinite(rough) & (slope <= MAX_SLOPE_DEG)
+    valid_cells = np.isfinite(dem) & np.isfinite(slope) & np.isfinite(rough) & (slope <= max_slope_deg)
     dem, slope, rough = (np.where(valid_cells, a, 0.0) for a in (dem, slope, rough))
     rows, cols = dem.shape
     stops = [start, *science_waypoints, end]
-    for p in stops:
+    for p in [*stops, return_to]:
         if (not isinstance(p, (list, tuple)) or len(p) != 2
                 or any(isinstance(v, (bool, np.bool_)) or not isinstance(v, (int, np.integer)) for v in p)
                 or not (0 <= p[0] < rows and 0 <= p[1] < cols)):
@@ -68,7 +73,7 @@ def plan_routes(dem, slope, rough, cell_m, start, end, budget_s, science_s,
             grade = np.degrees(np.arctan((dem[rt, ct] - dem[rs, cs]) / length))
             valid = (valid_cells[rs, cs]
                      & valid_cells[rt, ct]
-                     & (np.abs(grade) <= MAX_SLOPE_DEG))
+                     & (np.abs(grade) <= max_slope_deg))
             if dr and dc:
                 valid &= valid_cells[rt, cs] & valid_cells[rs, ct]
             grade = np.where(valid, grade, 0.0)
@@ -78,13 +83,14 @@ def plan_routes(dem, slope, rough, cell_m, start, end, budget_s, science_s,
             source.append(ids[rs, cs][valid])
             target.append(ids[rt, ct][valid])
             times.append(travel[valid])
-            risks.append((travel * (1 + avg_rough + (avg_slope / MAX_SLOPE_DEG) ** 2))[valid])
+            risks.append((travel * (1 + avg_rough + (avg_slope / max_slope_deg) ** 2))[valid])
     source, target, times, risks = map(np.concatenate, (source, target, times, risks))
     endpoints = [int(ids[tuple(point)]) for point in stops]
-    segments = list(zip(endpoints, endpoints[1:])) + [(endpoints[-1], endpoints[0])]
+    home = int(ids[tuple(return_to)])
+    segments = list(zip(endpoints, endpoints[1:])) + [(endpoints[-1], home)]
     # Reverse directed travel graph: one search gives fastest walkback from any cell.
     return_graph = coo_matrix((times, (target, source)), shape=(rows * cols,) * 2).tocsr()
-    return_dist, return_pred = dijkstra(return_graph, directed=True, indices=endpoints[0],
+    return_dist, return_pred = dijkstra(return_graph, directed=True, indices=home,
                                         return_predecessors=True)
     result = {}
     for name, weights in (("fast", times), ("safe", risks)):
@@ -111,6 +117,8 @@ def plan_routes(dem, slope, rough, cell_m, start, end, budget_s, science_s,
             edge_slope = np.maximum(avg_slope, np.abs(grades))
             legs.append({"points": pts.tolist(), "time_s": sec,
                          "distance_m": distance,
+                         "ascent_m": float(np.maximum(0, np.diff(dem[rr, cc])).sum()),
+                         "descent_m": float(np.maximum(0, -np.diff(dem[rr, cc])).sum()),
                          "slope_max_deg": max(float(slope[rr, cc].max()),
                                               float(np.abs(grades).max()) if grades.size else 0.0),
                          "slope_exposure_m": float(lengths[edge_slope >= 15].sum()),
@@ -128,8 +136,8 @@ def plan_routes(dem, slope, rough, cell_m, start, end, budget_s, science_s,
         length = outbound["distance_m"] + back["distance_m"]
         science_total = len(science_waypoints) * values['science_stop_s']
         all_points = np.asarray(outbound['points'] + back['points'])
-        radial = np.hypot((all_points[:, 0] - start[0]) * cell_m,
-                          (all_points[:, 1] - start[1]) * cell_x_m)
+        radial = np.hypot((all_points[:, 0] - return_to[0]) * cell_m,
+                          (all_points[:, 1] - return_to[1]) * cell_x_m)
         worst = int(np.argmax(radial))
         eva_budget = budget(values, len(science_waypoints), outbound['time_s'], back['time_s'],
                             float(radial[worst]), all_points[worst].tolist())
@@ -140,7 +148,7 @@ def plan_routes(dem, slope, rough, cell_m, start, end, budget_s, science_s,
             if not np.isfinite(return_dist[node]):
                 raise ValueError('retorno contingente intransitable')
             nodes = [node]
-            while nodes[-1] != endpoints[0]:
+            while nodes[-1] != home:
                 nodes.append(int(return_pred[nodes[-1]]))
             pts = np.array(np.unravel_index(nodes, dem.shape)).T
             delta = np.diff(pts, axis=0)
@@ -153,7 +161,10 @@ def plan_routes(dem, slope, rough, cell_m, start, end, budget_s, science_s,
         eva_budget['return_contingency'].update({
             'path_method': 'fastest_directed_terrain_path', 'waypoint_returns': waypoint_returns,
             'path_note': 'Fastest modeled return from each science waypoint, or the farthest radial route point if there are no science waypoints. Limits apply to this path only; exceeding one does not prove no alternative path can satisfy both. Not added to planned return or fixed reserve; terrain model is not field validation.'})
-        result[name] = {"objective": "fastest" if name == "fast" else "conservative",
+        result[name] = {"return_to": list(return_to), "end_is_home": tuple(end)==tuple(return_to),
+                        "ascent_m": round(sum(leg["ascent_m"] for leg in legs),1),
+                        "descent_m": round(sum(leg["descent_m"] for leg in legs),1),
+                        "objective": "fastest" if name == "fast" else "conservative",
                         "points": outbound["points"], "outbound": outbound, "return": back,
                         "time_s": round(duration, 1), "distance_m": round(length, 1),
                         "science_total_s": science_total, "total_s": round(eva_budget['operational_s'], 1),

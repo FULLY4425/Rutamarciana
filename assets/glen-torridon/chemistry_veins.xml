@@ -1,0 +1,485 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-model href="https://pds.nasa.gov/pds4/pds/v1/PDS4_PDS_1C00.sch" 
+ schematypens="http://purl.oclc.org/dsdl/schematron"?>
+<Product_Observational xmlns="http://pds.nasa.gov/pds4/pds/v1" xmlns:pds="http://pds.nasa.gov/pds4/pds/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://pds.nasa.gov/pds4/pds/v1 https://pds.nasa.gov/pds4/pds/v1/PDS4_PDS_1C00.xsd">
+<Identification_Area>
+<logical_identifier>urn:nasa:pds:msl_gt_diagenesis_supplement:data:veins</logical_identifier>
+<version_id>1.0</version_id>
+<title>Supporting Information Metadata and Oxide Results Table for Veins for Overview of the Morphology and Chemistry of Diagenetic Features in the Clay-Rich Glen Torridon Unit of Gale Crater, Mars</title>
+<information_model_version>1.12.0.0</information_model_version>
+<product_class>Product_Observational</product_class>
+</Identification_Area>
+<Observation_Area>
+<Time_Coordinates>
+<start_date_time>2019-01-24T19:45:59Z</start_date_time>
+<stop_date_time>2021-01-16T03:08:05Z</stop_date_time>
+</Time_Coordinates>
+<Investigation_Area>
+<name>Mars Science Laboratory</name>
+<type>Mission</type>
+<Internal_Reference>
+<lid_reference>urn:nasa:pds:context:investigation:mission.mars_science_laboratory</lid_reference>
+<reference_type>data_to_investigation</reference_type>
+</Internal_Reference>
+</Investigation_Area>
+<Observing_System>
+<Observing_System_Component>
+<name>Mars Science Laboratory</name>
+<type>Spacecraft</type>
+<Internal_Reference>
+<lid_reference>urn:nasa:pds:context:instrument_host:spacecraft.msl</lid_reference>
+<reference_type>is_instrument_host</reference_type>
+</Internal_Reference>
+</Observing_System_Component>
+<Observing_System_Component>
+<name>ChemCam</name>
+<type>Instrument</type>
+<Internal_Reference>
+<lid_reference>urn:nasa:pds:context:instrument:chemcam_libs.msl</lid_reference>
+<reference_type>is_instrument</reference_type>
+</Internal_Reference>
+</Observing_System_Component>
+</Observing_System>
+<Target_Identification>
+<name>Mars</name>
+<type>Planet</type>
+<Internal_Reference>
+<lid_reference>urn:nasa:pds:context:target:planet.mars</lid_reference>
+<reference_type>data_to_target</reference_type>
+</Internal_Reference>
+</Target_Identification>
+</Observation_Area>
+<Reference_List>
+<External_Reference>
+<doi>10.1029/2021JE007097</doi>
+<reference_text> Gasda, P. J. et al. (2022), Overview of the Morphology and Chemistry of Diagenetic Features in the Clay-Rich Glen Torridon Unit of Gale Crater, Mars, Journal of Geophysical Research: Planets, Volume 127, Issue 12.</reference_text>
+</External_Reference>
+</Reference_List>
+<File_Area_Observational>
+<File>
+<file_name>veins.csv</file_name>
+<creation_date_time>2020-10-02T09:52:00</creation_date_time>
+</File>
+<Header>
+<name>Column Headings</name>
+<offset unit="byte">0</offset>
+<object_length unit="byte">1022</object_length>
+<parsing_standard_id>PDS DSV 1</parsing_standard_id>
+<description>Comma-separated names of columns in the data table.</description>
+</Header>
+<Table_Delimited>
+<name>ChemCam Vein Compositions in Glen Torridon</name>
+<offset unit="byte">1023</offset>
+<parsing_standard_id>PDS DSV 1</parsing_standard_id>
+<records>591</records>
+<record_delimiter>Carriage-Return Line-Feed</record_delimiter>
+<field_delimiter>Comma</field_delimiter>
+<Record_Delimited>
+<fields>67</fields>
+<groups>0</groups>
+<Field_Delimited>
+<name>File</name>
+<field_number>1</field_number>
+<data_type>ASCII_String</data_type>
+<description>Filename</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>Spacecraft Clock</name>
+<field_number>2</field_number>
+<data_type>ASCII_Integer</data_type>
+<description>Spacecraft Clock</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>Target</name>
+<field_number>3</field_number>
+<data_type>ASCII_String</data_type>
+<description>Target Name</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>SeqID</name>
+<field_number>4</field_number>
+<data_type>ASCII_String</data_type>
+<description>Sequence Identifier</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>Sol</name>
+<field_number>5</field_number>
+<data_type>ASCII_Integer</data_type>
+<description>Mars Solar Day of Target</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>Elevation</name>
+<field_number>6</field_number>
+<data_type>ASCII_Real</data_type>
+<description>Elevation of Target</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>Observation Point</name>
+<field_number>7</field_number>
+<data_type>ASCII_Integer</data_type>
+<description>Observation Point with Cement in Target</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>SiO2</name>
+<field_number>8</field_number>
+<data_type>ASCII_Real</data_type>
+<description>SiO2 Composition (wt%) of Observation Point in Target</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>+/-</name>
+<field_number>9</field_number>
+<data_type>ASCII_String</data_type>
+<description>String Denoting Uncertainties Follow</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>SiO2 RMSEP</name>
+<field_number>10</field_number>
+<data_type>ASCII_Real</data_type>
+<description>Root Mean Squared Error of Prediction for SiO2 (wt%)</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>SiO2_shots_stdev</name>
+<field_number>11</field_number>
+<data_type>ASCII_Real</data_type>
+<description>Standard Deviation of SiO2 in Individual Shots in Observation Point of Target (wt%)</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>TiO2</name>
+<field_number>12</field_number>
+<data_type>ASCII_Real</data_type>
+<description>TiO2 Composition (wt%) of Observation Point in Target</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>+/-</name>
+<field_number>13</field_number>
+<data_type>ASCII_String</data_type>
+<description>String Denoting Uncertainties Follow</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>TiO2 RMSEP</name>
+<field_number>14</field_number>
+<data_type>ASCII_Real</data_type>
+<description>Root Mean Squared Error of Prediction for TiO2 (wt%)</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>TiO2_shots_stdev</name>
+<field_number>15</field_number>
+<data_type>ASCII_Real</data_type>
+<description>Standard Deviation of TiO2 in Individual Shots in Observation Point of Target (wt%)</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>Al2O3</name>
+<field_number>16</field_number>
+<data_type>ASCII_Real</data_type>
+<description>Al2O3 Composition (wt%) of Observation Point in Target</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>+/-</name>
+<field_number>17</field_number>
+<data_type>ASCII_String</data_type>
+<description>String Denoting Uncertainties Follow</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>Al2O3 RMSEP</name>
+<field_number>18</field_number>
+<data_type>ASCII_Real</data_type>
+<description>Root Mean Squared Error of Prediction for Al2O3 (wt%)</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>Al2O3_shots_stdev</name>
+<field_number>19</field_number>
+<data_type>ASCII_Real</data_type>
+<description>Standard Deviation of Al2O3 in Individual Shots in Observation Point of Target (wt%)</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>FeOT</name>
+<field_number>20</field_number>
+<data_type>ASCII_Real</data_type>
+<description>FeOT Composition (wt%) of Observation Point in Target</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>+/-</name>
+<field_number>21</field_number>
+<data_type>ASCII_String</data_type>
+<description>String Denoting Uncertainties Follow</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>FeOT RMSEP</name>
+<field_number>22</field_number>
+<data_type>ASCII_Real</data_type>
+<description>Root Mean Squared Error of Prediction for FeOT (wt%)</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>FeOT_shots_stdev</name>
+<field_number>23</field_number>
+<data_type>ASCII_Real</data_type>
+<description>Standard Deviation of FeOT in Individual Shots in Observation Point of Target (wt%)</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>MgO</name>
+<field_number>24</field_number>
+<data_type>ASCII_Real</data_type>
+<description>MgO Composition (wt%) of Observation Point in Target</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>+/-</name>
+<field_number>25</field_number>
+<data_type>ASCII_String</data_type>
+<description>String Denoting Uncertainties Follow</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>MgO RMSEP</name>
+<field_number>26</field_number>
+<data_type>ASCII_Real</data_type>
+<description>Root Mean Squared Error of Prediction for MgO (wt%)</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>MgO_shots_stdev</name>
+<field_number>27</field_number>
+<data_type>ASCII_Real</data_type>
+<description>Standard Deviation of MgO in Individual Shots in Observation Point of Target (wt%)</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>CaO</name>
+<field_number>28</field_number>
+<data_type>ASCII_Real</data_type>
+<description>CaO Composition (wt%) of Observation Point in Target</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>+/-</name>
+<field_number>29</field_number>
+<data_type>ASCII_String</data_type>
+<description>String Denoting Uncertainties Follow</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>CaO RMSEP</name>
+<field_number>30</field_number>
+<data_type>ASCII_Real</data_type>
+<description>Root Mean Squared Error of Prediction for CaO (wt%)</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>CaO_shots_stdev</name>
+<field_number>31</field_number>
+<data_type>ASCII_Real</data_type>
+<description>Standard Deviation of CaO in Individual Shots in Observation Point of Target (wt%)</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>Na2O</name>
+<field_number>32</field_number>
+<data_type>ASCII_Real</data_type>
+<description>Na2O Composition (wt%) of Observation Point in Target</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>+/-</name>
+<field_number>33</field_number>
+<data_type>ASCII_String</data_type>
+<description>String Denoting Uncertainties Follow</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>Na2O RMSEP</name>
+<field_number>34</field_number>
+<data_type>ASCII_Real</data_type>
+<description>Root Mean Squared Error of Prediction for Na2O (wt%)</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>Na2O_shots_stdev</name>
+<field_number>35</field_number>
+<data_type>ASCII_Real</data_type>
+<description>Standard Deviation of Na2O in Individual Shots in Observation Point of Target (wt%)</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>K2O</name>
+<field_number>36</field_number>
+<data_type>ASCII_Real</data_type>
+<description>K2O Composition (wt%) of Observation Point in Target</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>+/-</name>
+<field_number>37</field_number>
+<data_type>ASCII_String</data_type>
+<description>String Denoting Uncertainties Follow</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>K2O RMSEP</name>
+<field_number>38</field_number>
+<data_type>ASCII_Real</data_type>
+<description>Root Mean Squared Error of Prediction for K2O (wt%)</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>K2O_shots_stdev</name>
+<field_number>39</field_number>
+<data_type>ASCII_Real</data_type>
+<description>Standard Deviation of K2O in Individual Shots in Observation Point of Target (wt%)</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>MnO</name>
+<field_number>40</field_number>
+<data_type>ASCII_Real</data_type>
+<description>MnO Composition (wt%) of Observation Point in Target</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>+/-</name>
+<field_number>41</field_number>
+<data_type>ASCII_String</data_type>
+<description>String Denoting Uncertainties Follow</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>MnO RMSEP</name>
+<field_number>42</field_number>
+<data_type>ASCII_Real</data_type>
+<description>Root Mean Squared Error of Prediction for MnO (wt%)</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>MnO_shots_stdev</name>
+<field_number>43</field_number>
+<data_type>ASCII_Real</data_type>
+<description>Standard Deviation of K2O in Individual Shots in Observation Point of Target (wt%)</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>Sum of Oxides</name>
+<field_number>44</field_number>
+<data_type>ASCII_Real</data_type>
+<description>The sum of the major element oxides (wt%)</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>Distance</name>
+<field_number>45</field_number>
+<data_type>ASCII_Real</data_type>
+<description>Distance from ChemCam to Target (meters)</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>Laser Power</name>
+<field_number>46</field_number>
+<data_type>ASCII_String</data_type>
+<description>Laser Power Used During Target Acquisition</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>Spectrum Total</name>
+<field_number>47</field_number>
+<data_type>ASCII_Real</data_type>
+<description>Total of all Spectrometer Channels in Spectrum of Observation Point in Target</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>Cr</name>
+<field_number>48</field_number>
+<data_type>ASCII_Real</data_type>
+<description>Peak Area of Chromium Peak in Spectrum of Observation Point in Target</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>Li</name>
+<field_number>49</field_number>
+<data_type>ASCII_Real</data_type>
+<description>Peak Area of Lithium Peak in Spectrum of Observation Point in Target</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>Li prediction (ppm)</name>
+<field_number>50</field_number>
+<data_type>ASCII_Real</data_type>
+<description>Lithium Composition of Observation Point in Target (ppm)</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>Li prediction RMSE (ppm)</name>
+<field_number>51</field_number>
+<data_type>ASCII_Real</data_type>
+<description>Root Mean Squared Error of the Lithium Composition of Observation Point in Target (ppm)</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>Rb</name>
+<field_number>52</field_number>
+<data_type>ASCII_Real</data_type>
+<description>Peak Area of Rubidium Peak in Spectrum of Observation Point in Target</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>Rb prediction (ppm)</name>
+<field_number>53</field_number>
+<data_type>ASCII_Real</data_type>
+<description>Rubidium Composition of Observation Point in Target (ppm)</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>Rb prediction RMSE (ppm)</name>
+<field_number>54</field_number>
+<data_type>ASCII_Real</data_type>
+<description>Root Mean Squared Error of the Rubidium Composition of Observation Point in Target (ppm)</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>Sr</name>
+<field_number>55</field_number>
+<data_type>ASCII_Real</data_type>
+<description>Peak Area of Strontium Peak in Spectrum of Observation Point in Target</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>Sr prediction (ppm)</name>
+<field_number>56</field_number>
+<data_type>ASCII_Real</data_type>
+<description>Strontium Composition of Observation Point in Target (ppm)</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>Sr prediction RMSE (ppm)</name>
+<field_number>57</field_number>
+<data_type>ASCII_Real</data_type>
+<description>Root Mean Squared Error of the Strontium Composition of Observation Point in Target (ppm)</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>Na2O-rich</name>
+<field_number>58</field_number>
+<data_type>ASCII_Integer</data_type>
+<description>Binary yes (1) or no (0) if Observation Point is Enriched in Na2O Compared to Chemical Endmember of Target</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>MgO-rich</name>
+<field_number>59</field_number>
+<data_type>ASCII_Integer</data_type>
+<description>Binary yes (1) or no (0) if Observation Point is Enriched in MgO Compared to Chemical Endmember of Target</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>CaO-rich</name>
+<field_number>60</field_number>
+<data_type>ASCII_Integer</data_type>
+<description>Binary yes (1) or no (0) if Observation Point is Enriched in CaO Compared to Chemical Endmember of Target</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>MnO-rich</name>
+<field_number>61</field_number>
+<data_type>ASCII_Integer</data_type>
+<description>Binary yes (1) or no (0) if Observation Point is Enriched in MnO Compared to Chemical Endmember of Target</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>FeOT-rich</name>
+<field_number>62</field_number>
+<data_type>ASCII_Integer</data_type>
+<description>Binary yes (1) or no (0) if Observation Point is Enriched in FeOT Compared to Chemical Endmember of Target</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>Strongest Enrichment</name>
+<field_number>63</field_number>
+<data_type>ASCII_String</data_type>
+<description>The Type of Strongest Enrichment of Observation Point in Target</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>Chemical Endmember</name>
+<field_number>64</field_number>
+<data_type>ASCII_String</data_type>
+<description>The Chemical Endmember of the Target</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>Notes</name>
+<field_number>65</field_number>
+<data_type>ASCII_String</data_type>
+<description>Additional Notes for Observation Point in Target</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>Vein Composition</name>
+<field_number>66</field_number>
+<data_type>ASCII_String</data_type>
+<description>Additional vein type information for Observation Point in Target</description>
+</Field_Delimited>
+<Field_Delimited>
+<name>B detected</name>
+<field_number>67</field_number>
+<data_type>ASCII_String</data_type>
+<description>Boron peak area or not analyzed if Boron is was detected in LIBS spectrum in Observation Point of Target</description>
+</Field_Delimited>
+</Record_Delimited>
+</Table_Delimited>
+</File_Area_Observational>
+</Product_Observational>

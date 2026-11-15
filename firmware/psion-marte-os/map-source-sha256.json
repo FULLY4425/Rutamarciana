@@ -1,0 +1,10 @@
+{
+  "region": "glen-torridon",
+  "quantization": "nearest centimetre",
+  "maximum_error_m": 0.005000000000109139,
+  "sources": {
+    "assets/glen-torridon/dem.npy": "0e9e0129c7821a1765a0ecbd3d70860027f3d384d2aa74da57f160c38d4f39f2",
+    "assets/glen-torridon/routes.json": "72acd0eacbd44bee351524cdd1fc9b7a86023a20fd722978757bc7753f2a7e3d",
+    "assets/glen-torridon/targets.json": "4b287ceb2ed1b33a8f48c441ad6b77788c95e3a8c698ed11e773452eb8238933"
+  }
+}

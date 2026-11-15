@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "reviewed_on": "2026-11-15",
+  "sources": [
+    {
+      "id": "glen-chemcam",
+      "title": "NASA PDS · Curiosity ChemCam LIBS / Glen Torridon",
+      "url": "https://pds-geosciences.wustl.edu/msl/urn-nasa-pds-msl_gt_diagenesis_supplement/",
+      "region": "Glen Torridon / Gale",
+      "role": "chemistry",
+      "status": "integrated",
+      "description": "Óxidos cuantitativos en wt% y RMSEP de vetas/nódulos, emparejados por nombre y secuencia. Coordenadas del objetivo, no localización independiente del disparo. Datos históricos, sin interpolación fuera de observaciones."
+    },
+    {
+      "id": "mola-global",
+      "title": "NASA PDS · MOLA global",
+      "url": "https://pds-geosciences.wustl.edu/missions/mgs/megdr.html",
+      "region": "Todo Marte",
+      "role": "terrain",
+      "status": "integrated",
+      "description": "MGS MOLA MEGDR, 16 píxeles/grado (~3.7 km en el ecuador), con bins interpolados por el productor. Atlas y ventanas regionales locales de 400 km. No es un mapa de obstáculos EVA."
+    },
+    {
+      "id": "usgs-jezero",
+      "title": "USGS · HiRISE DTM de Jezero",
+      "url": "https://astrogeology.usgs.gov/search/map/mars_2020_terrain_relative_navigation_hirise_dtm_mosaic",
+      "region": "Jezero / Marte",
+      "role": "terrain",
+      "status": "integrated",
+      "description": "Recorte real del DEM HiRISE de 1 m, promediado a celdas de 4 m para planificar rutas. DOI 10.5066/P9REJ9JN."
+    },
+    {
+      "id": "mars-trek",
+      "title": "NASA Mars Trek · Atlas de Marte",
+      "url": "https://trek.nasa.gov/mars/",
+      "region": "Marte global",
+      "role": "context",
+      "status": "reference",
+      "description": "Atlas y catálogo WMTS oficial para explorar otras regiones. Sus imágenes de relieve sombreado no se interpretan como alturas del DEM local.",
+      "service_documentation": "https://trek.nasa.gov/tiles/apidoc/trekAPI.html?body=mars"
+    },
+    {
+      "id": "usgs-maps",
+      "title": "USGS · Mapas interactivos de Marte",
+      "url": "https://astrogeology-usgs.hub.arcgis.com/pages/interactive-maps-mars",
+      "region": "Marte",
+      "role": "catalog",
+      "status": "reference",
+      "description": "Catálogo de mapas planetarios para localizar productos y consultar su proyección, cobertura y resolución."
+    },
+    {
+      "id": "perseverance",
+      "title": "NASA · Imágenes de Perseverance",
+      "url": "https://mars.nasa.gov/mars2020/multimedia/raw-images/",
+      "region": "Jezero / Marte",
+      "role": "surface_images",
+      "status": "reference",
+      "description": "Archivo de imágenes reales del rover. Se consulta como contexto; una fotografía individual no es una textura georreferenciada ni un panorama navegable de cualquier punto."
+    },
+    {
+      "id": "mount-sharp",
+      "title": "NASA · Ruta propuesta de Curiosity",
+      "url": "https://science.nasa.gov/resource/curiositys-proposed-path-up-mount-sharp/",
+      "region": "Mount Sharp / Gale, Marte",
+      "role": "other_region",
+      "status": "reference",
+      "description": "Referencia de presentación de rutas y geología. Corresponde a otra región: no se superpone a Jezero ni se utiliza para calcular sus recorridos."
+    },
+    {
+      "id": "worldview",
+      "title": "NASA Worldview · Observación de la Tierra",
+      "url": "https://worldview.earthdata.nasa.gov/",
+      "region": "Tierra",
+      "role": "not_applicable",
+      "status": "excluded",
+      "description": "Portal de observación terrestre. No aporta elevaciones, clima o imágenes de Marte a este proyecto."
+    }
+  ]
+}

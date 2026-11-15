@@ -1,0 +1,69 @@
+# Cambios implementados y verificación
+
+Registro funcional hasta el **15 de noviembre de 2026**. No es un roadmap ni una afirmación de que se hayan probado físicamente todas las funciones del firmware heredado. [Índice](../README.md).
+
+| Etapa | Resultado actual |
+| --- | --- |
+| Servidor local | Lanzador `python iniciar.py`, entorno aislado y datos preparados en el ZIP descargado de GitHub |
+| Jezero real | Recorte DEM/ortofoto HiRISE, procedencia y comprobaciones de compatibilidad espacial |
+| Planificación | FAST/SAFE dirigidos, ciencia ordenada, regreso independiente, presupuesto por analogía lunar y retorno contingente |
+| Interfaz y visor | Mapa 2D/3D, capas, detalle visual, perfil, navegación de cámara y reconstrucción de superficie |
+| Seguimiento | Dos astronautas, reproducción, avance manual, cámara de seguimiento, instrucciones y voces españolas configurables |
+| Marte global | MOLA incluido, atlas, selección de cualquier coordenada y ventanas regionales aisladas |
+| Glen Torridon | Importación oficial HiRISE/PDS y 718 registros ChemCam con clasificación, sol y formación |
+| Edición de misión | Puntos propios guardados por región, combinación con ciencia, 2–20 puntos totales y pendiente 5°–40° |
+| Entorno hipotético | Polvo, restricciones, desvío, recálculo desde posición actual y conservación del hogar |
+| Exportación | JSON de rutas, puntos, métricas, proyección, supuestos y fuentes |
+| Hosting | Servicio Python en Render con HTTPS, datos incluidos y arranque Waitress |
+| Guía de bolsillo | Vista Reloj / celular con GPS terrestre explícitamente vinculado a Marte, entrenamiento 1:1 |
+| Enlace embebido | Sesiones privadas temporales, guía ASCII y receptor HTTPS ESP32, conservando la bitácora suministrada |
+| TFT 320×240 | Renderer horizontal dedicado, flechas grandes, fuente de distancia de 24 píxeles y texto acotado |
+| Reloj Mars OS | Sistema alternativo de dos ST7789, mapa local Glen Torridon, guía privada, códigos públicos y relay opcional |
+| Organización de la página | Once categorías laterales y vista ampliada; en escritorio el marco termina al pie del mapa |
+| Documentación integral | README reorganizado, especificaciones, arquitectura, API, datos, hardware y límites contrastados con código |
+
+## Estado y última verificación funcional registrada
+
+La interfaz actual mantiene las tres columnas y el límite inferior del mapa. Agrupa todas las herramientas laterales en once pestañas y amplía las categorías extensas sin duplicar ni perder los formularios. La guía móvil incorpora acciones de salida/destino/parada/exclusión y gestos de dos dedos.
+
+Se añade el firmware independiente Mars OS, con dos ST7789, DEM local generado desde los datos de este repositorio, guía privada HTTPS compartida y buzón público de misiones. Se conserva la variante Space Apps/ROVER.
+
+- **198 pruebas Python aprobadas, 2 omitidas; 34 JavaScript aprobadas** en la última revisión funcional anterior a esta actualización de documentación.
+- Chromium: flujo táctil con cálculo Python real, cinco tamaños de pantalla, las once pestañas, límite inferior del mapa, ausencia de herramientas debajo, formulario conservado al ampliar, FAST/SAFE completos y Escape.
+- Relay real con Chromium: plan, escenarios, buzón y cuatro imágenes RGB565 320×190 con contenido visible.
+- Compilación Space Apps/ROVER: **1,992,078 B flash y 94,516 B RAM estática**.
+- Compilación Mars OS: **1,301,595 B flash y 71,540 B RAM estática**. Ambas con core ESP32 3.3.12 y partición `no_ota`.
+- Render: recursos de la interfaz y nuevo agrupado contrastados con los archivos probados; la actualización documental no modifica esos recursos ni requiere un despliegue.
+
+El [manual completo](MANUAL_WEB.md), la [referencia de 89 controles](CONTROLES_WEB.md), la [guía de problemas](SOLUCION_DE_PROBLEMAS.md) y el [índice](README.md) documentan la página actual. Se comprobaron los controles y enlaces contra el código. No se repitieron compilaciones ni se flasheó hardware por editar documentos.
+
+Las cifras que siguen pertenecen a etapas históricas concretas; no se suman entre sí como si fueran pruebas independientes.
+
+## Verificación histórica de la adaptación TFT
+
+- Suite completa de software previa a la adaptación TFT: **166 pruebas Python aprobadas, 2 omitidas y 27 comprobaciones JavaScript aprobadas**.
+- Adaptación TFT: nueva prueba de límites/texto con ASan/UBSan y comprobaciones focalizadas de parser/API/preservación de firmware: **15 pruebas Python aprobadas**. No sumar 15 a 166 como si fueran pruebas independientes; hay pruebas repetidas entre ejecuciones.
+- Firmware completo, ESP32 core 3.3.12, partición `no_ota`: **1,980,518 bytes de flash (94%)**, **93,692 bytes de RAM estática (28%)**. La memoria dinámica de TLS, tareas y aplicaciones se añade en ejecución.
+- Verificación HTTP pública: vista de bolsillo y script de navegación disponibles, credenciales separadas, publicación/lectura y revocación de sesión, paquete de 16 líneas. Se observó transferencia chunked y se adaptó el receptor acotado, con recompilación correcta.
+- Integración en host: resultado de ruta Python → mensaje autenticado → paquete real → parser C++ y campos EVA.
+- Forest y los núcleos de bitácora/EVA/contrato preservan sus hashes. El sketch principal incorporó después los enganches de ROVER.
+
+Estos resultados son evidencia de desarrollo, no una garantía permanente para cualquier entorno. Comandos reproducibles en el [README](../README.md#desarrollo-y-comprobaciones) y en la [guía ESP](NAVEGADOR_ESP32.md).
+
+## Pendiente de prueba física
+
+Precisión GPS y orientación escogida en un celular real, permisos/voz de cada navegador, conexión TLS desde la placa, TFT/OLED, manejo del encoder, consumo/temperatura/batería y comportamiento de todas las aplicaciones heredadas. No se ha flasheado una placa en estas verificaciones. Tampoco se ha certificado seguridad EVA, rescate o tránsito terrestre.
+
+## Documentos históricos
+
+`reference/` conserva propuestas de diseño anteriores. Las secciones históricas de `eva_budget_lunar_analog.md` registran una etapa previa de backend y no describen todos los cambios posteriores de UI/datos/hosting. Para capacidades actuales usar [especificaciones](ESPECIFICACIONES.md), [API](API.md) y [guía ESP](NAVEGADOR_ESP32.md). La documentación no convierte propuestas de los anexos en instrucciones para eliminar aplicaciones o cambiar hardware.
+
+## Revisión del reto científico
+
+La [auditoría completa](AUDITORIA_RETO_NASA.md) distingue objetivos centrales y propuestas opcionales del texto proporcionado. Se añadieron química PDS cuantitativa, combinación de tres clases de datos en Glen, objetivo/hipótesis, equipo/factor de movilidad, exclusiones manuales y cuaderno web. **177 pruebas Python aprobadas (2 omitidas) y 29 comprobaciones JavaScript aprobadas**, incluidos emparejamiento/hashes, factor de marcha sin penalización inventada por kg, ausencia de interpolación química y persistencia por región. No se cambió el firmware del ESP ni se añadió meteorología/radiación observada o panoramas fotográficos reales.
+
+## Integración del módulo 3 suministrado
+
+Se añadió la app ROVER del ZIP v2, con ortofoto Jezero en 64 mosaicos LittleFS, núcleo/contrato POV, panel y tarjetas. Se corrigieron stride de filas parciales, clipping del visor y buffers de texto, conservando la guía TFT, bitácora y presupuesto actuales. Compilación integrada: **1,992,078 B flash, 94,516 B RAM estática**; 27/27 pruebas EVA, 40/40 bitácora y 109/109 POV de la entrega aprobadas. Imagen LittleFS construida y mosaicos recompuestos sin alterar el PNG/JSON original. No hay transferencia automática de geometría web ni rover físico. [Detalles](MODULO_ROVER_ESP32.md).
+
+Validación del árbol integrado tras el módulo ROVER: **183 pruebas Python aprobadas (2 omitidas) y 29 comprobaciones JavaScript aprobadas**. La comprobación nativa adicional cubre lectura por filas, bordes de 52 píxeles, ausencia de archivos, recorte del viewport y textos largos. No se ha probado ni flasheado una placa física.
