@@ -2,6 +2,7 @@ const cvs = document.getElementById("map");
 const ctx = cvs.getContext("2d");
 const cards = document.getElementById("cards");
 const hint = document.getElementById("hint");
+const mockflag = document.getElementById("mockflag");
 
 const bg = new Image();
 bg.src = "/preview.png";
@@ -40,10 +41,10 @@ function legPath(p, legStart) {
   return `${from} → ${to}`;
 }
 
-function legCard(leg, label) {
+function legCard(leg, label, extraCls) {
   if (!leg) return "";
   return `
-    <div class="leg">
+    <div class="leg ${extraCls || ""}">
       <div class="leg-t">${label}</div>
       <div class="kv">${fmtMin(leg.time_s)} min · ${fmtKm(leg.distance_m)} km ·
         slope ≤ ${leg.slope_max_deg === null || leg.slope_max_deg === undefined ? "—" : leg.slope_max_deg.toFixed(1)}°</div>
@@ -64,16 +65,27 @@ function contingencyLine(b) {
   return `<div class="kv cont ${cls}">${verdict} · worst stop ${fmtKm(worstD)} km / ${fmtMin(worstT)} min${c.status === "not_verified" && !bad ? " (model check, not field-verified)" : ""}</div>`;
 }
 
-function budgetLine(b) {
-  return `
-    <div class="kv">ida ${fmtMin(b.outbound_travel_s)} + science ${fmtMin(b.science_total_s)}
-      (${b.science_stops} stops) + regreso ${fmtMin(b.return_travel_s)} + overhead ${fmtMin(b.overhead_s)}
-      = <b>${fmtMin(b.operational_s)} min</b> · reserve ${fmtMin(b.reserve_fixed_s)} min held apart</div>`;
+// Budget breakdown: outbound + science + return + overhead = operational;
+// reserve shown apart.
+function budgetBreakdown(b) {
+  if (!b || b.operational_s === undefined || b.operational_s === null) return "";
+  const row = (label, s, cls) =>
+    `<div class="brow ${cls || ""}"><span class="bl">${label}</span><i></i><span class="bv">${fmtMin(s)} min</span></div>`;
+  let html = "";
+  html += row("ida · outbound", b.outbound_travel_s ?? 0);
+  html += row(`science · ${b.science_stops ?? 0} stop${(b.science_stops ?? 0) === 1 ? "" : "s"}`, b.science_total_s ?? 0);
+  html += row("regreso · return", b.return_travel_s ?? 0);
+  html += row("overhead", b.overhead_s ?? 0);
+  html += row("operational", b.operational_s, "brow-total");
+  if (b.reserve_fixed_s !== undefined && b.reserve_fixed_s !== null) {
+    html += row("reserve · held apart", b.reserve_fixed_s, "brow-res");
+  }
+  return `<div class="budget">${html}</div>`;
 }
 
 function stopList() {
   if (!state.stops.length) return "";
-  return `<div class="kv">stops in order: ${state.stops
+  return `<div class="kv stops-line">stops in order: ${state.stops
     .map((s, i) => `S${i + 1}(${s[0]},${s[1]})`)
     .join(" → ")}</div>`;
 }
@@ -106,36 +118,42 @@ function renderCards() {
           }).join("")
         : "";
       const el = document.createElement("div");
-      el.className = "card";
+      el.className = `card card--${name}`;
       el.innerHTML = `
-        <h2>${name === "safe" ? "SAFE ROUTE" : "FAST ROUTE"}</h2>
+        <div class="card-top">
+          <h2>${name === "safe" ? "SAFE ROUTE" : "FAST ROUTE"}</h2>
+          <span class="status ${statusCls}">${STATUS_LABEL[status] || status}</span>
+        </div>
         <div class="big">${fmtMin(r.total_s)} min <span class="of">of ${fmtMin(state.budgetMin * 60)} budget</span></div>
-        <div class="kv">route ${fmtKm(r.distance_m)} km${direct !== null ? ` · straight A–B ${fmtKm(direct)} km (flat)` : ""} ·
+        <div class="kv">route <b>${fmtKm(r.distance_m)} km</b>${direct !== null ? ` · straight A–B <b>${fmtKm(direct)} km</b> (flat)` : ""} ·
           roughness ${r.rough_mean === null || r.rough_mean === undefined ? "—" : r.rough_mean.toFixed(2)} ·
           dose ${r.dose_msv === null || r.dose_msv === undefined ? "—" : r.dose_msv.toFixed(3)} mSv</div>
         ${stopList()}
         <div class="legs">
           ${legHtml || legCard(r.outbound, "IDA (outbound)")}
-          ${legCard(r.return, "REGRESO (return)")}
+          ${legCard(r.return, "REGRESO (return)", "leg--return")}
         </div>
-        ${budgetLine(b)}
+        ${budgetBreakdown(b)}
         ${contingencyLine(b)}
         <div class="verdict ${statusCls}">
-          ${STATUS_LABEL[status] || status} · slack ${fmtMin(b.slack_s || 0)} min
-          (limiting: ${(b.limiting_terms || []).join(", ") || "—"})
+          <span class="v-main">${STATUS_LABEL[status] || status}</span>
+          <span class="v-sub">slack ${fmtMin(b.slack_s || 0)} min · limiting: ${(b.limiting_terms || []).join(", ") || "—"}</span>
         </div>`;
       cards.appendChild(el);
     }
   }
 
   const reco = document.getElementById("reco");
-  if (!state.data) { reco.textContent = "—"; return; }
+  if (!state.data) { reco.textContent = "—"; reco.removeAttribute("data-state"); return; }
   if (!fits.length) {
     reco.textContent = "NO ROUTE FITS under scenario assumptions — do not leave the habitat";
+    reco.dataset.state = "nogo";
   } else if (fits.length === 2) {
     reco.textContent = "BOTH FIT — take the SAFE route";
+    reco.dataset.state = "go";
   } else {
     reco.textContent = "ONLY THE " + fits[0].toUpperCase() + " ROUTE FITS";
+    reco.dataset.state = "mid";
   }
 }
 
@@ -147,12 +165,22 @@ function g2c(pt) {
   ];
 }
 
+// small legible tag with a dark plate so labels read over the orthofoto
+function tag(text, x, y, color) {
+  ctx.font = "bold 11px ui-monospace, Menlo, monospace";
+  const w = ctx.measureText(text).width;
+  ctx.fillStyle = "rgba(8, 10, 11, 0.85)";
+  ctx.fillRect(x - 2, y - 12, w + 6, 15);
+  ctx.fillStyle = color;
+  ctx.fillText(text, x + 1, y);
+}
+
 function draw() {
   ctx.clearRect(0, 0, cvs.width, cvs.height);
   if (bg.complete && bg.naturalWidth) {
     ctx.drawImage(bg, 0, 0, cvs.width, cvs.height);
   } else {
-    ctx.fillStyle = "#0b1018";
+    ctx.fillStyle = "#0b0d0e";
     ctx.fillRect(0, 0, cvs.width, cvs.height);
   }
 
@@ -160,9 +188,20 @@ function draw() {
     for (const [name, color] of [["fast", "#f08a3c"], ["safe", "#f2c14e"]]) {
       const route = state.data[name];
       if (!route || !route.points || route.points.length < 2) continue;
+      const dash = name === "fast" ? [10, 8] : [];
+      // dark under-stroke so the line reads over the rust orthofoto
+      ctx.strokeStyle = "rgba(7, 9, 9, 0.7)";
+      ctx.lineWidth = name === "safe" ? 6 : 5;
+      ctx.setLineDash(dash);
+      ctx.beginPath();
+      route.points.forEach((p, i) => {
+        const [x, y] = g2c(p);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
       ctx.strokeStyle = color;
-      ctx.lineWidth = name === "safe" ? 3 : 2;
-      ctx.setLineDash(name === "fast" ? [10, 8] : []);
+      ctx.lineWidth = name === "safe" ? 3 : 3;
       ctx.beginPath();
       route.points.forEach((p, i) => {
         const [x, y] = g2c(p);
@@ -177,27 +216,29 @@ function draw() {
   state.stops.forEach((pt, i) => {
     const [x, y] = g2c(pt);
     ctx.beginPath();
-    ctx.arc(x, y, 8, 0, Math.PI * 2);
-    ctx.fillStyle = "#314fe8";
+    ctx.arc(x, y, 7, 0, Math.PI * 2);
+    ctx.fillStyle = "#56d4c8";
     ctx.fill();
-    ctx.strokeStyle = "#05070b";
+    ctx.strokeStyle = "#070909";
     ctx.lineWidth = 2;
     ctx.stroke();
-    ctx.fillStyle = "#e8eef7";
-    ctx.font = "bold 11px ui-monospace, monospace";
-    ctx.fillText("S" + (i + 1), x + 10, y - 8);
+    tag("S" + (i + 1), x + 10, y - 8, "#8fe6dd");
   });
 
-  for (const [pt, color] of [[state.start, "#4bcc31"], [state.end, "#cc314b"]]) {
+  for (const [pt, color, label] of [
+    [state.start, "#5fd48a", "A"],
+    [state.end, "#e5606f", "B"],
+  ]) {
     if (!pt) continue;
     const [x, y] = g2c(pt);
     ctx.beginPath();
-    ctx.arc(x, y, 9, 0, Math.PI * 2);
+    ctx.arc(x, y, 8, 0, Math.PI * 2);
     ctx.fillStyle = color;
     ctx.fill();
-    ctx.strokeStyle = "#05070b";
+    ctx.strokeStyle = "#070909";
     ctx.lineWidth = 2;
     ctx.stroke();
+    tag(label, x + 11, y - 9, color);
   }
 }
 
@@ -237,6 +278,7 @@ async function compute() {
     if (json.cell_m) state.cellM = json.cell_m;
     if (json.cell_x_m) state.cellXM = json.cell_x_m;
     state.data = json;
+    mockflag.hidden = true;
     hint.textContent = "Routes computed. Orange = fast, yellow = safe. Verdict = scenario feasibility, not NASA GO/NO-GO.";
   } catch (err) {
     // Mock fallback keeps the page usable, but the labels say so loudly.
@@ -244,6 +286,7 @@ async function compute() {
     const mock = await fetch("/mock_routes.json").then(r => r.json());
     const m = mock.routes || {};
     state.data = { safe: m.safe, fast: m.fast, mock: true };
+    mockflag.hidden = false;
     hint.textContent = "⚠ Server route failed — showing PRECOMPUTED routes, not a live calculation.";
   }
   draw();
@@ -267,6 +310,7 @@ cvs.addEventListener("click", (ev) => {
   }
   state.data = null;
   cards.innerHTML = "";
+  mockflag.hidden = true;
   hint.textContent = nextHint();
   draw();
 });
@@ -279,6 +323,7 @@ document.getElementById("reset").addEventListener("click", () => {
   state.stops = [];
   state.data = null;
   cards.innerHTML = "";
+  mockflag.hidden = true;
   hint.textContent = nextHint();
   draw();
 });
@@ -299,6 +344,7 @@ document.getElementById("nstops").addEventListener("change", (e) => {
   if (state.nStops === 0) state.stops = [];
   state.data = null;
   cards.innerHTML = "";
+  mockflag.hidden = true;
   hint.textContent = nextHint();
   draw();
 });
