@@ -4,6 +4,24 @@ Explorador de **todo Marte** con globo MOLA, mapas 2D/3D, recortes HiRISE, plani
 
 **Aplicación:** [rutamarciana.onrender.com](https://rutamarciana.onrender.com). **Rama principal:** `main` en `FULLY4425/Rutamarciana`. Para descargar el proyecto completo, selecciona `main` y usa **Code → Download ZIP**.
 
+El **hub** (portada con hora Tierra/Marte y módulos Mapa+EVA, Bitácora por tags y Rover) se está implementando en un clon paralelo. Esta rama documental fija su contrato y verifica el código base: [Hub Ruta Marciana](docs/HUB_RUTA_MARCIANA.md), [Tiempo marciano](docs/TIEMPO_MARCIANO.md), [Trazabilidad](docs/REQUISITOS_TRAZABILIDAD.md) y [límites/licencias](docs/OPERACION_LIMITES_LICENCIAS.md). No se afirma que la integración del hub esté terminada.
+
+## Qué es y qué queda como dirección futura
+
+> **Micor Field / Martian OS is a simulation built on real NASA data. Future direction: adapt the NASA-data mission simulation for low-power ESP32-class hardware and LoRa-connected field nodes.**
+
+Esa frase es la posición de producto: lo primero está verificado; lo segundo es **future roadmap** (hoja de ruta futura), no una adaptación en curso. Estas son sus partes por separado, sin ampliarlas:
+
+| Capa | Estado en este repositorio | Dónde se comprueba |
+| --- | --- | --- |
+| **Datos NASA reales** | Verificado: DEM de Jezero (Mars 2020 Terrain Relative Navigation HiRISE DTM Mosaic, USGS), Glen Torridon (DEM ~12.14 m/celda, 718 registros PDS ChemCam, 878 observaciones de 320 objetivos y nueve óxidos) y contexto global MOLA a 16 píxeles/grado | [Datos y fuentes](docs/DATOS_Y_FUENTES.md), `assets/` |
+| **Simulación** | Verificado: el relieve 3D se reconstruye del DEM (no son panoramas), las rutas y el presupuesto EVA son cálculo educativo, y el rover y la bitácora son simulados. No hay telemetría, dosimetría ni predicción certificada | [Especificaciones](docs/ESPECIFICACIONES.md), [Auditoría del reto](docs/AUDITORIA_RETO_NASA.md) |
+| **Hub web** | En implementación en un clon paralelo. Esta rama documental fija su contrato y **no declara la integración terminada** | [Hub Ruta Marciana](docs/HUB_RUTA_MARCIANA.md) |
+| **Firmware ESP32 existente (base)** | Existe y compila: dos firmwares para ESP32-WROOM-32 con TFT ST7789 320×240 y segunda pantalla 240×240, que enlazan por **Wi-Fi/HTTPS**. Es la base de software/hardware existente; no integra esta simulación web y no se ha flasheado una placa física. El bajo consumo no está medido | `firmware/*/README.md`, [Mars OS](docs/RELOJ_MARS_OS.md) |
+| **LoRa y topología de nodos** | **No implementado.** No hay librería de radio, banda, potencia, topología de nodos, enrutamiento ni medición de consumo en el repositorio. Es **future roadmap**, no una capacidad actual | `grep -ri lora firmware/` sin resultados |
+
+La adaptación de **esta** simulación web basada en datos NASA a microcontroladores ESP32 de bajo consumo y a nodos LoRa es **future roadmap**: no está en curso ni implementada en el repositorio. No se afirma consumo medido, alcance de radio, número de nodos conectados ni hardware probado, porque no existe esa medición.
+
 ## Página y servidor en Render
 
 **Abre la aplicación aquí: [https://rutamarciana.onrender.com](https://rutamarciana.onrender.com).**

@@ -10,6 +10,9 @@ def test_render_entrypoint_loads_real_bundle_and_serves_assets(monkeypatch):
     assert client.get('/api/routes').json['site'] == 'jez_dtm_1m'
     assert client.get('/').status_code == 200
     assert client.get('/streetview.js').status_code == 200
+    hub = client.get('/hub.js')
+    assert hub.status_code == 200
+    assert 'marsClock' in hub.text
 
 
 def test_render_startup_refuses_to_generate_missing_terrain(monkeypatch, tmp_path):
