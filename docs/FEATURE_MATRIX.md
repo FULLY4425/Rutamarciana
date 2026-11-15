@@ -2,6 +2,8 @@
 
 | Función | Implementación y alcance |
 | --- | --- |
+| Hub / portada | Portada con hora Tierra y hora marciana aproximada (`MSD`, `MST`, `LMST`) y selector de tres módulos. Contrato en [Hub](HUB_RUTA_MARCIANA.md); implementación en clon paralelo, **pendiente de verificación** en esta rama. |
+| Bitácora por tags (hub) | Módulo local-first previsto: entradas etiquetadas, filtro y exportación; sin sincronización automática ni telemetría. Base existente: notas web en `localStorage` (máx. 100) y bitácora LittleFS del ESP32. **Pendiente de verificación** en el hub. |
 | Espacio de trabajo | Tres columnas en escritorio hasta el pie del mapa, once pestañas laterales y vista Ampliar sección para contenido extenso, conservando campos y valores. [Manual completo](MANUAL_WEB.md). |
 | Mapa 2D y terreno 3D | Ortofoto HiRISE real en escala de grises sobre el DEM compatible. Zoom, giro, inclinación, desplazamiento con Mayús/arrastre y flechas. |
 | Globo de Marte | MOLA global y selección de regiones. Acceso directo a Jezero (DEM de 4 m) y Glen Torridon (DEM muestreado a ~12.14 m). Fuera de estos recortes se usa MOLA de ~3.7 km nativos; no hay fotografía HiRISE global. |

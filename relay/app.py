@@ -80,6 +80,10 @@ def create_app(data_dir: str):
     def app_js():
         return send_from_directory(WEB, "app.js")
 
+    @app.get("/hub.js")
+    def hub_js():
+        return send_from_directory(WEB, "hub.js")
+
     @app.get("/style.css")
     def style_css():
         return send_from_directory(WEB, "style.css")

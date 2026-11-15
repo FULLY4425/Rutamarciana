@@ -2,6 +2,8 @@
 
 Revisión del **15 de noviembre de 2026** contra el [texto proporcionado por el usuario](../reference/MARSWALK_CHALLENGE_2026.txt). Se conserva para trazabilidad; no se afirma que NASA haya evaluado o aprobado esta implementación. SHA-256 del texto: `71449d3c2e29be6002f06d4b5230e18d127587ec3da5e8c39c8de213629b446b`.
 
+La tabla requisito→componente, la distinción frente a normas formales de NASA (incluido NASA-STD-3001, sin declaración de cumplimiento) y las fuentes primarias con URL y fecha están en [REQUISITOS_TRAZABILIDAD.md](REQUISITOS_TRAZABILIDAD.md). El hub se documenta en [HUB_RUTA_MARCIANA.md](HUB_RUTA_MARCIANA.md); su integración no se verificó en este árbol.
+
 El texto distingue un objetivo central de propuestas introducidas por «might», «may consider» y «may (but are not required to)». La revisión conserva esa distinción. No convierte una sugerencia de radiación, rover, boxwork o HUD en un requisito obligatorio, ni presenta una simulación como validación de seguridad.
 
 ## Resultado de la revisión

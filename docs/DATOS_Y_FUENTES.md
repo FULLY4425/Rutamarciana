@@ -47,8 +47,12 @@ El servidor genera ventanas esféricas azimutales equidistantes de 81×81 celdas
 | [Curiosity y Mount Sharp](https://science.nasa.gov/resource/curiositys-proposed-path-up-mount-sharp/) | Contexto de Gale/Curiosity; no se aplica como ruta de Jezero |
 | [NASA Worldview](https://worldview.earthdata.nasa.gov/) | Referencia terrestre; excluida como DEM o textura de Marte |
 | [Imágenes de Perseverance](https://mars.nasa.gov/mars2020/multimedia/raw-images/) | Archivo real de misión; no se convirtió en panoramas Street View ni en telemetría en vivo |
+| [NASA GISS Mars24](https://www.giss.nasa.gov/tools/mars24/) | Referencia del cálculo de tiempo marciano (`MSD`, `MST`, `LMST`); el hub no consulta la herramienta en vivo. [Detalle](TIEMPO_MARCIANO.md) |
+| [NASA Space Apps 2026 · Martian Map](https://www.spaceappschallenge.org/2026/challenges/interplanetary-survival-guide-martian-map/) | Texto del reto; no es una norma NASA ni una aprobación. [Trazabilidad](REQUISITOS_TRAZABILIDAD.md) |
+| [NASA Images and Media Guidelines](https://www.nasa.gov/nasa-brand-center/images-and-media/) | Condiciones de uso y atribución de contenido NASA. [Licencias](OPERACION_LIMITES_LICENCIAS.md#8-licencias-y-créditos) |
+| [NASA-STD-3001 Vol. 1](https://standards.nasa.gov/standard/NASA/NASA-STD-3001_VOL_1) | Norma de salud de tripulación citada solo como contexto; **no se declara cumplimiento**. |
 
-Los datos preparados y sus metadatos son la fuente de la aplicación; enlazar estos portales no implica sincronización permanente con todos ellos.
+Las fuentes de la tabla se consultaron el **15 de noviembre de 2026**; los productos PDS/USGS/HiRISE conservan sus propias fechas, hashes y condiciones. Enlazar un portal no implica sincronización permanente.
 
 ## Reproducir los paquetes
 

@@ -4,6 +4,34 @@
 
 Actualizado el **15 de noviembre de 2026**, con la interfaz de pestañas laterales y los dos firmwares ESP32. Los manuales describen funciones implementadas; las observaciones científicas, los escenarios educativos y las funciones pendientes de prueba física se distinguen en cada documento.
 
+## Marco del producto
+
+**Micor Field / Martian OS is a simulation built on real NASA data. Future direction: adapt the NASA-data mission simulation for low-power ESP32-class hardware and LoRa-connected field nodes.**
+
+La segunda oración es **future roadmap** (hoja de ruta futura): no describe una adaptación en curso ni implementada.
+
+| Parte de la frase | Estado | Documento |
+| --- | --- | --- |
+| Simulación | Verificado: relieve reconstruido del DEM, rutas y EVA educativos, rover simulado | [Especificaciones](ESPECIFICACIONES.md) |
+| Datos NASA reales | Verificado: Jezero, Glen Torridon, MOLA, con DOI y hashes | [Datos y fuentes](DATOS_Y_FUENTES.md) |
+| Firmware ESP32 existente (base) | Compilado para ESP32-WROOM-32 con enlace Wi-Fi; no integra esta simulación web, sin placa flasheada y sin consumo medido | [Mars OS](RELOJ_MARS_OS.md), [Celular y ESP32](NAVEGADOR_ESP32.md) |
+| LoRa / nodos | No implementado; **future roadmap** | [Requisitos y trazabilidad](REQUISITOS_TRAZABILIDAD.md#4-hoja-de-ruta-futura-hardware-de-bajo-consumo-edge) |
+
+## Hub, reloj Tierra/Marte y módulos
+
+La portada/hub se está implementando en un clon paralelo; este clon documental permanece en el commit base `13ee095`. Los documentos siguientes fijan el contrato y verifican lo que existe en el código base, sin afirmar una integración que no se haya leído.
+
+| Documento | Para qué sirve |
+| --- | --- |
+| [Hub Ruta Marciana](HUB_RUTA_MARCIANA.md) | Portada, reloj, selector de módulos (Mapa+EVA, Bitácora por tags, Rover), estados y criterios de aceptación. |
+| [Tiempo marciano](TIEMPO_MARCIANO.md) | Definiciones, ecuaciones Mars24, ejemplo validado, supuestos y límites del reloj. |
+| [Requisitos y trazabilidad](REQUISITOS_TRAZABILIDAD.md) | Reto NASA Space Apps frente a normas formales NASA; fuentes primarias con URL y fecha. |
+| [Operación, límites y licencias](OPERACION_LIMITES_LICENCIAS.md) | Supuestos EVA, bitácora/rover, riesgos, modo offline, permisos, datos personales y créditos. |
+| [Validación documental](VALIDACION_DOCUMENTACION.md) | Qué se comprobó, con qué comandos, y qué queda pendiente. |
+
+Los módulos 2 y 3 no están verificados en el hub. La bitácora web existente es local (`localStorage`) y el endpoint legado no autentica ni lista; el rover es una simulación en ESP32, no telemetría.
+
+
 ## Usar la página
 
 | Documento | Para qué sirve |

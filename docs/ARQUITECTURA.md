@@ -115,6 +115,12 @@ En escritorio, `ResizeObserver` toma la altura real del mapa y las columnas no c
 
 Los enlaces a secciones activan su pestaña. El acceso a resultados desde el cálculo puede abrirlos ampliados; un modo de marcado vuelve al mapa y cierra la vista ampliada. Las pestañas usan roles accesibles, selección con flechas/Inicio/Fin y el diálogo admite cierre con Escape. El agrupado no recalcula ni modifica el presupuesto por sí mismo. [Manual](MANUAL_WEB.md), [inventario de controles](CONTROLES_WEB.md).
 
+## Capa hub y reloj marciano
+
+La portada del hub es una capa de entrada, no una segunda aplicación. Debe conservar `web/index.html` y sus controladores como módulo Mapa + EVA, añadir un selector de módulos y mostrar hora Tierra/Marte. El reloj se calcula en el cliente a partir de UTC y de la longitud de la localidad; no requiere endpoint nuevo ni telemetría. Contrato: [Hub](HUB_RUTA_MARCIANA.md) y [Tiempo marciano](TIEMPO_MARCIANO.md).
+
+Módulos 2 y 3: la bitácora por tags debe ser local-first (no hay API web autenticada ni listado); el rover es una simulación ESP32 y no un canal de telemetría. La implementación del hub se realiza en un clon separado y **no se verificó en este árbol**.
+
 ## Criterios de diseño
 
 Se aplican responsabilidades separadas, contratos pequeños y reutilización de rutas/escenarios entre vistas: SOLID, DRY, KISS y YAGNI como criterios de mantenimiento, no como certificación automática. La interfaz actual usa módulos JavaScript y algunos globales compartidos; no es una arquitectura de clases totalmente desacoplada. Mantener los cambios en el componente correspondiente y evitar abstracciones sin un uso concreto.
@@ -140,3 +146,19 @@ Para cambios solo de documentación basta contrastar código, enlaces y ejemplos
 `relay/psion.py` normaliza 2–10 puntos de Glen Torridon y delega el cálculo en la misma función de servicio de `/api/route`. El buzón devuelve métricas de ida FAST y CRC de celdas, sin afirmar igualdad con el A* del reloj. Los códigos públicos se separan de los tokens privados de guía.
 
 `web/psion.js` expone `window.ojoDeMarte` para el relay suministrado, adaptado al proyecto. La PC conserva páginas separadas para el plan y la captura, sincroniza puntos/restricciones/escenarios y convierte PNG a RGB565. No se ejecuta Chromium como parte del servidor Render. Los datos del reloj se generan mediante `extras/make_marte_data.py` y registran hashes del DEM, manifiesto y objetivos del repositorio. [Operación y límites](RELOJ_MARS_OS.md).
+
+## Destinos de ejecución: web, firmware ESP32 existente y LoRa como roadmap futuro
+
+**Micor Field / Martian OS is a simulation built on real NASA data. Future direction: adapt the NASA-data mission simulation for low-power ESP32-class hardware and LoRa-connected field nodes.**
+
+La segunda oración es **future roadmap** (hoja de ruta futura): no hay adaptación en curso. La arquitectura actual tiene dos destinos reales y uno declarado como roadmap no implementado:
+
+| Destino | Transporte | Estado | Qué implica en el código |
+| --- | --- | --- | --- |
+| Servidor web (Render/local) | HTTPS del navegador | Desplegado | Flask + Waitress, planificador Python, assets NASA preparados |
+| Firmware ESP32-WROOM-32 (Space Apps y Mars OS) | **Wi-Fi + HTTPS** (`WiFiClientSecure`, `HTTPClient`) con sesión privada en RAM y buzón público | Base existente: compilado; **sin placa física flasheada**; no integra esta simulación web | `firmware/psion-micor-spaceapps/`, `firmware/psion-marte-os/`; TFT ST7789 320×240 y segunda pantalla 240×240; LittleFS para mapa y mosaicos |
+| Nodo LoRa / malla de bajo consumo | **No definido** | **No implementado** | No hay driver de radio, banda, potencia, formato de trama, enrutamiento ni presupuesto energético |
+
+Consecuencias de diseño que sí están tomadas: el firmware reduce trabajo en el dispositivo (el mapa y los mosaicos van precalculados en LittleFS, el A* local del reloj es una aproximación declarada) y tolera pérdida de enlace (espera ante datos antiguos). Eso es compatible con un enlace intermitente, pero **no demuestra** que el sistema funcione sobre LoRa.
+
+Consecuencias que **no** están tomadas y no deben documentarse como hechas: no existe fragmentación para MTU de radio, no hay acuse/retransmisión propia, no hay direccionamiento de nodos, no hay plan de consumo ni de energía solar/batería, y no hay medición de alcance. Cualquier afirmación de autonomía, cobertura o número de nodos requiere una fase de banco de pruebas que aún no ocurrió.
