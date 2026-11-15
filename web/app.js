@@ -10,6 +10,7 @@ bg.src = "/preview.png";
 
 const state = {
   revision: 0,
+  region: new URLSearchParams(location.search).get("region") || "jezero",
   view: { k: 1, ox: 0, oy: 0 },
   grid: { rows: 500, cols: 500 },
   cellM: 4.0,
@@ -23,6 +24,10 @@ const state = {
   nStops: 0,
   viaServer: true,  // false when the mock fallback is used
 };
+
+function apiURL(path,region=state.region) {
+  return path+(path.includes('?')?'&':'?')+'region='+encodeURIComponent(region);
+}
 
 const VIEW_K_MIN = 1, VIEW_K_MAX = 16;
 const STATUS_LABEL = { cabe: "CABE ✓", justo: "JUSTO", no_cabe: "NO CABE ✗" };
@@ -341,7 +346,7 @@ async function compute() {
   const revision = ++state.revision;
   hint.textContent = "Calculando…";
   try {
-    const res = await fetch("/api/route", {
+    const res = await fetch(apiURL("/api/route"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -439,7 +444,9 @@ bg.onload = draw;
 
 (async function boot() {
   try {
-    const meta = await fetch("/api/routes").then((r) => r.json());
+    const revision=state.revision;
+    const meta = await fetch(apiURL("/api/routes")).then((r) => r.json());
+    if(revision!==state.revision)return;
     if (meta.grid && meta.grid.rows) state.grid = meta.grid;
     if (meta.cell_m) state.cellM = meta.cell_m;
     if (meta.cell_x_m) state.cellXM = meta.cell_x_m;

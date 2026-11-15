@@ -2,7 +2,9 @@
 
 **Lobos Espaciales** · NASA Space Apps
 
-Planificador de caminatas EVA en **Jezero, Marte**: mapa con ortofoto HiRISE real, rutas de
+Atlas global de **Marte** y explorador de regiones con un planificador de
+caminatas EVA de escenario. **Jezero** conserva la cobertura HiRISE de mayor
+detalle: mapa con ortofoto HiRISE real, rutas de
 ida y regreso con paradas científicas que el usuario coloca estilo Google Maps, y un presupuesto
 EVA de escenario que dice si el recorrido cabe en el tiempo del traje.
 
@@ -258,3 +260,53 @@ El distribuidor sirve filas completas: preparar el recorte transfiere unos
 completo de 1,8 GB ni reemplaza una carpeta existente. Es necesario internet
 para regenerar esos datos. Ver `assets/jezero/provenance.json` y
 `assets/science_sources.json` para trazabilidad y alcance por fuente.
+
+
+## Atlas de todo Marte y selección de regiones
+
+La página abre un globo 3D con el modelo real **NASA MGS MOLA MEGDR** incluido
+en `assets/mars` (16 píxeles/grado; aproximadamente 3,7 km en el ecuador).
+Arrastra el planeta o usa las flechas para girar. Pulsa una zona, escribe sus
+coordenadas planetocéntricas o elige un acceso del catálogo. **Abrir región**
+carga una ventana local de 400 km alrededor de cualquier latitud/longitud,
+incluidos polos y cruces de meridianos. **Jezero · HiRISE** conserva el recorte
+de 4 m; no se sustituye por MOLA al pulsar ese acceso específico.
+
+Dentro de cada región están disponibles mapa 2D/3D, capas de elevación y
+pendiente, salida/destino/paradas, cálculo FAST/SAFE con regreso, presupuesto
+simulado, perfil visual, seguimiento, guía de voz, reconstrucción de superficie
+y exportación de misión. **Las funciones trabajan dentro de la ventana cargada**;
+no concatenan automáticamente un recorrido entre ventanas opuestas del planeta.
+
+MOLA sirve para explorar relieve regional. No ofrece detalle suficiente para
+planificar una caminata EVA operativa. La interfaz lo indica permanentemente:
+las celdas locales son de 5 km, el producto original ya contiene interpolaciones
+y tiene huecos entre perfiles de hasta 12 km. El motor mantiene sus supuestos
+de marcha y presupuesto, por lo que recorridos regionales extensos normalmente
+superan el presupuesto EVA. Un resultado numérico no valida transitabilidad.
+
+Se usan ventanas azimutales equidistantes esféricas y muestreo bilineal, sin
+fabricar detalle de elevación. El atlas usa colores ilustrativos, no imágenes
+del suelo. La ortofoto de Jezero nunca se superpone a una región MOLA.
+
+Cada solicitud resuelve su propia región: `/api/routes`, `/api/terrain`,
+`/api/terrain-image`, `/api/route` y `/api/manifest` aceptan
+`?region=mola:latitud:longitud`. Sin parámetro, conservan el terreno configurado
+(originalmente Jezero). No hay un mapa global mutable compartido entre usuarios.
+Las pequeñas ventanas se materializan en carpetas temporales por solicitud y
+se eliminan al finalizar; el muestreo mantiene una caché limitada en memoria.
+Las bitácoras del firmware conservan su ubicación de almacenamiento original.
+
+Los enlaces de regiones se pueden compartir: la selección queda en la URL,
+por ejemplo `/?region=mola:18.65:-133.8`. La exportación incluye región,
+procedencia, alcance regional y parámetros de proyección. Cambiar de región
+reinicia los puntos y cancela los cálculos/respuestas anteriores para evitar
+mezclar una ruta con el terreno de otra zona.
+
+El ZIP de GitHub incluye MOLA preparado (≈33 MB) y no descarga el modelo al
+arrancar. Para reproducir el modelo desde NASA PDS en otra carpeta:
+
+```bash
+python -m pipeline.fetch_mola --out data/mola-nuevo
+node --test tests/planet.cjs tests/region-ui.cjs
+```

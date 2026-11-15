@@ -16,14 +16,17 @@ WEB = ROOT / "web"
 def create_app(data_dir: str):
     app = Flask(__name__, static_folder=None)
     root = Path(data_dir).resolve()
+    from relay.planet import register_planet
+    from pipeline.planet import RegionError
+    dataset_root = register_planet(app, root)
 
     def valid_scenario(data):
-        from pipeline.scenario import DEFAULTS, PROFILE, metadata, scenario
+        from pipeline.scenario import DEFAULTS, PROFILE, metadata, scenario, site_profile
         profile = data.get('scenario')
         if (data.get('budget_model') != PROFILE or not isinstance(profile, dict)
                 or profile.get('scenario_id') != PROFILE or profile.get('profile') != PROFILE
                 or profile.get('assumption_basis') != 'lunar_analogue'
-                or profile.get('site') not in ('Jezero/Mars', 'synthetic', 'unknown')
+                or profile.get('site') not in ('Jezero/Mars', 'Mars/global', 'synthetic', 'unknown')
                 or not isinstance(profile.get('values'), dict)
                 or set(profile['values']) != set(DEFAULTS)):
             return False
@@ -37,7 +40,7 @@ def create_app(data_dir: str):
             if any(profile.get(key) != value for key, value in expected.items()):
                 return False
             if 'site' in data:
-                site = 'Jezero/Mars' if data['site'] == 'jez_dtm_1m' else ('synthetic' if data['site'] == 'synth' else 'unknown')
+                site = site_profile(data['site'])
                 if profile['site'] != site:
                     return False
             if any(key in data and data[key] != values[field] for key, field in
@@ -54,8 +57,10 @@ def create_app(data_dir: str):
         def invalid_constant(value):
             raise ValueError(f'constante JSON inválida: {value}')
         try:
-            data = json.loads((root / 'routes.json').read_text(encoding='utf-8'), parse_constant=invalid_constant)
+            data = json.loads((dataset_root() / 'routes.json').read_text(encoding='utf-8'), parse_constant=invalid_constant)
             return data if isinstance(data, dict) else None
+        except RegionError:
+            raise
         except (OSError, UnicodeError, ValueError):
             return None
 
@@ -81,10 +86,11 @@ def create_app(data_dir: str):
 
     @app.get("/preview.png")
     def preview():
-        f = root / "preview.png"
+        f = dataset_root() / "preview.png"
         if not f.exists():
             abort(404)
-        return send_file(f, mimetype="image/png")
+        import io
+        return send_file(io.BytesIO(f.read_bytes()), mimetype="image/png")
 
     @app.get("/reference-image")
     def reference_image():
@@ -128,11 +134,11 @@ def create_app(data_dir: str):
         if layer not in ("natural", "slope", "elevation"):
             return jsonify(error="Capa desconocida"), 400
         meta = read_manifest()
-        if meta is None or not (root / "dem.npy").exists() or not (root / "slope.npy").exists():
+        if meta is None or not (dataset_root() / "dem.npy").exists() or not (dataset_root() / "slope.npy").exists():
             return jsonify(error="Faltan datos del terreno"), 503
         try:
-            image = terrain_rgba(np.load(root / "dem.npy", allow_pickle=False),
-                                 np.load(root / "slope.npy", allow_pickle=False),
+            image = terrain_rgba(np.load(dataset_root() / "dem.npy", allow_pickle=False),
+                                 np.load(dataset_root() / "slope.npy", allow_pickle=False),
                                  meta["cell_m"], meta["cell_x_m"], layer)
         except ValueError as error:
             return jsonify(error=str(error)), 503
@@ -145,7 +151,7 @@ def create_app(data_dir: str):
     def terrain():
         import numpy as np
         meta = read_manifest()
-        path = root / "dem.npy"
+        path = dataset_root() / "dem.npy"
         if meta is None or not path.exists():
             return jsonify(error="Genera el terreno con make demo o pipeline.build --dem"), 503
         dem = np.load(path, allow_pickle=False)
@@ -159,7 +165,7 @@ def create_app(data_dir: str):
         rows = np.unique(np.linspace(0, dem.shape[0] - 1, min(detail, dem.shape[0])).astype(int))
         cols = np.unique(np.linspace(0, dem.shape[1] - 1, min(detail, dem.shape[1])).astype(int))
         z = dem[np.ix_(rows, cols)]
-        slope_path = root / "slope.npy"
+        slope_path = dataset_root() / "slope.npy"
         slope = np.load(slope_path, allow_pickle=False)[np.ix_(rows, cols)] if slope_path.exists() else None
         finite = dem[np.isfinite(dem)]
         return jsonify(
@@ -167,21 +173,22 @@ def create_app(data_dir: str):
                        statistics={"elevation_min_m": float(finite.min()) if finite.size else None,
                                    "elevation_max_m": float(finite.max()) if finite.size else None,
                                    "valid_cells": int(finite.size), "total_cells": int(dem.size)},
-                       provenance=meta.get("provenance"),rows=rows.tolist(), cols=cols.tolist(),
+                       provenance=meta.get("provenance"), region=meta.get("region", "jezero"),
+                       planning_scope=meta.get("planning_scope", "local_terrain"),rows=rows.tolist(), cols=cols.tolist(),
                        elevations=[[float(v) if np.isfinite(v) else None for v in row] for row in z],
                        grid=meta["grid"], cell_m=meta["cell_m"], cell_x_m=meta["cell_x_m"],
                        site=meta.get("site", "unknown"), spatial=meta.get("spatial", {}))
 
     @app.get("/api/manifest")
     def manifest():
-        f = root / "routes.json"
+        f = dataset_root() / "routes.json"
         if not f.exists():
             abort(404)
         data = read_manifest()
         if data is None:
             return jsonify(error="routes.json inválido; regenera el pipeline"), 503
         if request.args.get("full") == "1":
-            return send_file(f, mimetype="application/json")
+            return jsonify(data)
         routes = data.get("routes")
         raw = routes if isinstance(routes, dict) else {}
         waypoints = data.get("waypoints")
@@ -198,7 +205,7 @@ def create_app(data_dir: str):
 
     @app.get("/api/routes")
     def routes():
-        f = root / "routes.json"
+        f = dataset_root() / "routes.json"
         if not f.exists():
             return jsonify(error="falta routes.json; ejecuta el pipeline"), 503
         data = read_manifest()
@@ -230,11 +237,11 @@ def create_app(data_dir: str):
         if not isinstance(waypoints, list):
             return jsonify(error="science_waypoints debe ser una lista ordenada"), 400
 
-        files = [root / f"{name}.npy" for name in ("dem", "slope", "rough")]
+        files = [dataset_root() / f"{name}.npy" for name in ("dem", "slope", "rough")]
         if not all(p.exists() for p in files):
             return jsonify(error="faltan dem.npy / slope.npy / rough.npy; regenera el pipeline"), 503
 
-        mf = root / "routes.json"
+        mf = dataset_root() / "routes.json"
         if not mf.exists():
             return jsonify(error="falta routes.json; regenera el pipeline"), 503
         meta = read_manifest()
@@ -253,6 +260,9 @@ def create_app(data_dir: str):
             return jsonify(error=str(exc)), 400
         out = {"schema_version": 3, "start": start, "end": end,
                "science_waypoints": waypoints, "science_stops": len(waypoints),
+               "site": meta.get("site"), "region": meta.get("region", "jezero"),
+               "spatial": meta.get("spatial", {}), "provenance": meta.get("provenance"),
+               "planning_scope": meta.get("planning_scope", "local_terrain"),
                "budget_model": "LUNAR-ANALOG-2026", "scenario": metadata(values, meta['scenario']['site'], meta['scenario']['overrides']['build'], overrides),
                "cell_m": cell_m, "cell_x_m": meta["cell_x_m"], "grid": meta.get("grid", {}),
                "budget_s": values['suit_budget_s'],

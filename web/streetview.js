@@ -125,7 +125,7 @@
     attributes(routeBuffer);gl.uniform1i(uniform('route'),1);for(const [first,length] of strips)gl.drawArrays(gl.LINE_STRIP,first,length);
     const degrees=((routeHeading+yawOffset)*180/Math.PI+360)%360;
     el('surfaceheading').textContent=`${Math.round(degrees)}° · CÁMARA A 1.70 M · RELIEVE ×1`;
-    status(`${terrain.site==='synth'?'DEMO SINTÉTICA':textureReady?'JEZERO · ORTOFOTO HiRISE':'DEM · COLOR ILUSTRATIVO'} · Reconstrucción 3D, sin panoramas de superficie`);
+    status(`${terrain.site==='synth'?'DEMO SINTÉTICA':terrain.site==='mola-global'?'MOLA · CONTEXTO REGIONAL ~3.7 KM':textureReady?'JEZERO · ORTOFOTO HiRISE':'DEM · COLOR ILUSTRATIVO'} · Reconstrucción 3D, sin panoramas de superficie`);
   }
   function setOpen(value){open=value;el('surfaceview').hidden=!open;el('surfaceopen').setAttribute('aria-pressed',String(open));if(open){render();canvas.focus();}else {el('surfaceopen').focus();root.dispatchEvent(new CustomEvent('surface-close'));}}
   el('surfaceopen').onclick=()=>setOpen(true);el('surfaceclose').onclick=()=>setOpen(false);

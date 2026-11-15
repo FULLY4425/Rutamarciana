@@ -102,7 +102,7 @@ function drawTerrain() {
   }
 }
 function updateBasemap(){
-  bg.src=byId('orthophoto').checked?'/reference-image':'/api/terrain-image?layer='+byId('terrainpalette').value;
+  bg.src=byId('orthophoto').checked?'/reference-image':apiURL('/api/terrain-image?layer='+byId('terrainpalette').value);
 }
 byId('terrainpalette').onchange=()=>{updateBasemap();draw();};
 window.addEventListener('terrain-photo',event=>{
@@ -110,6 +110,7 @@ window.addEventListener('terrain-photo',event=>{
   if(event.detail){flat=true;document.querySelector('.zoomctl').hidden=false;byId('viewmode').textContent='Vista 3D';}
   draw();
 });
+window.addEventListener('atlas-open',()=>{running=false;window.MissionGuidance?.stop();byId('play').textContent='Continuar';});
 window.addEventListener('surface-close',()=>draw());
 window.addEventListener('surface-step',event=>{
   const path=trackingPath();
@@ -161,16 +162,57 @@ byId('export').onclick=()=>{
 };
 function animate(t){if(running){progress=Math.min(1,progress+Math.min((t-lastFrame)/1000,0.1)/60);byId('progress').value=Math.round(progress*1000);draw();if(progress>=1){running=false;byId('play').textContent='Repetir';}}lastFrame=t;requestAnimationFrame(animate);}
 requestAnimationFrame(animate);
+function terrainSourceLabel(data){
+ if(data.site==='synth')return '● DEMO · TERRENO SINTÉTICO';
+ if(data.site==='mola-global')return '● MARTE GLOBAL · MOLA ~3.7 KM';
+ if(data.site==='jez_dtm_1m')return `● JEZERO · HiRISE ${data.cell_m.toFixed(0)} M`;
+ return `● DEM · ${data.site}`;
+}
+function updateRegionLabels(){
+ const global=terrain?.site==='mola-global',synthetic=terrain?.site==='synth';
+ const name=global?`Región ${terrain.spatial.center_latitude_deg.toFixed(2)}°, ${terrain.spatial.center_longitude_deg.toFixed(2)}°`:synthetic?'Demostración sintética':terrain?.site==='jez_dtm_1m'?'Jezero · HiRISE':terrain?.site||'Terreno local';
+ byId('active-region-name').textContent=name;
+ byId('region-scope').textContent=global?'MOLA global: resolución nativa ~3.7 km en el ecuador, con celdas interpoladas de 5 km en esta ventana de 400 km. No permite evaluar una caminata EVA, rocas, arena ni obstáculos pequeños. Las rutas y la voz son un ensayo regional.':synthetic?'Terreno sintético de demostración: esta ventana no representa un lugar real de Marte.':'Terreno local de mayor detalle. Las rutas son simulaciones de escenario; el DEM no detecta rocas ni arena.';
+ byId('region-scope').dataset.coarse=String(global);
+}
+let regionSwitch=0;
+async function switchRegion(region){
+ const request=++regionSwitch;terrainLoad++;state.revision++;
+ running=false;window.MissionGuidance?.stop();byId('compute').disabled=true;byId('terraindetail').disabled=true;
+ hint.textContent='Cargando la región seleccionada…';
+ try{
+  const [terrainResponse,metaResponse]=await Promise.all([
+   fetch(apiURL('/api/terrain?detail='+byId('terraindetail').value,region)),fetch(apiURL('/api/routes',region))]);
+  if(!terrainResponse.ok || !metaResponse.ok)throw Error('No se pudo cargar la región. Se conserva el mapa anterior.');
+  const [loaded,meta]=await Promise.all([terrainResponse.json(),metaResponse.json()]);
+  if(request!==regionSwitch)return;
+  terrainLoad++;terrain=loaded;terrain.base=Math.min(...terrain.elevations.flat().filter(z=>z!==null));
+  state.region=region;state.grid=loaded.grid;state.cellM=loaded.cell_m;state.cellXM=loaded.cell_x_m;
+  state.start=null;state.end=null;state.stops=[];state.nStops=0;state.data=null;
+  byId('nstops').value='0';byId('orthophoto').checked=false;byId('orthophoto').disabled=true;
+  state.view={k:1,ox:0,oy:0};yaw=-.35;tilt=.85;zoom=1;progress=0;overviewTerrain=null;
+  if(meta.routes?.safe && meta.routes?.fast){
+   state.data={...meta,safe:meta.routes.safe,fast:meta.routes.fast};
+   state.start=state.data.safe.points[0];state.end=state.data.safe.points.at(-1);
+  }
+  byId('source').textContent=terrainSourceLabel(loaded);
+  document.querySelector('.meta').textContent=`${state.grid.rows} × ${state.grid.cols} · RELIEVE ×${exaggeration} · ARRASTRA PARA GIRAR`;
+  mockflag.hidden=true;hint.textContent=nextHint();updateRegionLabels();updateBasemap();renderCards();draw();
+  window.history?.replaceState(null,'','?region='+encodeURIComponent(region));
+ }catch(error){if(request===regionSwitch)hint.textContent=error.message;}
+ finally{if(request===regionSwitch){byId('compute').disabled=false;byId('terraindetail').disabled=false;}}
+}
+window.addEventListener('mission-region',event=>switchRegion(event.detail.region));
 let terrainLoad=0;
 async function loadTerrain(){
  const request=++terrainLoad;
  try{
-  const response=await fetch('/api/terrain?detail='+byId('terraindetail').value);if(!response.ok)throw Error('No se pudo cargar el DEM. Revisa el servidor.');
+  const response=await fetch(apiURL('/api/terrain?detail='+byId('terraindetail').value));if(!response.ok)throw Error('No se pudo cargar el DEM. Revisa el servidor.');
   const loaded=await response.json();if(request!==terrainLoad)return;terrain=loaded;
   terrain.base=Math.min(...terrain.elevations.flat().filter(z=>z!==null));state.grid=terrain.grid;state.cellM=terrain.cell_m;state.cellXM=terrain.cell_x_m;
-  byId('source').textContent=terrain.site==='synth'?'● DEMO · TERRENO SINTÉTICO':terrain.provenance?.doi==='10.5066/P9REJ9JN'?`● JEZERO · HiRISE ${terrain.cellM.toFixed(0)} M`:`● DEM · ${terrain.site}`;
+  byId('source').textContent=terrainSourceLabel(terrain);
   document.querySelector('.meta').textContent=`${state.grid.rows} × ${state.grid.cols} · RELIEVE ×${exaggeration} · ARRASTRA PARA GIRAR`;
-  updateBasemap();
+  updateRegionLabels();updateBasemap();
  }catch(error){if(request!==terrainLoad)return;byId('source').textContent=terrain?'● DETALLE ANTERIOR CONSERVADO':'● SIN DEM';hint.textContent=error.message;}
  draw();
 }

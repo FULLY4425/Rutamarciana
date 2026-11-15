@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from pipeline.scenario import scenario, metadata
+from pipeline.scenario import scenario, metadata, site_profile
 
 
 def write_manifest(path: Path, *, site, waypoints, layers, routes, budget_s, science_s,
@@ -25,7 +25,7 @@ def write_manifest(path: Path, *, site, waypoints, layers, routes, budget_s, sci
         "science_waypoints": science_waypoints,
         "science_stops": len(science_waypoints),
         "budget_model": "LUNAR-ANALOG-2026",
-        "scenario": metadata(values, 'Jezero/Mars' if site == 'jez_dtm_1m' else ('synthetic' if site == 'synth' else 'unknown'), scenario_overrides),
+        "scenario": metadata(values, site_profile(site), scenario_overrides),
         "waypoints": waypoints,
         "layers": layers,
         "routes": routes,

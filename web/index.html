@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#101414">
 <meta name="description" content="Planifica un recorrido EVA en Jezero: explora el terreno 3D, compara rutas y sigue cada paso con una guía de voz.">
-<title>Ruta Marciana · Explorador de Jezero</title>
+<title>Ruta Marciana · Atlas de Marte</title>
 <link rel="stylesheet" href="/style.css">
 </head>
 <body>
@@ -15,13 +15,14 @@
   <nav aria-label="Navegación principal"><a href="#mission-controls">Plan de misión</a><a href="#mission-sources">Fuentes y alcance ↗</a><b id="source" role="status">Cargando terreno…</b></nav>
 </header>
 <section class="intro" aria-labelledby="explorer-title">
-  <div><p class="eyebrow">EXPLORACIÓN EVA / JEZERO</p><h1 id="explorer-title">Explora el terreno.<br><span>Traza tu siguiente paso.</span></h1><p>Una salida, un destino y la ciencia en el camino.<br>Compara rutas y ensaya tu recorrido sobre el relieve.</p></div>
-  <div class="location"><span>MARTE / CRÁTER JEZERO</span><strong>Tu misión empieza aquí.</strong><small>HiRISE · PLANIFICACIÓN DE ESCENARIO</small></div>
+  <div><p class="eyebrow">ATLAS PLANETARIO / MARTE</p><h1 id="explorer-title">Explora todo Marte.<br><span>Traza tu siguiente paso.</span></h1><p>Una salida, un destino y la ciencia en el camino.<br>Compara rutas y ensaya tu recorrido sobre el relieve.</p></div>
+  <div class="location"><span>RELIEVE GLOBAL / MOLA + HiRISE</span><strong>Tu misión empieza aquí.</strong><small>RESOLUCIÓN Y ALCANCE VISIBLES EN CADA REGIÓN</small></div>
 </section>
 <main class="workspace" aria-label="Explorador de Jezero">
-  <header class="workspace-toolbar"><div class="explorer-brand"><span class="eyebrow">MARS / EXPLORER</span><strong>Ojo de Jezero</strong><small>Mapa, relieve y recorrido de superficie</small></div><div class="maptools"><button id="surfaceopen" aria-pressed="false" disabled>Vista de superficie</button><button id="viewmode">Vista 2D</button><button id="camerareset" class="ghost">Centrar cámara</button><label for="terrainpalette">Capa <select id="terrainpalette"><option value="natural">Relieve iluminado</option><option value="elevation">Elevación</option><option value="slope">Pendiente</option></select></label><label for="terraindetail">Detalle <select id="terraindetail"><option value="75">Estándar</option><option value="150">Alto</option></select></label><label>Relieve <input id="relief" type="range" min="1" max="8" value="3" aria-label="Exageración vertical"></label></div></header>
+  <header class="workspace-toolbar"><div class="explorer-brand"><span class="eyebrow">MARS / EXPLORER</span><strong>Ojo de Marte</strong><small><span id="active-region-name">Jezero · HiRISE</span></small></div><div class="maptools"><button id="planetopen">◉ Atlas de Marte</button><button id="surfaceopen" aria-pressed="false" disabled>Vista de superficie</button><button id="viewmode">Vista 2D</button><button id="camerareset" class="ghost">Centrar cámara</button><label for="terrainpalette">Capa <select id="terrainpalette"><option value="natural">Relieve iluminado</option><option value="elevation">Elevación</option><option value="slope">Pendiente</option></select></label><label for="terraindetail">Detalle <select id="terraindetail"><option value="75">Estándar</option><option value="150">Alto</option></select></label><label>Relieve <input id="relief" type="range" min="1" max="8" value="3" aria-label="Exageración vertical"></label></div></header>
   <aside class="panel plan-panel" id="mission-controls" aria-labelledby="plan-title">
     <header class="head"><p class="sectionlabel">01 / PLAN DE MISIÓN</p><h2 id="plan-title">Diseña tu caminata.</h2><p class="sub">Coloca A, B y las paradas en el mapa. El regreso se calcula por separado.</p></header>
+    <p id="region-scope" class="region-scope" role="status">Cargando cobertura y resolución…</p>
     <section class="terrain-facts" aria-label="Datos del terreno"><p class="sectionlabel">BASE CIENTÍFICA</p><p id="terrainfacts">Cargando procedencia y resolución…</p><p id="layerlegend"></p><label class="photo-toggle"><input id="orthophoto" type="checkbox" disabled> Ortofoto HiRISE en el mapa 2D</label><p id="photostatus">Verificando correspondencia de la imagen.</p></section>
     <div class="point-key" aria-label="Puntos del recorrido"><span><i class="start-dot"></i>A · Salida</span><span><i class="stop-dot"></i>S · Ciencia</span><span><i class="end-dot"></i>B · Destino</span></div>
     <div class="flag" id="mockflag" hidden>No se pudo calcular la ruta. Revisa los puntos y el servidor.</div>
@@ -68,6 +69,11 @@
   <section class="mapwrap" aria-label="Mapa interactivo">
     <div class="stage">
       <canvas id="map" width="1000" height="1000" aria-label="Mapa de Jezero: selecciona salida, destino y paradas; arrastra para explorar el relieve"></canvas>
+      <section id="planetview" class="planetview" hidden aria-label="Atlas global de Marte">
+        <canvas id="planetcanvas" width="1000" height="1000" tabindex="0" aria-label="Globo de Marte. Arrastra o usa las flechas para girar. Haz clic para elegir una región."></canvas>
+        <div class="planet-top"><div><strong>ATLAS DE MARTE</strong><p>MOLA · elevación global real · colores ilustrativos</p></div><button id="planetclose">Volver a la región</button></div>
+        <form id="planetform" class="planet-selection"><p id="planetstatus" role="status">Cargando MOLA global…</p><label for="planetbookmark">Explorar una zona <select id="planetbookmark"><option value="">Selecciona o pulsa el planeta</option></select></label><div class="row"><label>Latitud ° <input id="planetlat" type="number" min="-90" max="90" step="any" value="18.4881" required></label><label>Longitud este ° <input id="planetlon" type="number" min="-180" max="360" step="any" value="77.388" required></label></div><button type="submit" id="planetload">Abrir región MOLA · 400 km</button><button type="button" id="planetjezero">Jezero · detalle HiRISE de 4 m</button><small>MOLA: ~3.7 km/píxel en el ecuador, con interpolación de origen. Cambiar de región reinicia el recorrido. No es una carta de peligros EVA.</small></form>
+      </section>
       <section id="surfaceview" class="surfaceview" hidden aria-label="Recorrido a nivel de superficie">
         <canvas id="surfacecanvas" tabindex="0" aria-label="Vista de superficie. Arrastra para mirar. Flechas izquierda y derecha para girar; arriba y abajo para avanzar; Escape para salir."></canvas>
         <div class="surface-top"><div><strong>EXPLORAR LA SUPERFICIE</strong><span id="surfaceheading"></span></div><button id="surfaceclose">Volver al mapa</button></div>
@@ -114,6 +120,6 @@
     <p class="note"><span class="note-t">Alcance del modelo</span>Presupuesto de escenario: marcha 2 km/h, ciencia 20 min/parada, entrada y salida 30 min y reserva fija de 30 min aparte. No representa capacidad certificada de un traje ni un criterio NASA GO/NO-GO. La rugosidad del DEM no detecta rocas o arena. Marte no tiene GPS: posición relativa al mapa.</p>  </aside>
 </main>
 <footer class="mission-footer"><span>◈ RUTA MARCIANA <b>/ MICOR FIELD</b></span><span>Planificación y recorrido simulados · Sin telemetría en vivo</span></footer>
-<script src="/app.js"></script><script src="/navigation.js"></script><script src="/guidance.js"></script><script src="/streetview.js"></script><script src="/science.js"></script><script src="/terrain.js"></script>
+<script src="/app.js"></script><script src="/navigation.js"></script><script src="/guidance.js"></script><script src="/streetview.js"></script><script src="/science.js"></script><script src="/planet.js"></script><script src="/terrain.js"></script>
 </body>
 </html>

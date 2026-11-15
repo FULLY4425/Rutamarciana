@@ -162,3 +162,15 @@ canvas {display:block;width:100%;height:auto;background:var(--bg-deep);cursor:cr
 #sciencesources a:hover {text-decoration:underline;}
 #sciencesources p {font-size:10px;line-height:1.8;color:var(--dim);margin-top:6px;}
 @media(min-width:1001px){.workspace-toolbar .maptools {max-width:75%;}}
+.region-scope {font-size:10px;line-height:1.8;color:#b5cabc;background:#1b2b22;border-left:2px solid var(--teal);padding:11px;}
+.region-scope[data-coarse=true] {background:#332a1d;border-color:var(--orange);color:#e6c99e;}
+.planetview {position:absolute;inset:0;z-index:7;background:#0b1314;border:1px solid #52705f;border-radius:8px;overflow:hidden;}
+#planetcanvas {width:100%;height:100%;display:block;background:#0b1314;cursor:grab;}
+#planetcanvas:active {cursor:grabbing;}
+.planet-top {position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:flex-start;gap:15px;padding:15px;pointer-events:none;background:linear-gradient(#101b17e8,transparent);}
+.planet-top strong {font:12px var(--mono);letter-spacing:1.5px;color:var(--teal);}.planet-top p {font-size:9px;color:var(--dim);margin-top:7px;}.planet-top button {pointer-events:auto;font-size:10px;background:#14271f;}
+.planet-selection {position:absolute;bottom:12px;right:12px;width:min(310px,calc(100% - 24px));display:grid;gap:9px;padding:13px;background:#11251feb;border:1px solid #526b5a;border-radius:7px;}
+.planet-selection label {font-size:10px;color:var(--dim);display:grid;gap:5px;min-width:0;}.planet-selection select {width:100%;font-size:10px;}
+.planet-selection .row {display:grid;grid-template-columns:1fr 1fr;gap:8px;}.planet-selection input {width:100%;min-width:0;padding:7px;border:1px solid var(--line);background:#172f23;color:var(--ink);border-radius:4px;}
+.planet-selection p {font-size:10px;line-height:1.6;color:var(--teal);}.planet-selection small {font-size:9px;line-height:1.6;color:var(--dim);}.planet-selection button {min-height:34px;padding:7px;font-size:10px;}#planetload {background:var(--teal);border-color:var(--teal);color:#12291c;}#planetjezero {color:var(--orange);}
+@media(max-width:700px){.planetview{overflow-y:auto;}#planetcanvas{height:auto;aspect-ratio:1;}.planet-selection{position:relative;bottom:auto;right:auto;margin:0 12px 12px;width:calc(100% - 24px);}.planet-top{padding:10px;}.planet-top strong{font-size:10px;}.planet-top p{font-size:8px;max-width:180px;}.planet-top button{font-size:8px;padding:6px;min-height:30px;}}

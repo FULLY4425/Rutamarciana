@@ -46,9 +46,9 @@
     if(currentTerrain!==terrain){
       currentTerrain=terrain;photoStatus();
       const stats=terrain.statistics,p=terrain.provenance;
-      el('terrainfacts').textContent=terrain.site==='synth'?'Terreno sintético de demostración.':`${p?'HiRISE / USGS · ':''}${terrain.grid.rows} × ${terrain.grid.cols} celdas · ${terrain.cell_x_m.toFixed(2)} × ${terrain.cell_m.toFixed(2)} m por celda. ${stats?.elevation_min_m!=null?`Elevación ${stats.elevation_min_m.toFixed(0)} a ${stats.elevation_max_m.toFixed(0)} m, referencia vertical del DEM.`:''}`;
+      el('terrainfacts').textContent=terrain.site==='synth'?'Terreno sintético de demostración.':`${p?(terrain.site==='mola-global'?'MOLA / NASA PDS · ':'HiRISE / USGS · '):''}${terrain.grid.rows} × ${terrain.grid.cols} celdas · ${terrain.cell_x_m.toFixed(2)} × ${terrain.cell_m.toFixed(2)} m por celda. ${stats?.elevation_min_m!=null?`Elevación ${stats.elevation_min_m.toFixed(0)} a ${stats.elevation_max_m.toFixed(0)} m, referencia vertical del DEM.`:''}`;
       if(p)el('terrainfacts').textContent+=` Fuente nativa ${p.source_resolution_m} m; malla visual ${terrain.rows.length} × ${terrain.cols.length}.`;
-      profileData=null;
+      profileData=null;profileName=null;
     }
     const palette=el('terrainpalette').value;
     el('layerlegend').textContent=palette==='slope'?'Verde → rojo: 0° → 25° o más. Pendiente del DEM, sin detección de rocas.':palette==='elevation'?'Azul verdoso → arena: menor → mayor elevación. Colores ilustrativos.':'Iluminación calculada a partir de las alturas. El relieve exagerado solo afecta la vista aérea.';
@@ -79,7 +79,7 @@
       note.textContent=`${source.region} · ${source.status==='integrated'?'DATOS INTEGRADOS':source.status==='excluded'?'NO APLICABLE A MARTE':'REFERENCIA'}. ${source.description}`;
       item.appendChild(link);item.appendChild(note);el('sciencesources').appendChild(item);
     }
-    el('sourcesstatus').textContent='DEM real incluido y fuentes de contexto diferenciadas por región.';
+    el('sourcesstatus').textContent='MOLA global y HiRISE de Jezero incluidos; referencias diferenciadas por región.';
   }).catch(()=>{el('sourcesstatus').textContent='No se pudo cargar el catálogo. La planificación sigue disponible.';});
   root.ScienceView={...api,update};
 })(typeof window==='object'?window:globalThis);

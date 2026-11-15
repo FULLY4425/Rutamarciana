@@ -8,7 +8,7 @@ La interfaz, el mapa y la API de cálculo se sirven desde un único **Web Servic
 - Build command: `pip install -r requirements-server.txt`.
 - Start command: `python server.py`.
 - Puerto: variable `PORT` de Render, escuchando en `0.0.0.0`.
-- Datos: `assets/jezero`, incluidos en GitHub; sin descargar el TIFF al arrancar.
+- Datos: `assets/jezero` y modelo global `assets/mars`, incluidos en GitHub; sin descargar el TIFF al arrancar.
 - Comprobación HTTP disponible: `/health`.
 
 `server.py` reutiliza la aplicación y la validación del terreno del lanzador local,
@@ -36,3 +36,11 @@ python server.py
 
 Abre `http://localhost:10000/`. La ejecución local simplificada con preparación
 automática sigue disponible mediante `python iniciar.py`.
+
+
+El atlas global se sirve desde `/api/mars/atlas`. Las ventanas MOLA de cualquier
+coordenada se generan por solicitud, con una caché limitada a ocho regiones y
+lectura del modelo global mediante memoria mapeada. Los archivos temporales de
+cada ventana se eliminan tras la respuesta; no necesitan un disco persistente.
+No cambies `RUTA_DATA_DIR` a `assets/mars`: esa carpeta contiene el modelo global,
+no un build local del pipeline. El terreno local por defecto sigue siendo Jezero.
