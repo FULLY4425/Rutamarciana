@@ -2,7 +2,7 @@
 (function(root){
  const el=id=>document.getElementById(id);let role='auto',last='';
  const buttons={start:'editstart',end:'editend',stop:'editstop',pan:'editpan'};
- function showMap(target='map'){root.MarsAtlas?.close();root.SurfaceView?.close?.();el(target).scrollIntoView?.({block:target==='map'?'center':'start',behavior:root.matchMedia?.('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});}
+ function showMap(target='map'){root.MarsAtlas?.close();root.SurfaceView?.close?.();root.WorkspaceSections?.reveal(el(target));el(target).scrollIntoView?.({block:target==='map'?'center':'start',behavior:root.matchMedia?.('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});}
  function choose(next){
   root.dispatchEvent(new CustomEvent('pick-mode',{detail:'route-'+next}));role=next;
   showMap();update();

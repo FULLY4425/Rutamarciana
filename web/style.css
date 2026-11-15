@@ -241,3 +241,40 @@ textarea {width:100%;min-height:65px;resize:vertical;border:1px solid var(--line
 .workspace-toolbar {align-self:stretch;}
 .panel {align-self:start;max-height:none;overflow:visible;}
 .mapwrap {justify-content:flex-start;}
+
+/* Keep the three-column explorer shown in the reference video. */
+.workspace-tabs {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;flex:none;}
+.workspace-tabs button {min-width:0;min-height:40px;padding:8px 4px;font-size:11px;}
+.workspace-tabs button[aria-selected=true] {color:#13251e;background:var(--teal);border-color:var(--teal);}
+.workspace-pages {min-width:0;}
+.workspace-page-content {display:flex;flex-direction:column;gap:22px;min-width:0;}
+.workspace-page[hidden],.workspace-page-content[hidden],.workspace-overview[hidden],.workspace-expand[hidden] {display:none;}
+.workspace-page-content>.tracking {padding-top:0;border-top:0;}
+.workspace-page-content>.psion-exchange {margin:0;padding:0;border:0;}
+.workspace-page-content>.mission-footer {margin:0;padding:12px 0;flex-wrap:wrap;font-size:10px;}
+.workspace-page-actions {flex:none;}
+.workspace-expand {width:100%;min-height:44px;border-color:var(--line-strong);font-size:12px;}
+.workspace-overview {display:grid;gap:14px;padding:16px;border:1px solid var(--line-strong);border-radius:7px;background:#182720;line-height:1.7;font-size:12px;}
+.workspace-overview strong {font-size:18px;color:var(--teal);}.workspace-overview-note {color:var(--dim);}
+.workspace-dialog {width:min(1100px,calc(100vw - 32px));max-height:calc(100dvh - 32px);padding:0;border:1px solid var(--line-strong);border-radius:10px;background:var(--panel);color:var(--ink);overflow:auto;}
+.workspace-dialog::backdrop {background:#050b0bd9;}
+.workspace-dialog-head {position:sticky;top:0;z-index:2;display:flex;justify-content:space-between;align-items:center;gap:16px;padding:16px 20px;background:#1b2a23;border-bottom:1px solid var(--line-strong);}
+.workspace-dialog-head h2 {margin:0;}.workspace-dialog-head button {min-height:44px;}
+.workspace-dialog-body {padding:20px;}.workspace-dialog-body input:not([type=checkbox]),.workspace-dialog-body select {max-width:100%;}
+.workspace-dialog-body #cards {grid-template-columns:repeat(2,minmax(0,1fr));}
+@media(min-width:1001px){
+ .workspace-grouped>.panel {contain:size;height:var(--workspace-map-height);min-height:0;align-self:stretch;}
+ .workspace-grouped .workspace-pages {flex:1;min-height:0;}
+ .workspace-grouped .workspace-page {height:100%;}
+ .workspace-grouped>.panel>.head {flex:none;}
+ .workspace-grouped>.panel>#region-scope {flex:none;}
+}
+@media(max-width:1000px){
+ .workspace-grouped>.details-panel {display:flex;}
+}
+@media(max-width:700px){
+ .workspace-tabs button {font-size:14px;min-height:44px;}
+ .workspace-dialog {width:calc(100vw - 16px);max-height:calc(100dvh - 16px);}
+ .workspace-dialog-head,.workspace-dialog-body {padding:12px;}
+ .workspace-dialog-body #cards {grid-template-columns:1fr;}
+}

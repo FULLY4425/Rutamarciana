@@ -91,6 +91,8 @@ En celular, los botones **Salida A**, **Destino B**, **Parada** y **Zona a evita
 
 El nuevo [reloj Mars OS de dos pantallas](docs/RELOJ_MARS_OS.md) está en `firmware/psion-marte-os`: TFT 320×240 y ST7789 secundaria 240×240, mapa local de Glen Torridon, guía privada del celular, misiones por código y relay opcional para sincronización e imágenes 3D. Su A* local difiere de FAST/SAFE; conserva el firmware anterior como alternativa.
 
+En computadora, se mantienen las tres columnas y el área de trabajo termina al pie del mapa. La información lateral se organiza en **Plan, Ciencia, Puntos, Datos y Reloj**, y **Guía, Recorrido, Entorno, Rutas, Notas y Fuentes**. **Ampliar sección** permite consultar o editar todo el contenido en una vista completa sin alargar el mapa; los campos y sus valores se conservan. Las categorías también están disponibles en celular.
+
 ## Desarrollo y comprobaciones
 
 ```sh
@@ -103,6 +105,8 @@ node --test tests/*.cjs
 ```
 
 La comprobación opcional `node tools/check_mobile_browser.cjs` usa Chromium con depuración CDP en `http://127.0.0.1:9227` y el servidor en `http://127.0.0.1:8094` (variables `RUTA_CDP_URL` y `RUTA_TEST_BASE`). Prueba toques reales emulados, puntos, exclusiones, cálculo Python, zoom con dos dedos y tamaños desde 320×568 hasta 1280×800; guarda una captura en `/tmp/ruta-mobile-map.png`.
+
+`RUTA_TEST_WORKSPACE=1` activa la comprobación adicional del agrupado: pestañas con ratón, límite inferior del mapa, ausencia de herramientas debajo, conservación de formularios, comparación FAST/SAFE y cierre con Escape.
 
 Node.js se usa para pruebas, no para servir la aplicación. Las pruebas nativas C++ requieren `g++` con soporte de AddressSanitizer/UBSan; tampoco es necesario para utilizar el servidor. `requirements-server.txt` contiene las dependencias de ejecución; las completas añaden pytest y rasterio para pruebas e importación geoespacial. También existen `make demo` y `make serve` para el flujo de desarrollo con `data/out`.
 

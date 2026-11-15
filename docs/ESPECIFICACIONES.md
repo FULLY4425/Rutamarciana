@@ -186,3 +186,7 @@ El proveedor geométrico opcional admite START, hasta 8 paradas y END (10 puntos
 ## Reloj Mars OS de dos pantallas
 
 Se incorpora el [firmware Mars OS](RELOJ_MARS_OS.md) recibido: ST7789 principal 320×240 y secundaria 240×240, mapa local de Glen Torridon generado desde el repositorio (136 sitios, 718 objetivos), guía privada HTTPS del celular y misiones públicas temporales de 2–10 puntos. Un relay opcional en la PC sincroniza paradas/restricciones y envía imágenes 3D. Su A* local y tiempos difieren del planificador Python; no amplía el DEM sin conexión a todo Marte ni aporta GPS autónomo. El firmware con OLED y módulo ROVER se conserva como alternativa.
+
+## Organización del espacio de trabajo
+
+En escritorio se conserva la distribución de tres columnas. La altura de los paneles sigue al mapa y no añade información al pie del área de trabajo. Los controles existentes se agrupan en pestañas: Plan, Ciencia, Puntos, Datos y Reloj; Guía, Recorrido, Entorno, Rutas, Notas y Fuentes. La categoría activa presenta el contenido que cabe completo; las secciones largas se consultan con **Ampliar sección**, en una vista completa con cierre por botón o Escape. Se reutilizan los mismos campos y eventos, conservando sus valores. Los enlaces a Plan, Guía, Resultados y Fuentes activan la categoría correspondiente. En pantallas pequeñas las categorías siguen el flujo de la página.
