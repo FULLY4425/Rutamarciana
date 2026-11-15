@@ -241,3 +241,16 @@ textarea {width:100%;min-height:65px;resize:vertical;border:1px solid var(--line
 .workspace-toolbar {align-self:stretch;}
 .panel {align-self:start;max-height:none;overflow:visible;}
 .mapwrap {justify-content:flex-start;}
+
+/* The map frame ends with the map; long forms continue below it in page flow. */
+.workspace {border:0;border-radius:0;min-height:0;grid-template-columns:minmax(0,1fr);grid-template-areas:'toolbar' 'map' 'plan' 'details';}
+.workspace-toolbar {border:1px solid var(--line);border-radius:9px 9px 0 0;}
+.mapwrap {min-height:0;border:1px solid var(--line);border-top:0;border-radius:0 0 9px 9px;}
+.plan-panel,.details-panel {border:0;margin-top:20px;}
+@media(min-width:1001px){
+ .workspace {grid-template-columns:repeat(2,minmax(0,1fr));grid-template-areas:'toolbar toolbar' 'map map' 'plan details';column-gap:24px;}
+ .mapwrap {display:grid;grid-template-columns:minmax(220px,280px) minmax(0,1fr);align-items:start;justify-content:center;padding:16px 16px 48px;gap:16px;}
+ .map-editor {max-width:none;}
+ .map-pick-actions {grid-template-columns:repeat(2,minmax(0,1fr));}
+ .stage {justify-self:center;}
+}
