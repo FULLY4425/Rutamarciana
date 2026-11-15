@@ -19,7 +19,7 @@ Para el nuevo firmware de reloj con **dos pantallas ST7789**, consulta [Reloj Ma
 
 ## ESP32 de la bitácora
 
-Se integra el firmware del ZIP suministrado en `firmware/psion-micor-spaceapps/`. `forest.ino`, `bitacora_core.h`, `eva_budget.h` y `mision_map_contract.h` conservan sus bytes originales; el sketch principal añade los enganches del módulo ROVER. `upstream-sha256.json` registra los hashes. El espacio Misión → Mapa muestra el navegador y registra un proveedor del presupuesto; se añaden `navigator_core.h`, `navigator_link.h`, `navigator_tft.h` y `navigator_ca.h`. El firmware anterior de `psion_micor_stable` permanece disponible.
+Se integra el firmware del ZIP suministrado en `firmware/psion-micor-spaceapps/`. `forest.ino`, `bitacora_core.h`, `eva_budget.h` y `mision_map_contract.h` conservan sus bytes originales; el sketch principal añade los enganches del módulo ROVER. `upstream-sha256.json` registra los hashes. El espacio Misión → Mapa muestra el navegador y registra un proveedor del presupuesto; se añaden `navigator_core.h`, `navigator_transport.h`, `navigator_link.h`, `navigator_tft.h` y `navigator_ca.h`. El transporte HTTPS se comparte con Mars OS; la adaptación a la UI y al presupuesto de esta base permanece en `navigator_link.h`. El firmware anterior de `psion_micor_stable` permanece disponible.
 
 El ESP32-WROOM-32 de esta base no incluye receptor GNSS. El celular aporta GPS; el ESP necesita Wi-Fi con acceso a internet (por ejemplo el hotspot del celular). No se añaden GPIO ni se cambia el cableado de las pantallas, encoder o sensores. No es una aplicación instalable en cualquier reloj comercial; es para el ESP32 y pantallas de esta base Psion Micor.
 
@@ -70,10 +70,10 @@ No hay historial de GPS ni almacenamiento persistente de estos enlaces. El despl
 ## Validación de esta integración
 
 - Compilación real: ESP32 core 3.3.12, NimBLE-Arduino 2.5.2 y FQBN de arriba. **1,992,078 bytes de flash (94%) y 94,516 bytes de RAM estática (28%)**. Se conserva la partición original sin OTA.
-- Suite del proyecto: 166 pruebas Python de la suite anterior aprobadas, más la nueva prueba TFT aprobada, 2 omitidas; 27 comprobaciones JavaScript aprobadas. Incluye permisos GPS explícitos, vínculo de origen, desplazamiento/rotación/rumbo, ida y regreso coincidentes, señales antiguas, pausa en segundo plano, credenciales, caducidad, aislamiento, paquete acotado y parser C++ real.
+- Última revisión funcional registrada del proyecto: **198 pruebas Python aprobadas, 2 omitidas y 34 comprobaciones JavaScript aprobadas**. Incluye permisos GPS explícitos, vínculo de origen, desplazamiento/rotación/rumbo, ida y regreso coincidentes, señales antiguas, pausa en segundo plano, credenciales, caducidad, aislamiento, paquete acotado y parser C++ real.
 - Integración: ruta Python → publicación autenticada → paquete de 16 líneas → parser real C++ y campos del presupuesto EVA.
 - Los hashes comprueban los núcleos y activos conservados; el sketch principal se compara con los enganches recibidos en el módulo ROVER.
-- No se ha flasheado ni probado una placa física. Precisión GPS, enlace Wi-Fi/TLS desde la placa, consumo de batería y funcionamiento de las pantallas requieren prueba en tu hardware. No es una prueba visual en navegador real ni una certificación de navegación.
+- No se ha flasheado ni probado una placa física. Precisión GPS, enlace Wi-Fi/TLS desde la placa, consumo de batería y funcionamiento de las pantallas requieren prueba en tu hardware. Las pruebas visuales con Chromium emulan escritorio/celular; no sustituyen una prueba en dispositivo ni certifican navegación.
 
 ## Hardware y pines de la base suministrada
 

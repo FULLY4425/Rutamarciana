@@ -2,6 +2,7 @@
 
 | Función | Implementación y alcance |
 | --- | --- |
+| Espacio de trabajo | Tres columnas en escritorio hasta el pie del mapa, once pestañas laterales y vista Ampliar sección para contenido extenso, conservando campos y valores. [Manual completo](MANUAL_WEB.md). |
 | Mapa 2D y terreno 3D | Ortofoto HiRISE real en escala de grises sobre el DEM compatible. Zoom, giro, inclinación, desplazamiento con Mayús/arrastre y flechas. |
 | Globo de Marte | MOLA global y selección de regiones. Acceso directo a Jezero (DEM de 4 m) y Glen Torridon (DEM muestreado a ~12.14 m). Fuera de estos recortes se usa MOLA de ~3.7 km nativos; no hay fotografía HiRISE global. |
 | Objetivos científicos | 718 registros originales NASA PDS ChemCam de Glen Torridon/Gale: coordenadas, sol, formación, miembro, vetas y nódulos. Búsqueda y filtros. No se trasladan a Jezero. |
@@ -13,6 +14,7 @@
 | Indicaciones y voz | Giros, distancias, ciencia y regreso; selección de voces españolas instaladas, ritmo y volumen. Depende del dispositivo; no requiere API de pago. |
 | Guía celular / ESP32 | Vista de indicaciones grandes, GPS real del celular vinculado explícitamente a la ruta de Marte a escala 1:1, y receptor Wi-Fi para el firmware ESP32 de la bitácora suministrada. Ubicación antigua, mala precisión o desconexión ponen la guía en espera. |
 | Recálculo y polvo | Desvío simulado/manual y cambio de escenario recalculan lo restante conservando el hogar H. Polvo reduce velocidad; tormenta añade una exclusión hipotética. Sin paso, pausa y reintento. El presupuesto corresponde al nuevo tramo, sin descontar tiempo consumido. |
+| Reloj Mars OS | Firmware alternativo para ST7789 320×240 + 240×240, mapa local Glen Torridon, guía privada del celular y misiones públicas de 2–10 puntos por código. Relay opcional de sincronización/imágenes. Su A* local difiere de FAST/SAFE Python. [Guía](RELOJ_MARS_OS.md). |
 | ROVER en ESP32 | Simulación independiente sobre ortofoto de Jezero, mosaicos LittleFS, panel y tarjetas. Sin proveedor geométrico muestra RUTA DEMO; la guía Wi-Fi no transfiere geometría automáticamente. [Módulo 3](MODULO_ROVER_ESP32.md). |
 | Exportación | JSON con puntos nombrados, ruta, métricas, escenario, restricciones, procedencia y fuentes. |
 
@@ -25,3 +27,5 @@ No se extrapolan objetivos ni fotografía orbital a todo Marte. El DEM no detect
 Verificación automática: rutas, regreso independiente, pendientes, exclusiones, catálogo, coordenadas, geometría y carga conjunta de scripts. Las voces efectivas, la precisión real del GPS y la pantalla/enlace físico del ESP requieren prueba en dispositivo; no se han probado físicamente desde este entorno. Véase [guía de uso y firmware](NAVEGADOR_ESP32.md).
 
 Especificaciones completas y parámetros: [ESPECIFICACIONES.md](ESPECIFICACIONES.md). Arquitectura: [ARQUITECTURA.md](ARQUITECTURA.md). Contratos: [API.md](API.md). Fuentes: [DATOS_Y_FUENTES.md](DATOS_Y_FUENTES.md).
+
+Uso de cada pantalla: [Manual web](MANUAL_WEB.md). Referencia de las 89 entradas/botones estáticos y controles generados: [Controles](CONTROLES_WEB.md). Diagnóstico: [Solución de problemas](SOLUCION_DE_PROBLEMAS.md).

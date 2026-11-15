@@ -2,6 +2,8 @@
 
 Estado documentado: 15 de noviembre de 2026. Describe lo implementado en `feat/ruta-marciana-servidor-local`; no constituye una lista de funciones futuras. [Índice general](../README.md).
 
+Guía de cada pantalla y flujo: [Manual web](MANUAL_WEB.md). Inventario completo: [Controles](CONTROLES_WEB.md). Diagnóstico: [Solución de problemas](SOLUCION_DE_PROBLEMAS.md).
+
 ## Propósito y plataformas
 
 Ruta Marciana permite explorar relieve marciano, elegir objetivos, comparar recorridos educativos y ensayar su seguimiento. Una aplicación web sirve mapa, planificación y guía. El celular puede aportar desplazamientos GPS terrestres para entrenamiento; un ESP32 recibe la indicación actual y conserva las aplicaciones de bitácora y presupuesto de su base.

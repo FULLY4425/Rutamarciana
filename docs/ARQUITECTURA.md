@@ -7,18 +7,23 @@
 ```mermaid
 flowchart LR
     Assets[Datos NASA/PDS preparados] --> Flask[Flask + Waitress]
-    Web[Mapa y planificador en navegador] -->|POST ruta| Flask
+    Web[Interfaz y mapa en navegador] -->|POST ruta| Flask
     Flask --> Python[Planificador Python]
     Python -->|FAST / SAFE y presupuesto| Web
     GPS[GPS terrestre del celular] --> Local[Marco local de entrenamiento]
     Local --> Web
-    Web -->|Solo guía y tiempos| RAM[Sesión privada en RAM]
-    RAM -->|HTTPS por Wi-Fi| ESP[ESP32: TFT 320x240 / OLED]
-    ESP --> FS[Bitácora en LittleFS]
-    FS -->|Sync manual legado| Flask
+    Web -->|Guía y tiempos| RAM[Sesión privada en RAM]
+    RAM -->|HTTPS| Base[ESP32 Space Apps]
+    RAM -->|HTTPS| Watch[ESP32 Mars OS]
+    Web -->|Compartir puntos| Mail[Buzón público temporal]
+    Mail --> Watch
+    Web --> PC[Relay opcional en PC]
+    PC -->|Plan, escenarios e imágenes| Watch
+    Base --> FS[Bitácora LittleFS]
+    FS -->|Sync manual independiente| Flask
 ```
 
-La voz se sintetiza en el navegador del celular. Las coordenadas terrestres no pasan al canal de guía. El ESP no ejecuta SciPy, no descarga un mapa global ni interpreta geometría 3D: recibe la indicación actual.
+La voz se sintetiza en el navegador del celular. Las coordenadas terrestres no pasan al canal de guía. El receptor de indicaciones no ejecuta SciPy ni descarga un DEM global. Mars OS incorpora además su propio A* y mapa local de Glen Torridon, generados desde los assets de este repositorio: no equivalen al planificador FAST/SAFE. El módulo ROVER es otra simulación embebida, con sus propios mosaicos y contrato.
 
 ## Distribución del código
 
@@ -29,6 +34,7 @@ La voz se sintetiza en el navegador del celular. Las coordenadas terrestres no p
 | `relay/app.py` | Recursos web, terreno, rutas, manifest y copia de bitácoras |
 | `relay/planet.py` | Selección de región por solicitud y limpieza de temporales |
 | `relay/field.py` | Catálogo científico por región y scripts de campo permitidos |
+| `relay/psion.py` | Buzón público de misiones Mars OS, validación y reutilización del cálculo Python en Glen Torridon |
 | `relay/navigator.py` | Sesiones temporales autenticadas, validación, frescura y paquete ESP |
 | `pipeline/terrain.py`, `roughness.py`, `visualization.py` | Preparación/derivados del relieve y capas |
 | `pipeline/mission.py` | Objetivo científico y supuestos explícitos de movilidad/equipo |
@@ -38,6 +44,9 @@ La voz se sintetiza en el navegador del celular. Las coordenadas terrestres no p
 | `pipeline/planet.py` | Lectura MOLA, proyección, muestreo y atlas |
 | `pipeline/fetch_jezero.py`, `fetch_glen.py`, `fetch_mola.py` | Importadores reproducibles de datos oficiales |
 | `pipeline/build.py`, `manifest.py`, `tiles.py`, `synth.py` | Build de terreno/manifiesto, PNG/BMP 320×240 y demo |
+| `web/workspace.js` | Pestañas, límite de altura respecto al mapa, vista ampliada y traslado de los mismos controles sin duplicarlos |
+| `web/mobile.js`, `map-touch.js` | Acciones de trazado, accesos táctiles, detección de toque/arrastre y zoom con dos dedos |
+| `web/psion.js` | Adaptador del relay Mars OS, intercambio de misiones y capturas de los visores |
 | `web/app.js` | Estado de misión, selección, peticiones de planificación y tarjetas |
 | `web/terrain.js` | Mapa/malla, interacción, seguimiento y conexión entre vistas |
 | `web/planet.js` | Globo y selección de regiones |
@@ -52,6 +61,7 @@ La voz se sintetiza en el navegador del celular. Las coordenadas terrestres no p
 | `web/navigator.js` | GPS local, anclaje, seguimiento real, vista de bolsillo y publicación al ESP |
 | `assets/` | Datos preparados, imágenes, catálogos y procedencia |
 | `firmware/psion-micor-spaceapps/` | Integración actual con la base ESP32 suministrada |
+| `firmware/psion-marte-os/` | Sistema independiente de dos ST7789, mapa/A* local, guía privada y relay opcional |
 | `firmware/psion_micor_stable/` | Variante anterior conservada; no es el nuevo receptor TFT |
 | `tests/`, `relay/tests/` | Pruebas Python, JavaScript y compilación nativa de núcleos C++ |
 | `reference/` | Material de referencia/diseño histórico; contrastar con especificaciones actuales |
@@ -64,7 +74,7 @@ La voz se sintetiza en el navegador del celular. Las coordenadas terrestres no p
 4. Se devuelven FAST/SAFE, regreso, métricas y presupuesto. No se sobrescribe el manifiesto precalculado.
 5. Mapa, perfil, superficie, personajes y voz consumen el mismo recorrido. El avance puede ser simulado o seguir GPS anclado.
 6. Recálculo conserva hogar y puntos pendientes. Un error elimina la ruta válida del nuevo cálculo y pausa; no usa una ruta de otra región como sustituto.
-7. Exportación descarga una copia JSON, sin crear una base de datos de misiones.
+7. Exportación descarga una copia JSON, sin crear una base de datos persistente de misiones. El buzón público Mars OS es un canal adicional explícito, acotado y temporal.
 
 Las revisiones de solicitudes evitan que una respuesta antigua reemplace una misión editada o una región recién seleccionada. El estado del navegador no es un registro compartido de servidor.
 
@@ -80,6 +90,7 @@ Los arrays de exclusión se calculan sin sobrescribir los originales. NoData se 
 - **Personalización web:** `localStorage` por ámbito geográfico; sin cuentas ni sincronización.
 - **Misión/anclaje:** memoria de la página; el GPS se solicita por una acción del usuario y se detiene al ocultarla.
 - **Guía ESP:** última publicación por sesión, en RAM, sin historial; tokens distintos de lectura/escritura y caducidad fija.
+- **Misiones Mars OS:** códigos públicos de cuatro caracteres, hasta 128 entradas en RAM, 24 h de duración; solo puntos/escenario/métricas de Glen Torridon. No contienen GPS terrestre ni credenciales de guía.
 - **Bitácora:** archivos LittleFS del ESP y copia de sincronización en el servidor. Este endpoint legado no está cubierto por las credenciales del navegador.
 
 El manifiesto de bitácora, las sesiones de guía y los JSON exportados son canales diferentes. No deben documentarse como una única sincronización automática.
@@ -89,11 +100,20 @@ El manifiesto de bitácora, las sesiones de guía y los JSON exportados son cana
 `forest.ino`, `bitacora_core.h`, `eva_budget.h` y `mision_map_contract.h` se conservan byte a byte de las entregas aportadas. El sketch principal añade los enganches append-only de ROVER; los manifiestos de hashes conservan ambas procedencias. Se modifica el espacio Misión en `spaceapps_apps.h` y se añaden:
 
 - `navigator_core.h`: parser acotado, paquete y estado/frescura, sin dependencia de Arduino.
-- `navigator_link.h`: tarea HTTPS, vinculación, proveedor EVA y adaptación al shell.
+- `navigator_transport.h`: tarea HTTPS, credenciales en RAM e instantánea de guía; reutilizado por ambos firmwares.
+- `navigator_link.h`: proveedor EVA y adaptación al shell Space Apps.
 - `navigator_tft.h`: presentación 320×240, iconos y texto acotado; no modifica las helpers de otras apps.
 - `navigator_ca.h`: raíces de confianza GTS para el transporte TLS.
 
 El worker de red no dibuja en pantalla; comparte una instantánea protegida y la UI la consume. El proveedor registrado con `mision::setMapProvider` respeta unidades en segundos, variantes 0/1 y capacidad de ocho paradas. No se cambia la electrónica del shell ni se eliminan sus aplicaciones heredadas.
+
+## Organización de la interfaz
+
+`web/workspace.js` agrupa los nodos ya creados y conserva sus identificadores y listeners. El panel izquierdo ofrece Plan/Ciencia/Puntos/Datos/Reloj; el derecho, Guía/Recorrido/Entorno/Rutas/Notas/Fuentes. No crea copias alternativas de formularios ni otro estado de misión.
+
+En escritorio, `ResizeObserver` toma la altura real del mapa y las columnas no contribuyen una altura intrínseca mayor al contenedor. El contenido activo se muestra completo si cabe. Si es extenso, una descripción y **Ampliar sección** permiten abrir el mismo nodo dentro de un `dialog`; al cerrar se devuelve al panel. No se recorta un formulario largo ni se crea una lista lateral con scroll independiente. En pantallas pequeñas se conserva el flujo de página de la categoría seleccionada.
+
+Los enlaces a secciones activan su pestaña. El acceso a resultados desde el cálculo puede abrirlos ampliados; un modo de marcado vuelve al mapa y cierra la vista ampliada. Las pestañas usan roles accesibles, selección con flechas/Inicio/Fin y el diálogo admite cierre con Escape. El agrupado no recalcula ni modifica el presupuesto por sí mismo. [Manual](MANUAL_WEB.md), [inventario de controles](CONTROLES_WEB.md).
 
 ## Criterios de diseño
 
@@ -114,3 +134,9 @@ Para cambios solo de documentación basta contrastar código, enlaces y ejemplos
 ## Módulo 3 ROVER
 
 `pov_core.h` y `pov_contract.h` definen la simulación/contrato geométrico; `rover_app.h` implementa su ciclo de vida y lectura de mosaicos, y `pov_render.h` recorta la geometría al visor. La nueva app usa LittleFS `data/pov` con archivos preparados por `pipeline.pov_tiles`. Se integró sin reemplazar Misión ni la guía de bolsillo. El canal de guía contiene tiempos/indicaciones y no es un proveedor automático de geometría. [Diseño, pruebas y carga de datos](MODULO_ROVER_ESP32.md).
+
+## Mars OS y relay opcional
+
+`relay/psion.py` normaliza 2–10 puntos de Glen Torridon y delega el cálculo en la misma función de servicio de `/api/route`. El buzón devuelve métricas de ida FAST y CRC de celdas, sin afirmar igualdad con el A* del reloj. Los códigos públicos se separan de los tokens privados de guía.
+
+`web/psion.js` expone `window.ojoDeMarte` para el relay suministrado, adaptado al proyecto. La PC conserva páginas separadas para el plan y la captura, sincroniza puntos/restricciones/escenarios y convierte PNG a RGB565. No se ejecuta Chromium como parte del servidor Render. Los datos del reloj se generan mediante `extras/make_marte_data.py` y registran hashes del DEM, manifiesto y objetivos del repositorio. [Operación y límites](RELOJ_MARS_OS.md).

@@ -18,9 +18,28 @@ Registro funcional hasta el **15 de noviembre de 2026**. No es un roadmap ni una
 | Guía de bolsillo | Vista Reloj / celular con GPS terrestre explícitamente vinculado a Marte, entrenamiento 1:1 |
 | Enlace embebido | Sesiones privadas temporales, guía ASCII y receptor HTTPS ESP32, conservando la bitácora suministrada |
 | TFT 320×240 | Renderer horizontal dedicado, flechas grandes, fuente de distancia de 24 píxeles y texto acotado |
+| Reloj Mars OS | Sistema alternativo de dos ST7789, mapa local Glen Torridon, guía privada, códigos públicos y relay opcional |
+| Organización de la página | Once categorías laterales y vista ampliada; en escritorio el marco termina al pie del mapa |
 | Documentación integral | README reorganizado, especificaciones, arquitectura, API, datos, hardware y límites contrastados con código |
 
-## Última verificación disponible
+## Estado y última verificación funcional registrada
+
+La interfaz actual mantiene las tres columnas y el límite inferior del mapa. Agrupa todas las herramientas laterales en once pestañas y amplía las categorías extensas sin duplicar ni perder los formularios. La guía móvil incorpora acciones de salida/destino/parada/exclusión y gestos de dos dedos.
+
+Se añade el firmware independiente Mars OS, con dos ST7789, DEM local generado desde los datos de este repositorio, guía privada HTTPS compartida y buzón público de misiones. Se conserva la variante Space Apps/ROVER.
+
+- **198 pruebas Python aprobadas, 2 omitidas; 34 JavaScript aprobadas** en la última revisión funcional anterior a esta actualización de documentación.
+- Chromium: flujo táctil con cálculo Python real, cinco tamaños de pantalla, las once pestañas, límite inferior del mapa, ausencia de herramientas debajo, formulario conservado al ampliar, FAST/SAFE completos y Escape.
+- Relay real con Chromium: plan, escenarios, buzón y cuatro imágenes RGB565 320×190 con contenido visible.
+- Compilación Space Apps/ROVER: **1,992,078 B flash y 94,516 B RAM estática**.
+- Compilación Mars OS: **1,301,595 B flash y 71,540 B RAM estática**. Ambas con core ESP32 3.3.12 y partición `no_ota`.
+- Render: recursos de la interfaz y nuevo agrupado contrastados con los archivos probados; la actualización documental no modifica esos recursos ni requiere un despliegue.
+
+El [manual completo](MANUAL_WEB.md), la [referencia de 89 controles](CONTROLES_WEB.md), la [guía de problemas](SOLUCION_DE_PROBLEMAS.md) y el [índice](README.md) documentan la página actual. Se comprobaron los controles y enlaces contra el código. No se repitieron compilaciones ni se flasheó hardware por editar documentos.
+
+Las cifras que siguen pertenecen a etapas históricas concretas; no se suman entre sí como si fueran pruebas independientes.
+
+## Verificación histórica de la adaptación TFT
 
 - Suite completa de software previa a la adaptación TFT: **166 pruebas Python aprobadas, 2 omitidas y 27 comprobaciones JavaScript aprobadas**.
 - Adaptación TFT: nueva prueba de límites/texto con ASan/UBSan y comprobaciones focalizadas de parser/API/preservación de firmware: **15 pruebas Python aprobadas**. No sumar 15 a 166 como si fueran pruebas independientes; hay pruebas repetidas entre ejecuciones.

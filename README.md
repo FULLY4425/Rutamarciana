@@ -26,6 +26,10 @@ La alternativa local sigue disponible con `python iniciar.py`. Configuración, c
 
 | Documento | Contenido |
 | --- | --- |
+| [Índice de documentación](docs/README.md) | Guías de uso, operación, hardware y mantenimiento organizadas por tarea |
+| [Manual completo de la página](docs/MANUAL_WEB.md) | Todas las pantallas, once pestañas, controles y flujos paso a paso |
+| [Referencia de controles](docs/CONTROLES_WEB.md) | Los 89 controles estáticos y los controles generados, con identificadores y límites |
+| [Solución de problemas](docs/SOLUCION_DE_PROBLEMAS.md) | Interfaz, rutas, datos, voz, GPS, códigos y servidor |
 | [Auditoría del reto proporcionado](docs/AUDITORIA_RETO_NASA.md) | Requisito por requisito, funciones añadidas, evidencia y límites |
 | [Especificaciones completas](docs/ESPECIFICACIONES.md) | Todas las funciones, parámetros, modelos, capacidades y límites |
 | [Matriz de funciones](docs/FEATURE_MATRIX.md) | Resumen de capacidades y cobertura |
@@ -36,6 +40,7 @@ La alternativa local sigue disponible con `python iniciar.py`. Configuración, c
 | [Render](RENDER.md) | Configuración del servicio, arranque, memoria y almacenamiento |
 | [Módulo 3 · ROVER](docs/MODULO_ROVER_ESP32.md) | Simulación sobre ortofoto de Jezero, tarjetas, mosaicos LittleFS y contrato geométrico |
 | [Celular y ESP32](docs/NAVEGADOR_ESP32.md) | GPS de entrenamiento, vinculación, TFT 320×240 y compilación |
+| [Reloj Mars OS](docs/RELOJ_MARS_OS.md) | Firmware de dos pantallas, mapa local, misiones públicas y relay opcional |
 | [Presupuesto EVA](docs/eva_budget_lunar_analog.md) | Fórmulas, supuestos y límites del modelo educativo |
 | [Cambios implementados](docs/CAMBIOS_IMPLEMENTADOS.md) | Evolución de las funciones y estado de verificación |
 
@@ -80,6 +85,8 @@ Para GPS en un celular usa la versión HTTPS de Render o un servidor HTTPS propi
 
 ## Primer recorrido
 
+Para recorrer cada opción de la interfaz consulta el [manual completo de la página](docs/MANUAL_WEB.md).
+
 1. Elige una región en el atlas o abre **Glen Torridon** desde el panel científico.
 2. Selecciona salida A y destino B. Añade paradas por clic o desde objetivos/puntos guardados. Son como máximo 18 paradas intermedias más A y B.
 3. Ajusta presupuesto, tiempo científico y pendiente; pulsa **Calcular rutas**.
@@ -110,7 +117,7 @@ La comprobación opcional `node tools/check_mobile_browser.cjs` usa Chromium con
 
 Node.js se usa para pruebas, no para servir la aplicación. Las pruebas nativas C++ requieren `g++` con soporte de AddressSanitizer/UBSan; tampoco es necesario para utilizar el servidor. `requirements-server.txt` contiene las dependencias de ejecución; las completas añaden pytest y rasterio para pruebas e importación geoespacial. También existen `make demo` y `make serve` para el flujo de desarrollo con `data/out`.
 
-La versión actual del firmware fue compilada para ESP32 core 3.3.12, partición `no_ota`: **1,992,078 B de flash (94%) y 94,516 B de RAM estática (28%)**. Las pruebas automáticas no sustituyen una prueba física de GPS, Wi-Fi, voz, pantallas o batería.
+Última verificación funcional registrada: **198 pruebas Python aprobadas (2 omitidas) y 34 JavaScript aprobadas**, además de Chromium para gestos, pestañas y vistas ampliadas. Las compilaciones con ESP32 core 3.3.12/`no_ota` corresponden a dos alternativas: Space Apps/ROVER, **1,992,078 B flash y 94,516 B RAM estática**; Mars OS, **1,301,595 B flash y 71,540 B RAM estática**. No se han flasheado placas ni probado físicamente GPS, Wi-Fi, voz, pantallas o batería desde esta integración. Esta actualización de manuales no requiere recompilar ni desplegar la aplicación.
 
 ## Créditos y procedencia
 
