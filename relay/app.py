@@ -17,6 +17,48 @@ def create_app(data_dir: str):
     app = Flask(__name__, static_folder=None)
     root = Path(data_dir).resolve()
 
+    def valid_scenario(data):
+        from pipeline.scenario import DEFAULTS, PROFILE, metadata, scenario
+        profile = data.get('scenario')
+        if (data.get('budget_model') != PROFILE or not isinstance(profile, dict)
+                or profile.get('scenario_id') != PROFILE or profile.get('profile') != PROFILE
+                or profile.get('assumption_basis') != 'lunar_analogue'
+                or profile.get('site') not in ('Jezero/Mars', 'synthetic', 'unknown')
+                or not isinstance(profile.get('values'), dict)
+                or set(profile['values']) != set(DEFAULTS)):
+            return False
+        try:
+            overrides = profile['overrides']
+            if set(overrides) != {'build', 'request'} or overrides['request'] != {}:
+                return False
+            scenario(profile['values'])
+            values = scenario(overrides['build'])
+            expected = metadata(values, profile['site'], overrides['build'])
+            if any(profile.get(key) != value for key, value in expected.items()):
+                return False
+            if 'site' in data:
+                site = 'Jezero/Mars' if data['site'] == 'jez_dtm_1m' else ('synthetic' if data['site'] == 'synth' else 'unknown')
+                if profile['site'] != site:
+                    return False
+            if any(key in data and data[key] != values[field] for key, field in
+                   (('budget_s', 'suit_budget_s'), ('science_s', 'science_stop_s'))):
+                return False
+            if 'science_waypoints' in data and (not isinstance(data['science_waypoints'], list)
+                    or ('science_stops' in data and data['science_stops'] != len(data['science_waypoints']))):
+                return False
+        except (ValueError, TypeError, KeyError, AttributeError):
+            return False
+        return True
+
+    def read_manifest():
+        def invalid_constant(value):
+            raise ValueError(f'constante JSON inválida: {value}')
+        try:
+            data = json.loads((root / 'routes.json').read_text(encoding='utf-8'), parse_constant=invalid_constant)
+            return data if isinstance(data, dict) else None
+        except (OSError, UnicodeError, ValueError):
+            return None
+
     @app.get("/health")
     def health():
         return jsonify(ok=True, files=sorted(p.name for p in root.glob("*")))
@@ -44,42 +86,48 @@ def create_app(data_dir: str):
             abort(404)
         return send_file(f, mimetype="image/png")
 
-    @app.get("/api/routes")
-    def routes():
-        f = root / "routes.json"
-        if not f.exists():
-            return jsonify(error="falta routes.json; ejecuta el pipeline"), 503
-        data = json.loads(f.read_text(encoding="utf-8"))
-        if (data.get("schema_version") != 3 or "cell_m" not in data or "cell_x_m" not in data
-                or data.get("dem_validity") != "nodata-preserved-v1"):
-            return jsonify(error="routes.json antiguo; regenera el pipeline"), 503
-        return jsonify(data)
-
     @app.get("/api/manifest")
     def manifest():
         f = root / "routes.json"
         if not f.exists():
             abort(404)
-        try:
-            data = json.loads(f.read_text(encoding="utf-8"))
-        except ValueError:
+        data = read_manifest()
+        if data is None:
             return jsonify(error="routes.json inválido; regenera el pipeline"), 503
-        raw = data.get("routes") if isinstance(data.get("routes"), dict) else {}
-        out = {"site": data.get("site", "unknown"),
-               "waypoints": [{"id": w.get("id"), "name": w.get("name"), "row": w.get("row"), "col": w.get("col")}
-                             for w in data.get("waypoints", [])
-                             if isinstance(w, dict) and isinstance(w.get("name"), str) and w.get("name")],
-               "routes": {k: {"time_s": v.get("time_s"), "distance_m": v.get("distance_m"), "points": v.get("points")}
-                          for k, v in raw.items() if k in ("safe", "fast") and isinstance(v, dict)},
-               "budget_s": data.get("budget_s"), "science_s": data.get("science_s"),
-               "science_stops": data.get("science_stops")}
-        return jsonify(out)
+        if request.args.get("full") == "1":
+            return send_file(f, mimetype="application/json")
+        routes = data.get("routes")
+        raw = routes if isinstance(routes, dict) else {}
+        waypoints = data.get("waypoints")
+        return jsonify({
+            "site": data.get("site", "unknown"),
+            "waypoints": [{"id": w.get("id"), "name": w.get("name"), "row": w.get("row"), "col": w.get("col")}
+                          for w in (waypoints if isinstance(waypoints, list) else [])
+                          if isinstance(w, dict) and isinstance(w.get("name"), str) and w.get("name")],
+            "routes": {k: {"time_s": v.get("time_s"), "distance_m": v.get("distance_m"), "points": v.get("points")}
+                       for k, v in raw.items() if k in ("safe", "fast") and isinstance(v, dict)},
+            "budget_s": data.get("budget_s"), "science_s": data.get("science_s"),
+            "science_stops": data.get("science_stops"),
+        })
+
+    @app.get("/api/routes")
+    def routes():
+        f = root / "routes.json"
+        if not f.exists():
+            return jsonify(error="falta routes.json; ejecuta el pipeline"), 503
+        data = read_manifest()
+        if (data is None or data.get("schema_version") != 3 or "cell_m" not in data or "cell_x_m" not in data
+                or data.get("dem_validity") != "nodata-preserved-v1"
+                or not valid_scenario(data)):
+            return jsonify(error="routes.json antiguo; regenera el pipeline"), 503
+        return jsonify(data)
 
     @app.post("/api/route")
     def compute():
         import numpy as np
 
         from pipeline.route import plan_routes
+        from pipeline.scenario import scenario, metadata
 
         body = request.get_json(force=True, silent=True) or {}
         if not isinstance(body, dict):
@@ -103,23 +151,31 @@ def create_app(data_dir: str):
         mf = root / "routes.json"
         if not mf.exists():
             return jsonify(error="falta routes.json; regenera el pipeline"), 503
-        meta = json.loads(mf.read_text(encoding="utf-8"))
-        if (meta.get("schema_version") != 3 or "cell_m" not in meta or "cell_x_m" not in meta
-                or meta.get("dem_validity") != "nodata-preserved-v1"):
+        meta = read_manifest()
+        if (meta is None or meta.get("schema_version") != 3 or "cell_m" not in meta or "cell_x_m" not in meta
+                or meta.get("dem_validity") != "nodata-preserved-v1"
+                or not valid_scenario(meta)):
             return jsonify(error="routes.json legado o incompleto; regenera a schema_version 3 y selecciona waypoints"), 503
         cell_m = meta["cell_m"]
+        try:
+            base = scenario(meta.get('scenario', {}).get('values'))
+            overrides = body.get('scenario_assumptions', {})
+            if not isinstance(overrides, dict):
+                raise ValueError('scenario_assumptions debe ser un objeto')
+            values = scenario({**base, **overrides})
+        except (ValueError, TypeError, AttributeError) as exc:
+            return jsonify(error=str(exc)), 400
         out = {"schema_version": 3, "start": start, "end": end,
                "science_waypoints": waypoints, "science_stops": len(waypoints),
-               "budget_model": "legacy_provisional",
+               "budget_model": "LUNAR-ANALOG-2026", "scenario": metadata(values, meta['scenario']['site'], meta['scenario']['overrides']['build'], overrides),
                "cell_m": cell_m, "cell_x_m": meta["cell_x_m"], "grid": meta.get("grid", {}),
-               "budget_s": meta.get("budget_s", 14400),
-               "science_s": meta.get("science_s", 600),
-               "reserve_fraction": meta.get("reserve_fraction", 0.15)}
+               "budget_s": values['suit_budget_s'],
+               "science_s": values['science_stop_s']}
         try:
             out.update(plan_routes(*(np.load(p, allow_pickle=False) for p in files),
                                    cell_m, start, end, out["budget_s"], out["science_s"],
-                                   waypoints, out["reserve_fraction"],
-                                   cell_x_m=out["cell_x_m"]))
+                                   waypoints, 0,
+                                   cell_x_m=out["cell_x_m"], scenario_assumptions=values))
         except (ValueError, TypeError, IndexError) as exc:
             return jsonify(error=str(exc)), 400
         return jsonify(out)

@@ -11,6 +11,7 @@ from pipeline.synth import hills
 from pipeline.terrain import slope_deg
 from pipeline.roughness import rough_from_dem
 from pipeline.tiles import save_png, save_tile_bmp, to_u8
+from pipeline.scenario import scenario
 
 MARS_KM_PER_DEG = 59.27
 
@@ -86,12 +87,20 @@ def main():
     ap.add_argument("--start", type=int, nargs=2)
     ap.add_argument("--end", type=int, nargs=2)
     ap.add_argument("--at", type=int, nargs=2, help="fila,col de la esquina superior izquierda (px del DEM)")
-    ap.add_argument("--budget-h", type=float, default=4.0)
-    ap.add_argument("--science-min", type=float, default=10.0)
+    ap.add_argument("--budget-h", type=float)
+    ap.add_argument("--science-min", type=float)
     ap.add_argument("--science-waypoint", type=int, nargs=2, action="append", default=[],
                     metavar=("ROW", "COL"), help="parada científica elegida; repetir en orden")
-    ap.add_argument("--reserve-fraction", type=float, default=0.15)
+    ap.add_argument("--scenario-json", default="{}", help="objeto JSON de overrides del escenario")
     a = ap.parse_args()
+    overrides = json.loads(a.scenario_json)
+    if not isinstance(overrides, dict):
+        ap.error('--scenario-json requiere un objeto')
+    if a.budget_h is not None:
+        overrides['suit_budget_s'] = a.budget_h * 3600
+    if a.science_min is not None:
+        overrides['science_stop_s'] = a.science_min * 60
+    values = scenario(overrides)
 
     out = Path(a.out)
     if a.synth:
@@ -115,8 +124,8 @@ def main():
     end = tuple(a.end) if a.end else (r - 3, c - 3)
 
     routes = plan_routes(dem, slope, rough, cell_m, start, end,
-                         a.budget_h * 3600, a.science_min * 60, a.science_waypoint, a.reserve_fraction,
-                         cell_x_m=cell_x_m)
+                         values['suit_budget_s'], values['science_stop_s'], a.science_waypoint, 0,
+                         cell_x_m=cell_x_m, scenario_assumptions=values)
 
     save_png(to_u8(slope), out / "preview.png")
     np.save(out / "dem.npy", dem)
@@ -134,10 +143,11 @@ def main():
                    {"id": 2, "name": "END", "row": end[0], "col": end[1]}],
         layers=[{"id": "slope", "label": "Slope", "tile": "slope"}],
         routes=routes,
-        budget_s=a.budget_h * 3600,
-        science_s=a.science_min * 60,
+        budget_s=values['suit_budget_s'],
+        science_s=values['science_stop_s'],
         science_waypoints=a.science_waypoint,
-        reserve_fraction=a.reserve_fraction,
+        scenario_assumptions=values,
+        scenario_overrides=overrides,
         cell_m=cell_m,
         cell_x_m=cell_x_m,
         spatial=spatial,

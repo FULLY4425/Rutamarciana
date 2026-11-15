@@ -1,6 +1,6 @@
 import numpy as np
 
-SUIT_FACTOR = 0.4      # calibrado para reproducir ~1 km/h del Apolo
+SUIT_FACTOR = 0.4      # escala de movilidad Tobler: llano ≈2.01 km/h; no consumibles
 MAX_SLOPE_DEG = 25.0   # por encima, intransitable
 DOSE_MSV_PER_HOUR = 0.02  # supuesto medio de superficie (RAD); se cita en README
 

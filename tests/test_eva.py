@@ -15,8 +15,8 @@ def test_round_trip_accounts_for_direction_and_stops():
     assert route['return']['points'][-1] == [3, 1]
     assert route['outbound']['time_s'] > route['return']['time_s']
     assert route['time_s'] == pytest.approx(route['outbound']['time_s'] + route['return']['time_s'], abs=0.11)
-    assert route['budget']['used_s'] == pytest.approx(route['time_s'] + 600, abs=0.11)
-    assert route['budget']['reserve_s'] == 2160
+    assert route['budget']['used_s'] == pytest.approx(route['time_s'] + 600 + 1800, abs=0.11)
+    assert route['budget']['reserve_s'] == 1800
     assert route['distance_m'] == pytest.approx(32)
 
 
@@ -83,7 +83,7 @@ def test_cli_manifest_matches_recomputed_api(tmp_path):
     from relay.app import create_app
 
     subprocess.run([sys.executable, '-m', 'pipeline.build', '--synth', '--rows', '30',
-                    '--cols', '30', '--science-waypoint', '5', '5', '--science-waypoint', '10', '10', '--reserve-fraction', '.25',
+                    '--cols', '30', '--science-waypoint', '5', '5', '--science-waypoint', '10', '10', '--scenario-json', '{"reserve_fixed_s":3600}',
                     '--out', str(tmp_path)], check=True, capture_output=True, text=True)
     doc = json.loads((tmp_path / 'routes.json').read_text())
     client = create_app(str(tmp_path)).test_client()
@@ -92,4 +92,4 @@ def test_cli_manifest_matches_recomputed_api(tmp_path):
     assert response.status_code == 200
     assert response.get_json()['fast'] == doc['routes']['fast']
     assert doc['science_stops'] == 2
-    assert doc['reserve_fraction'] == .25
+    assert doc['scenario']['values']['reserve_fixed_s'] == 3600

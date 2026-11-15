@@ -4,7 +4,7 @@ Generador local de rutas EVA simuladas: convierte un DEM en dos rutas de ida y
 regreso (conservadora y rápida), las sirve por LAN y genera tiles de pendiente.
 Ninguna ruta constituye una garantía o certificación de seguridad.
 
-**Apps incluidas:** 1) mapa por capas + rutas · 2) presupuesto EVA / GO-NO-GO.
+**Apps incluidas:** 1) mapa por capas + rutas · 2) presupuesto EVA de escenario (no GO/NO-GO).
 Las apps 3–5 (reloj dual, tarjeta de llegada, bitácora) no están en este MVP.
 
 ## Arranque rápido
@@ -26,15 +26,25 @@ curl -L -C - -o data/raw/jez_dtm_1m.tif \
   "https://planetarymaps.usgs.gov/mosaic/mars2020_trn/HiRISE/JEZ_hirise_soc_006_DTM_MOLAtopography_DeltaGeoid_1m_Eqc_latTs0_lon0_blend40.tif"
 
 python -m pipeline.build --dem data/raw/jez_dtm_1m.tif --rows 500 --cols 500 --out data/out \
-  --budget-h 4 --science-waypoint 100 200 --science-min 10 --reserve-fraction 0.15
+  --budget-h 4 --science-waypoint 100 200 --science-min 20
 ```
 
 ## Endpoints del relay
 
 - `GET /health` — estado y archivos disponibles.
 - `GET /api/routes` — rutas precalculadas y metadatos.
+- `GET /api/manifest` — catálogo reducido para el cliente embebido (site,
+  waypoints, routes.safe/fast, budget_s, science_s, science_stops); `?full=1`
+  devuelve el JSON crudo completo de `routes.json` (404 si falta;
+  503 si está malformado o no es un objeto). No valida el contrato v3: usar
+  `/api/routes` para consumir rutas validadas.
 - `POST /api/route` — `{"start":[row,col],"end":[row,col]}` → dos rutas nuevas.
+- `POST /api/bitacora` — `{id, fecha, entradas}` → escribe `bitacora/<id>.json`
+  de forma atómica; 400 si `id`, `fecha` o `entradas` son inválidos.
 - `GET /preview.png` — mapa de pendiente de la zona.
+
+Especificación completa de supuestos, fórmula y estados:
+[`docs/eva_budget_lunar_analog.md`](docs/eva_budget_lunar_analog.md).
 
 ### Contrato v3 para la UI
 
@@ -67,7 +77,7 @@ segundos por parada. Cada `fast` / `safe` contiene:
   la suma de longitudes de aristas de ambos recorridos, no la distancia recta.
   Cada tramo y cada dirección tiene su propia distancia de aristas.
   `science_total_s = len(science_waypoints) * science_s`, una sola vez;
-  `total_s = time_s + science_total_s`. Mostrar ida, regreso y total en cada
+  `total_s` es tiempo operacional incluyendo overhead y otras tareas. Mostrar ida, regreso y total en cada
   tarjeta. `points` superior es únicamente la ida, por compatibilidad.
 - `slope_max_deg`, `slope_exposure_m`, `rough_mean` agregan ambos recorridos;
   `dose_msv` es solo una estimación durante desplazamiento, no telemetría.
@@ -77,18 +87,88 @@ la distancia por la ruta y etiquetarla como distancia plana aproximada, no como
 geodésica exacta sin modelo y datum. Todos los totales se calculan a precisión
 completa y luego se redondean: sumar los valores visibles puede diferir.
 
-`budget_model: "legacy_provisional"` identifica los parámetros `budget_s`,
-`science_s`, `reserve_fraction` y los campos `budget` como simulación heredada,
-no un modelo EVA real. Se preservan la fórmula y reglas anteriores:
-`used = time_s + science_total_s`, `margin = budget_s - used`,
-`reserve = budget_s * reserve_fraction`, `fits_reserve = used + reserve <= budget_s`.
-La decisión usa precisión completa. La UI mantiene sus etiquetas y cálculos
-hasta que su propietario los integre; no se cambian reglas GO/NO-GO aquí.
+### Jezero / Marte — supuestos EVA basados en analogía lunar
+
+El sitio y la ruta son **Jezero, Marte** (`site: "Jezero/Mars"`); únicamente
+los supuestos de movilidad, tiempos y reserva usan datos lunares como analogía
+(`assumption_basis: "lunar_analogue"`), por falta de un estándar marciano público.
+No describen capacidad real de un traje marciano. `LUNAR-ANALOG-2026` es
+únicamente el identificador interno y versionado del perfil, no la ubicación.
+El DEM de demostración se etiqueta `synthetic` y otros nombres de DEM se
+etiquetan `unknown`; el nombre de archivo conocido `jez_dtm_1m` se etiqueta
+Jezero/Mars por convención, sin verificar la procedencia del contenido.
+
+`scenario.values` contiene todos los valores efectivos: Suit budget `suit_budget_s`
+= 14 400 s (240 min), velocidad nominal llana `v_nom_flat_kmh` = 2, velocidad
+llana de retorno `v_return_flat_kmh` = 2 km/h, `science_stop_s` = 1 200 s,
+`egress_s` = `ingress_s` = 900 s, `other_tasks_s` = 0,
+`reserve_fixed_s` = 1 800 s, `max_return_s` = 3 600 s y
+`max_return_distance_m` = 2 000 m. Son supuestos del proyecto, no capacidad
+de un traje marciano ni criterio oficial NASA. Artemis ConOps declara 2 km/h
+como assumption/TBR para llano, no promedio universal. 20 min/parada se
+inspira en evidencia Apollo, no es universal. Los 15+15 min son optimistas.
+Sensibilidad sugerida: parada 10–45 min, overhead 30–60 min y reserva 30–60 min.
+El 15% anterior no se usa. Apollo 14 observó 2,47 km/h solo caminando;
+progreso efectivo EVA caminada 0,10–0,37 km/h. El walkback de 6,34 km/h fue
+un ensayo optimista, no el default.
+
+Se sobrescriben parámetros con `--scenario-json '{"reserve_fixed_s":3600}'`
+en el build, o con `"scenario_assumptions":{"science_stop_s":600}` en POST;
+POST parte de los valores del manifiesto, sin modificarlo. `--budget-h` y
+`--science-min` también sobrescriben el perfil. El relay rechaza claves
+extrañas, no finitos, negativos y extremos numéricos: cada valor debe estar entre
+0 y 10⁹; las velocidades entre 10⁻⁶ y 10⁶ km/h. Son límites técnicos, no físicos.
+El manifiesto y la respuesta
+exponen `scenario.defaults` (perfil versionado), `scenario.values` (valores
+efectivos), `scenario.units` (unidad por parámetro), `scenario.provenance`,
+`scenario.note` y `scenario.sensitivity`. `scenario.overrides.build` registra
+las entradas explícitas del build, incluso las iguales al default;
+`scenario.overrides.request` registra solo el POST actual y prevalece sobre el
+build. Para llamadas directas a `write_manifest` que omiten `scenario_overrides`,
+se infieren solo las diferencias respecto al default, no la intención original.
+La procedencia describe los **defaults**, no atribuye overrides a las fuentes.
+El relay rechaza metadatos de escenario contradictorios o incompletos con 503;
+esto detecta inconsistencias, no autentica los archivos. `science_stops`
+siempre es `len(science_waypoints)`.
+
+Por ruta, `budget.operational_s = egress + outbound_travel + N*science_stop +
+other_tasks + return_travel + ingress`; `reserve_fixed_s` aparece aparte y
+`slack_s = suit_budget_s - operational_s - reserve_fixed_s`. `cabe`: slack ≥ 0;
+`justo`: slack < 0 pero operacional ≤ presupuesto; `no_cabe`: operacional >
+presupuesto. La clasificación usa valores sin redondear. `limiting_terms` enumera
+los términos de mayor duración, no implica identificación de consumible limitante.
+Con `N = 0` paradas el término de ciencia es exactamente 0 y no se añade tiempo
+de parada. `cabe/justo/no_cabe` son factibilidad de escenario LUNAR-ANALOG, no
+GO/NO-GO ni criterio NASA; no deben mostrarse como aprobación o rechazo de
+misión. Esta regla prevalece sobre los umbrales diferentes del informe de
+investigación.
+
+`return_contingency.waypoint_returns` contiene el camino de retorno más rápido
+modelado desde cada parada científica, o desde el punto más alejado radialmente
+si no hay paradas. Dijkstra dirigido usa pendiente, rugosidad y velocidad de
+retorno declarada; sus distancias y tiempos se comparan separadamente con los
+límites de 2 km y 60 min. Exceder un límite en ese camino no demuestra que no
+exista otra ruta que cumpla ambos; cumplirlos no valida el terreno real ni
+asegura rescate. Es una comprobación de modelo, no una garantía operacional.
+
+Adicionalmente se inspecciona la máxima **distancia radial en planta** de ambas
+rutas. `flat_radial_time_s` es un proxy calculado con velocidad llana, no una
+ruta ni cota inferior del tiempo. Los estados `distance_status`, `time_status`
+y `time_proxy_status` del objeto exterior se refieren solamente a ese diagnóstico
+radial; `time_status: not_verified` no contradice las comparaciones de rutas
+modeladas dentro de `waypoint_returns`. El retorno planeado ya se contabiliza
+una vez; esta prueba no añade otro retorno ni reserva. La UI existente no se
+ha actualizado y puede mostrar cálculos/etiquetas heredadas contradictorias;
+consumir el contrato backend, no interpretar la UI como validación.
+
+**Prohibido presentar una distancia recta (radial o A–B) como ruta transitable**:
+es solo una cota geométrica. Tampoco debe presentarse `flat_radial_time_s` como
+tiempo de retorno, ni sumar la contingencia al tiempo operacional o a la reserva.
 
 **Migración explícita:** `GET /api/routes` y POST requieren artefactos del mismo
 build con manifiesto `schema_version: 3`, `cell_m`, `cell_x_m`,
-`dem_validity: "nodata-preserved-v1"` y los tres NPY. Versiones v3 anteriores
-sin ese marcador también devuelven 503: hay que regenerar todos los artefactos
+`dem_validity: "nodata-preserved-v1"`, perfil Jezero con supuestos de analogía lunar y los tres NPY. Versiones v3 anteriores
+sin ese marcador o sin todos los valores del perfil también devuelven 503: hay que regenerar todos los artefactos
 juntos desde el DEM original, no añadir el marcador a mano. No comprueba hashes.
 Los manifiestos v2 devuelven 503: regenerar el pipeline y elegir cada parada
 con `--science-waypoint ROW COL` repetido en orden (o ninguna). El antiguo
@@ -98,6 +178,23 @@ con `science_stops` también se rechaza con 400, nunca se convierte en waypoints
 raíz. `/mock_routes.json` sigue siendo legado y no garantiza el contrato v3.
 Los mapas históricos `cost_fast.npy` y `cost_safe.npy` siguen por compatibilidad;
 no modelan dirección ni se usan para calcular estas rutas.
+
+## Pruebas
+
+```bash
+.venv/bin/python -m pytest -q -p no:cacheprovider   # 114 passed
+.venv/bin/python -m compileall -q pipeline relay tests
+git diff --check
+git status --short -- web/                          # debe quedar vacío
+```
+
+`tests/test_jezero_smoke.py` construye el DEM real (`data/raw/jez_dtm_1m.tif`,
+~1.8 GB, 500×500 a 4 m), valida el manifiesto v3 y ejercita `GET /api/routes` y
+`POST /api/route` con paradas ordenadas; se auto-omite si faltan el TIFF o `git`.
+Cobertura de presupuesto, fronteras y contingencia, con comandos y gaps:
+[`docs/eva_budget_lunar_analog.md`](docs/eva_budget_lunar_analog.md).
+Nota de estado: en este árbol `data/out` sigue en `schema_version: 2`, así que
+`GET /api/routes` y POST devuelven **503** hasta regenerarlo.
 
 ## Cómo se calcula (resumen)
 
@@ -117,7 +214,7 @@ no modelan dirección ni se usan para calcular estas rutas.
 3. Rugosidad aproximada por percentiles (sin ortofoto: residuo del DEM).
 4. Para cada paso dirigido entre 8 vecinos, gradiente firmado = diferencia de
    elevación / distancia horizontal; velocidad Tobler `6·e^(−3.5|gradiente+0.05|)`
-   km/h × `0.4`. Tiempo = distancia / velocidad × `(1 + 0.2·rugosidad media)`.
+   km/h normalizada para que en llano coincida con `v_nom_flat_kmh` o `v_return_flat_kmh`. Tiempo = distancia / velocidad × `(1 + 0.2·rugosidad media)`.
    El factor es un supuesto de aproximación, no calibración de un traje marciano.
 5. Dijkstra minimiza tiempo para `fast`; `safe` minimiza la suma de tiempo ×
    `[1 + rugosidad media + (pendiente media/25°)²]`. El tiempo mostrado para
@@ -171,8 +268,7 @@ no modelan dirección ni se usan para calcular estas rutas.
   aproximación local; para regiones grandes debe variar por fila. El recorte
   predeterminado cubre 2 000 m proyectados por eje pero ~1 896.8 m físicos E–O
   por 2 000 m N–S. La rejilla registra las distancias sin reproyectar la imagen.
-- El lector rellena nodata con la mediana del recorte: puede ocultar huecos;
-  inspeccionar la cobertura antes de interpretar una ruta.
+- NoData y sus vecinos afectados se excluyen de la búsqueda; inspeccionar la cobertura antes de interpretar una ruta.
 - Sin posicionamiento: Marte no tiene GPS; la posición es relativa al mapa.
 - La radiación no entra en la búsqueda: es tiempo × tasa, mostrada aparte.
 - Un solo corredor de ~2 km; no hay mosaico multi-hoja.

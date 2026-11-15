@@ -15,7 +15,7 @@ def test_ordered_waypoints_and_direct_return_for_both_profiles():
         assert route['return']['points'][0] == [3, 6]
         assert route['return']['points'][-1] == [3, 0]
         assert route['science_total_s'] == 200
-        assert route['budget']['used_s'] == pytest.approx(route['time_s'] + 200, abs=.11)
+        assert route['budget']['used_s'] == pytest.approx(route['time_s'] + 200 + 1800, abs=.11)
         assert route['distance_m'] == pytest.approx(sum(leg['distance_m'] for leg in legs) + route['return']['distance_m'], abs=.21)
 
 

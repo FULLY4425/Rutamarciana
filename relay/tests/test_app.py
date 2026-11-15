@@ -1,36 +1,42 @@
 import json
-
 import pytest
+from pipeline.scenario import metadata, scenario
 
 from relay.app import create_app
 
 
 def test_health_and_routes(tmp_path):
-    (tmp_path / "routes.json").write_text(json.dumps({"schema_version": 3, "dem_validity": "nodata-preserved-v1", "cell_m": 4, "cell_x_m": 4, "safe": {"time_s": 1}}))
+    (tmp_path / "routes.json").write_text(json.dumps({"schema_version": 3, "dem_validity": "nodata-preserved-v1", "budget_model": "LUNAR-ANALOG-2026", "scenario": metadata(scenario()), "cell_m": 4, "cell_x_m": 4, "safe": {"time_s": 1}}))
     app = create_app(str(tmp_path))
     c = app.test_client()
     assert c.get("/health").json["ok"] is True
     assert c.get("/api/routes").json["safe"]["time_s"] == 1
 
 
-def test_manifest_construye_contrato(tmp_path):
-    manifest = {"site": "jez_dtm_1m", "waypoints": [{"id": 1, "name": "START", "row": 2, "col": 2},
-               {"id": 2, "name": "END", "row": 497, "col": 497}, {"id": 3, "row": 4, "col": 4}],
-               "routes": {"safe": {"time_s": 1, "distance_m": 2, "points": [[0, 0]]},
-                          "fast": {"time_s": 1}, "otra": {"time_s": 9}},
-               "budget_s": 14400, "science_s": 600, "science_stops": 5, "layers": {"x": 1}}
+def test_manifest_slim_contract_and_full_file(tmp_path):
+    manifest = {"site": "jez_dtm_1m", "budget_s": 14400, "science_s": 1200, "science_stops": 1,
+                "waypoints": [{"id": 1, "name": "START", "row": 2, "col": 2},
+                              {"id": 2, "name": "S1", "row": 3, "col": 4}, {"id": 3, "name": "", "row": 0, "col": 0}],
+                "routes": {"safe": {"time_s": 5, "distance_m": 6, "points": [[2, 2]]},
+                           "fast": {"time_s": 4, "distance_m": 6, "points": [[2, 2]]},
+                           "other": {"time_s": 1}},
+                "layers": {"huge": [0] * 100}, "extra": {"x": True}}
     (tmp_path / "routes.json").write_text(json.dumps(manifest), encoding="utf-8")
-    out = create_app(str(tmp_path)).test_client().get("/api/manifest")
-    assert out.status_code == 200
-    assert out.json["site"] == "jez_dtm_1m"
-    assert out.json["waypoints"] == [{"id": 1, "name": "START", "row": 2, "col": 2}, {"id": 2, "name": "END", "row": 497, "col": 497}]
-    assert out.json["routes"] == {"safe": {"time_s": 1, "distance_m": 2, "points": [[0, 0]]}, "fast": {"time_s": 1, "distance_m": None, "points": None}}
-    assert out.json["budget_s"] == 14400 and out.json["science_s"] == 600 and out.json["science_stops"] == 5
-    assert "layers" not in out.json
+    client = create_app(str(tmp_path)).test_client()
+    slim = client.get("/api/manifest")
+    assert slim.status_code == 200
+    assert set(slim.json) == {"site", "waypoints", "routes", "budget_s", "science_s", "science_stops"}
+    assert [w["name"] for w in slim.json["waypoints"]] == ["START", "S1"]
+    assert set(slim.json["routes"]) == {"safe", "fast"}
+    assert slim.json["site"] == "jez_dtm_1m" and slim.json["science_stops"] == 1
+    full = client.get("/api/manifest?full=1")
+    assert full.status_code == 200
+    assert full.json == manifest
 
 
-def test_manifest_404_sin_routes(tmp_path):
-    assert create_app(str(tmp_path)).test_client().get("/api/manifest").status_code == 404
+def test_manifest_missing_returns_404(tmp_path):
+    response = create_app(str(tmp_path)).test_client().get("/api/manifest")
+    assert response.status_code == 404
 
 
 def test_bitacora_persists_and_replaces_full_json(tmp_path):
