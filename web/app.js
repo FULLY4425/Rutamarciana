@@ -8,6 +8,7 @@ const bg = new Image();
 bg.src = "/preview.png";
 
 const state = {
+  revision: 0,
   grid: { rows: 500, cols: 500 },
   cellM: 4.0,
   cellXM: 4.0,
@@ -47,7 +48,7 @@ function legCard(leg, label, extraCls) {
     <div class="leg ${extraCls || ""}">
       <div class="leg-t">${label}</div>
       <div class="kv">${fmtMin(leg.time_s)} min · ${fmtKm(leg.distance_m)} km ·
-        slope ≤ ${leg.slope_max_deg === null || leg.slope_max_deg === undefined ? "—" : leg.slope_max_deg.toFixed(1)}°</div>
+        pendiente ≤ ${leg.slope_max_deg === null || leg.slope_max_deg === undefined ? "—" : leg.slope_max_deg.toFixed(1)}°</div>
     </div>`;
 }
 
@@ -60,9 +61,9 @@ function contingencyLine(b) {
   const worstT = Math.max(...wr.map(w => w.time_s));
   const cls = bad ? "bad" : "";
   const verdict = bad
-    ? "EMERGENCY RETURN OVER LIMIT"
-    : "Emergency return within 60 min / 2 km";
-  return `<div class="kv cont ${cls}">${verdict} · worst stop ${fmtKm(worstD)} km / ${fmtMin(worstT)} min${c.status === "not_verified" && !bad ? " (model check, not field-verified)" : ""}</div>`;
+    ? "RETORNO DE EMERGENCIA SOBRE EL LÍMITE"
+    : "Retorno de emergencia dentro de 60 min / 2 km";
+  return `<div class="kv cont ${cls}">${verdict} · peor parada ${fmtKm(worstD)} km / ${fmtMin(worstT)} min${c.status === "not_verified" && !bad ? " (modelo sin validación de campo)" : ""}</div>`;
 }
 
 // Budget breakdown: outbound + science + return + overhead = operational;
@@ -72,20 +73,20 @@ function budgetBreakdown(b) {
   const row = (label, s, cls) =>
     `<div class="brow ${cls || ""}"><span class="bl">${label}</span><i></i><span class="bv">${fmtMin(s)} min</span></div>`;
   let html = "";
-  html += row("ida · outbound", b.outbound_travel_s ?? 0);
+  html += row("ida", b.outbound_travel_s ?? 0);
   html += row(`science · ${b.science_stops ?? 0} stop${(b.science_stops ?? 0) === 1 ? "" : "s"}`, b.science_total_s ?? 0);
-  html += row("regreso · return", b.return_travel_s ?? 0);
-  html += row("overhead", b.overhead_s ?? 0);
-  html += row("operational", b.operational_s, "brow-total");
+  html += row("regreso", b.return_travel_s ?? 0);
+  html += row("entrada + salida", b.overhead_s ?? 0);
+  html += row("operacional", b.operational_s, "brow-total");
   if (b.reserve_fixed_s !== undefined && b.reserve_fixed_s !== null) {
-    html += row("reserve · held apart", b.reserve_fixed_s, "brow-res");
+    html += row("reserva · separada", b.reserve_fixed_s, "brow-res");
   }
   return `<div class="budget">${html}</div>`;
 }
 
 function stopList() {
   if (!state.stops.length) return "";
-  return `<div class="kv stops-line">stops in order: ${state.stops
+  return `<div class="kv stops-line">paradas en orden: ${state.stops
     .map((s, i) => `S${i + 1}(${s[0]},${s[1]})`)
     .join(" → ")}</div>`;
 }
@@ -121,13 +122,13 @@ function renderCards() {
       el.className = `card card--${name}`;
       el.innerHTML = `
         <div class="card-top">
-          <h2>${name === "safe" ? "SAFE ROUTE" : "FAST ROUTE"}</h2>
+          <h2>${name === "safe" ? "RUTA SAFE" : "RUTA FAST"}</h2>
           <span class="status ${statusCls}">${STATUS_LABEL[status] || status}</span>
         </div>
-        <div class="big">${fmtMin(r.total_s)} min <span class="of">of ${fmtMin(state.budgetMin * 60)} budget</span></div>
-        <div class="kv">route <b>${fmtKm(r.distance_m)} km</b>${direct !== null ? ` · straight A–B <b>${fmtKm(direct)} km</b> (flat)` : ""} ·
-          roughness ${r.rough_mean === null || r.rough_mean === undefined ? "—" : r.rough_mean.toFixed(2)} ·
-          dose ${r.dose_msv === null || r.dose_msv === undefined ? "—" : r.dose_msv.toFixed(3)} mSv</div>
+        <div class="big">${fmtMin(r.total_s)} min <span class="of">de ${fmtMin(state.budgetMin * 60)} min EVA</span></div>
+        <div class="kv">route <b>${fmtKm(r.distance_m)} km</b>${direct !== null ? ` · recta A–B <b>${fmtKm(direct)} km</b> (plana)` : ""} ·
+          rugosidad ${r.rough_mean === null || r.rough_mean === undefined ? "—" : r.rough_mean.toFixed(2)} ·
+          dosis ${r.dose_msv === null || r.dose_msv === undefined ? "—" : r.dose_msv.toFixed(3)} mSv</div>
         ${stopList()}
         <div class="legs">
           ${legHtml || legCard(r.outbound, "IDA (outbound)")}
@@ -137,7 +138,7 @@ function renderCards() {
         ${contingencyLine(b)}
         <div class="verdict ${statusCls}">
           <span class="v-main">${STATUS_LABEL[status] || status}</span>
-          <span class="v-sub">slack ${fmtMin(b.slack_s || 0)} min · limiting: ${(b.limiting_terms || []).join(", ") || "—"}</span>
+          <span class="v-sub">margen ${fmtMin(b.slack_s || 0)} min · límite: ${(b.limiting_terms || []).join(", ") || "—"}</span>
         </div>`;
       cards.appendChild(el);
     }
@@ -146,13 +147,13 @@ function renderCards() {
   const reco = document.getElementById("reco");
   if (!state.data) { reco.textContent = "—"; reco.removeAttribute("data-state"); return; }
   if (!fits.length) {
-    reco.textContent = "NO ROUTE FITS under scenario assumptions — do not leave the habitat";
+    reco.textContent = "NINGUNA RUTA CABE bajo los supuestos del escenario";
     reco.dataset.state = "nogo";
   } else if (fits.length === 2) {
-    reco.textContent = "BOTH FIT — take the SAFE route";
+    reco.textContent = "AMBAS CABEN · SAFE penaliza pendiente y rugosidad";
     reco.dataset.state = "go";
   } else {
-    reco.textContent = "ONLY THE " + fits[0].toUpperCase() + " ROUTE FITS";
+    reco.textContent = "SOLO CABE LA RUTA " + fits[0].toUpperCase() + "";
     reco.dataset.state = "mid";
   }
 }
@@ -175,7 +176,7 @@ function tag(text, x, y, color) {
   ctx.fillText(text, x + 1, y);
 }
 
-function draw() {
+function draw2d() {
   ctx.clearRect(0, 0, cvs.width, cvs.height);
   if (bg.complete && bg.naturalWidth) {
     ctx.drawImage(bg, 0, 0, cvs.width, cvs.height);
@@ -242,20 +243,24 @@ function draw() {
   }
 }
 
+function draw() { if (window.drawTerrain) window.drawTerrain(); else draw2d(); }
+
 function nextHint() {
-  if (!state.start) return "Click the START point.";
-  if (!state.end) return "Now click the END point.";
+  if (!state.start) return "Selecciona A: punto de salida.";
+  if (!state.end) return "Selecciona B: destino.";
   const need = state.nStops - state.stops.length;
-  if (need > 0) return `Place science stop S${state.stops.length + 1} (${need} left in visit order).`;
-  return "Ready — press COMPUTE ROUTES.";
+  if (need > 0) return `Selecciona S${state.stops.length + 1} (${need} pendientes, en orden).`;
+  return "Listo: pulsa CALCULAR RUTAS.";
 }
 
 async function compute() {
   if (!state.start || !state.end) {
-    hint.textContent = "Pick a start and an end point first.";
+    hint.textContent = "Selecciona primero salida y destino.";
     return;
   }
-  hint.textContent = "Computing…";
+  if (state.stops.length !== state.nStops) { hint.textContent = nextHint(); return; }
+  const revision = ++state.revision;
+  hint.textContent = "Calculando…";
   try {
     const res = await fetch("/api/route", {
       method: "POST",
@@ -273,47 +278,41 @@ async function compute() {
     });
     if (!res.ok) throw new Error(await res.text());
     const json = await res.json();
+    if (revision !== state.revision) return;
     state.viaServer = true;
     if (json.grid && json.grid.rows) state.grid = json.grid;
     if (json.cell_m) state.cellM = json.cell_m;
     if (json.cell_x_m) state.cellXM = json.cell_x_m;
     state.data = json;
     mockflag.hidden = true;
-    hint.textContent = "Routes computed. Orange = fast, yellow = safe. Verdict = scenario feasibility, not NASA GO/NO-GO.";
+    hint.textContent = "Rutas listas. Amarillo: SAFE · naranja: FAST · turquesa: regreso. Factibilidad de escenario.";
   } catch (err) {
-    // Mock fallback keeps the page usable, but the labels say so loudly.
-    state.viaServer = false;
-    const mock = await fetch("/mock_routes.json").then(r => r.json());
-    const m = mock.routes || {};
-    state.data = { safe: m.safe, fast: m.fast, mock: true };
+    if (revision !== state.revision) return;
+    state.revision++;
+    state.data = null;
     mockflag.hidden = false;
-    hint.textContent = "⚠ Server route failed — showing PRECOMPUTED routes, not a live calculation.";
+    mockflag.textContent = "No se pudo calcular: " + err.message;
+    hint.textContent = "Revisa los puntos y el servidor. No hay una ruta calculada.";
   }
   draw();
   renderCards();
 }
 
-cvs.addEventListener("click", (ev) => {
-  const rect = cvs.getBoundingClientRect();
-  const x = (ev.clientX - rect.left) / rect.width;
-  const y = (ev.clientY - rect.top) / rect.height;
-  const pt = [
-    Math.max(0, Math.min(state.grid.rows - 1, Math.round(y * (state.grid.rows - 1)))),
-    Math.max(0, Math.min(state.grid.cols - 1, Math.round(x * (state.grid.cols - 1)))),
-  ];
+function selectPoint(pt) {
   if (!state.start) {
     state.start = pt;
   } else if (!state.end) {
     state.end = pt;
   } else if (state.stops.length < state.nStops) {
     state.stops.push(pt);
-  }
+  } else { return; }
+  state.revision++;
   state.data = null;
   cards.innerHTML = "";
   mockflag.hidden = true;
   hint.textContent = nextHint();
   draw();
-});
+}
 
 document.getElementById("compute").addEventListener("click", compute);
 
@@ -321,6 +320,7 @@ document.getElementById("reset").addEventListener("click", () => {
   state.start = null;
   state.end = null;
   state.stops = [];
+  state.revision++;
   state.data = null;
   cards.innerHTML = "";
   mockflag.hidden = true;
@@ -330,18 +330,21 @@ document.getElementById("reset").addEventListener("click", () => {
 
 document.getElementById("budget").addEventListener("change", (e) => {
   state.budgetMin = Number(e.target.value);
-  if (state.data && !state.data.mock) compute();
+  state.revision++;
+  if (state.start && state.end && state.stops.length === state.nStops) compute();
 });
 
 document.getElementById("science").addEventListener("change", (e) => {
   state.sciencePerStop = Number(e.target.value);
-  if (state.data && !state.data.mock) compute();
+  state.revision++;
+  if (state.start && state.end && state.stops.length === state.nStops) compute();
 });
 
 document.getElementById("nstops").addEventListener("change", (e) => {
   state.nStops = Number(e.target.value);
   state.stops = state.stops.slice(0, state.nStops);
   if (state.nStops === 0) state.stops = [];
+  state.revision++;
   state.data = null;
   cards.innerHTML = "";
   mockflag.hidden = true;
@@ -363,7 +366,12 @@ bg.onload = draw;
     document.getElementById("science").value = String(state.sciencePerStop);
     const r = meta.routes || meta;
     if (r.safe && r.fast) {
-      state.data = { safe: r.safe, fast: r.fast };
+      state.start = r.safe.points[0];
+      state.end = r.safe.points[r.safe.points.length - 1];
+      state.stops = meta.science_waypoints || [];
+      state.nStops = state.stops.length;
+      document.getElementById("nstops").value = String(state.nStops);
+      state.data = {...meta, safe: r.safe, fast: r.fast};
       draw();
       renderCards();
     }

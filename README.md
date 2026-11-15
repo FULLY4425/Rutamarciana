@@ -102,3 +102,36 @@ Ortomosaico y DTM: NASA/JPL-Caltech/University of Arizona/USGS — HiRISE Jezero
 Fergason et al. 2020 (CC0 1.0). Terminales: plataforma Psion Micor 4.2 (desarrollo previo del equipo).
 
 Marte no tiene GPS: la posición es relativa al mapa.
+
+## Explorador 3D y seguimiento de misión
+
+La interfaz incluye una malla 3D del DEM activo, sin dependencias de CDN. Arrastra
+para girar, usa la rueda para acercar y ajusta la exageración vertical (×1–×8).
+La vista 2D sigue disponible. Borra los puntos para elegir A, B y las paradas
+científicas directamente sobre el terreno; después calcula FAST y SAFE.
+El regreso se muestra en turquesa discontinuo.
+
+En **Seguimiento de recorrido**, elige un perfil y pulsa Iniciar. Puedes pausar o
+mover el control de avance para inspeccionar la posición y distancia acumulada
+de ida y regreso. La reproducción dura un minuto y representa **distancia de
+recorrido**, no tiempo EVA ni telemetría. No simula el tiempo dedicado a ciencia,
+entrada/salida o reserva. La exportación JSON conserva rutas, escenario y origen
+del terreno; se identifica como simulación.
+
+`GET /api/terrain` expone hasta 75×75 muestras del DEM, incluyendo ambos bordes,
+con coordenadas originales de rejilla y escala física independiente por eje.
+NoData se conserva como `null`; la malla omite triángulos sin elevación.
+El muestreo es solo visual: el cálculo de rutas conserva la resolución completa.
+La visualización no añade alturas a partir de la intensidad de la ortofoto.
+
+`make demo` usa el generador sintético de este repositorio, identificado en la
+cabecera. Para relieve real se requiere generar los datos con `pipeline.build
+--dem ...`. La ortofoto HiRISE incluida se puede consultar como referencia
+independiente; no se superpone a otra ventana del DEM ni al terreno sintético.
+Un error de cálculo se informa sin sustituir la ruta por datos precalculados.
+
+Validación adicional de la lógica del visor (Node.js):
+
+```bash
+node tests/frontend.cjs
+```

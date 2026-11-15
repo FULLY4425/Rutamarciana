@@ -559,3 +559,39 @@ button:disabled { opacity: 0.5; cursor: default; }
   }
   .note { margin-top: 4px; }
 }
+/* Ruta Marciana mission workspace */
+:root { --bg:#101518; --panel:#151c20; --line:#2c363b; --amber:#e7d08b; }
+body {font-family: 'Segoe UI', system-ui, sans-serif;}
+.missionbar {height:76px;display:flex;align-items:center;justify-content:space-between;padding:0 32px;border-bottom:1px solid var(--line);gap:20px;background:#10171b;}
+.missionbar a {color:var(--ink);text-decoration:none;letter-spacing:.16em;font-weight:750;font-size:19px;}
+.missionbar span {color:var(--dim);font:10px monospace;letter-spacing:.17em;}
+.missionbar b {color:#a8c9b6;font:10px monospace;border:1px solid #34453d;padding:9px 12px;border-radius:20px;}
+main {height:calc(100vh - 76px);grid-template-columns:minmax(0,1fr) 390px;}
+.mapwrap {padding:24px;background:radial-gradient(ellipse at 45% 55%,#242d30,#0d1215 70%);}
+.stage {max-width:min(89vh,100%);}
+canvas {background:#0d1215;border:0;image-rendering:auto;}
+.panel {padding:26px;gap:22px;}
+h1 {font:600 23px 'Segoe UI',sans-serif;letter-spacing:.04em;}
+.sub {margin-top:10px;letter-spacing:.1em;}
+.head::after,.tickrow,.ruler,.scalebar {display:none;}
+.head {padding-bottom:22px;}
+.maptools {position:absolute;top:40px;left:15px;z-index:2;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.maptools button {padding:8px 12px;font-size:10px;letter-spacing:.02em;background:#192328;color:#ded6c5;border-color:#465057;}
+.maptools label {display:flex;align-items:center;gap:7px;font-size:11px;color:var(--dim);background:#192328;padding:7px;}
+.maptools input {width:65px;}
+.hint {max-width:85%;font-family:monospace;}
+.meta {font-family:monospace;font-size:9px;letter-spacing:.1em;}
+.controls .row label {letter-spacing:.04em;}
+button {border-radius:5px;font-size:11px;letter-spacing:.08em;}
+select {border-radius:5px;font-family:monospace;}
+.tracking {border:1px solid #3d514e;border-radius:8px;padding:16px;background:#192725;display:grid;gap:13px;}
+.sectionlabel {font:10px monospace;color:#8bd6c8;letter-spacing:.1em;}
+.tracking input {width:100%;accent-color:#8bd6c8;}
+.tracking output {font:11px/1.6 monospace;color:#e4e6df;min-height:35px;}
+.tracking p {font-size:11px;color:#9dafaa;margin:0;}
+.tracking select {min-width:0;max-width:185px;}
+.card {border-radius:8px;background:#192126;}
+.card .big {font-size:30px;font-weight:500;}
+.note {font-size:11px;}
+@media(max-width:960px){main{height:auto;grid-template-columns:1fr;}.missionbar{height:auto;min-height:76px;padding:18px;flex-wrap:wrap;}.missionbar span{display:none;}.mapwrap{padding:12px;}.panel{overflow:visible;}.stage{max-width:760px;}.maptools{top:35px;}.hint{font-size:10px;bottom:4px;}.meta{top:8px;font-size:8px;}.maptools button{font-size:9px;padding:5px;}.maptools label{font-size:9px;padding:4px;}}
+.reference {color:var(--dim);font-size:11px;}.reference summary {cursor:pointer;}.reference img{width:100%;margin-top:12px;border-radius:6px;}.reference p{line-height:1.6;}input[type=range]{cursor:pointer;}button:disabled{cursor:not-allowed;}.tracking button{letter-spacing:.03em;}

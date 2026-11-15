@@ -64,3 +64,27 @@ def test_bitacora_rejects_invalid_body(tmp_path, body):
     c = create_app(str(tmp_path)).test_client()
     assert c.post("/api/bitacora", json=body).status_code == 400
     assert not (tmp_path / "bitacora").exists()
+
+
+def test_terrain_preserves_edges_nodata_and_physical_scale(tmp_path):
+    import numpy as np
+    dem = np.arange(101 * 91, dtype=float).reshape(101, 91)
+    dem[0, 0] = np.nan
+    np.save(tmp_path / 'dem.npy', dem)
+    (tmp_path / 'routes.json').write_text(json.dumps({
+        'grid': {'rows': 101, 'cols': 91}, 'cell_m': 4, 'cell_x_m': 3.79,
+        'site': 'synth', 'spatial': {}}))
+    response = create_app(str(tmp_path)).test_client().get('/api/terrain')
+    assert response.status_code == 200
+    data = response.json
+    assert len(data['rows']) == len(data['cols']) == 75
+    assert data['rows'][0] == data['cols'][0] == 0
+    assert data['rows'][-1] == 100 and data['cols'][-1] == 90
+    assert data['elevations'][0][0] is None
+    assert data['elevations'][-1][-1] == dem[-1, -1]
+    assert data['cell_x_m'] == 3.79 and data['cell_m'] == 4
+    assert data['site'] == 'synth'
+
+
+def test_terrain_requires_dem(tmp_path):
+    assert create_app(str(tmp_path)).test_client().get('/api/terrain').status_code == 503

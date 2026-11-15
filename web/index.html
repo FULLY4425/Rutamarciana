@@ -1,15 +1,15 @@
 <!doctype html>
-<html lang="en">
+<html lang="es">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Micor Field — route planner</title>
+<title>Ruta Marciana · Explorador EVA</title>
 <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-<main>
+<nav class="missionbar"><a href="/">◈ RUTA MARCIANA</a><span>EXPLORADOR DE TERRENO / JEZERO</span><b id="source">Cargando terreno…</b></nav><main>
   <section class="mapwrap">
-    <div class="stage">
+    <div class="stage"><div class="maptools"><button id="viewmode">Vista 2D</button><button id="camerareset" class="ghost">Centrar cámara</button><label>Relieve <input id="relief" type="range" min="1" max="8" value="3" aria-label="Exageración vertical"></label></div>
       <canvas id="map" width="1000" height="1000"></canvas>
       <div class="chrome" aria-hidden="true">
         <div class="corner tl"></div>
@@ -18,25 +18,25 @@
         <div class="corner br"></div>
         <div class="ruler ruler-x"></div>
         <div class="ruler ruler-y"></div>
-        <div class="meta">JEZERO W · GRID 500 × 500 · CELL ≈ 4 M</div>
+        <div class="meta">TERRENO 3D · ARRASTRA PARA GIRAR · RUEDA PARA ZOOM</div>
         <div class="scalebar"><span>0</span><i></i><span>500 M</span></div>
       </div>
-      <div class="hint" id="hint">Click the START point.</div>
+      <div class="hint" id="hint">Selecciona A: punto de salida.</div>
     </div>
   </section>
 
   <aside class="panel">
     <header class="head">
       <div class="tickrow" aria-hidden="true"></div>
-      <h1>MICOR FIELD</h1>
-      <p class="sub">Marswalk route planner · offline terminal</p>
+      <h1>PLANIFICA TU EVA</h1>
+      <p class="sub">Jezero / Marte · Micor Field</p>
     </header>
 
     <div class="flag" id="mockflag" hidden>Precomputed routes — server call failed, not a live calculation</div>
 
     <section class="controls">
       <div class="row">
-        <label for="budget">Suit budget</label>
+        <label for="budget">Presupuesto EVA</label>
         <select id="budget">
           <option value="120">120 min</option>
           <option value="180">180 min</option>
@@ -45,7 +45,7 @@
         </select>
       </div>
       <div class="row">
-        <label for="nstops">Number of science stops</label>
+        <label for="nstops">Paradas científicas</label>
         <select id="nstops">
           <option value="0" selected>0</option>
           <option value="1">1</option>
@@ -56,7 +56,7 @@
         </select>
       </div>
       <div class="row">
-        <label for="science">Science per stop</label>
+        <label for="science">Ciencia por parada</label>
         <select id="science">
           <option value="10">10 min</option>
           <option value="20" selected>20 min</option>
@@ -67,21 +67,17 @@
       <div id="reco" class="reco">—</div>
 
       <div class="actions">
-        <button id="compute">Compute routes</button>
-        <button id="reset" class="ghost">Reset points</button>
+        <button id="compute">Calcular rutas</button>
+        <button id="reset" class="ghost">Borrar puntos</button>
       </div>
     </section>
 
-    <div id="cards"></div>
+    <section class="tracking"><div class="sectionlabel">SEGUIMIENTO DE RECORRIDO</div><div class="row"><select id="trackroute" aria-label="Ruta a seguir"><option value="safe">SAFE · conservadora</option><option value="fast">FAST · rápida</option></select><button id="play">Iniciar</button></div><input id="progress" type="range" min="0" max="1000" value="0" aria-label="Avance del recorrido"><output id="trackinfo" aria-live="polite">Calcula una ruta para explorar el recorrido.</output><p>Simulación de ida y regreso · posición relativa al mapa · sin telemetría.</p><button id="export" class="ghost">Exportar misión JSON</button></section><div id="cards"></div>
 
-    <p class="note"><span class="note-t">Model scope</span>
-    Budget = scenario feasibility (walk 2 km/h, 20 min/stop,
-    30 min overhead, 30 min reserve held apart). <b>Not</b> a Mars suit
-    capacity and not a NASA GO/NO-GO rule. No suit telemetry. No GPS on Mars:
-    position is map-relative. Straight-line A–B is a flat approximation,
-    not the traversable distance.</p>
+    <details class="reference"><summary>Ortofoto de referencia · Jezero</summary><img src="/reference-image" alt="Ortofoto HiRISE de Jezero incluida en el repositorio"><p>Referencia visual de un recorte de 2 × 2 km. No se superpone a un DEM de otra ventana ni a la demo sintética. NASA/JPL-Caltech/University of Arizona/USGS · CC0.</p></details>
+    <p class="note"><span class="note-t">Alcance del modelo</span>Presupuesto de escenario: marcha 2 km/h, ciencia 20 min/parada, entrada y salida 30 min y reserva fija de 30 min aparte. No representa capacidad certificada de un traje ni un criterio NASA GO/NO-GO. La rugosidad del DEM no detecta rocas o arena. Marte no tiene GPS: posición relativa al mapa.</p>
   </aside>
 </main>
-<script src="/app.js"></script>
+<script src="/app.js"></script><script src="/terrain.js"></script>
 </body>
 </html>

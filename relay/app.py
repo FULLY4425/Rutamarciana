@@ -86,6 +86,31 @@ def create_app(data_dir: str):
             abort(404)
         return send_file(f, mimetype="image/png")
 
+    @app.get("/reference-image")
+    def reference_image():
+        return send_from_directory(ROOT / "assets", "jezero_ortho_4m.png")
+
+    @app.get("/terrain.js")
+    def terrain_js():
+        return send_from_directory(WEB, "terrain.js")
+
+    @app.get("/api/terrain")
+    def terrain():
+        import numpy as np
+        meta = read_manifest()
+        path = root / "dem.npy"
+        if meta is None or not path.exists():
+            return jsonify(error="Genera el terreno con make demo o pipeline.build --dem"), 503
+        dem = np.load(path, allow_pickle=False)
+        # Include both edges and bound payload / rendering cost.
+        rows = np.unique(np.linspace(0, dem.shape[0] - 1, min(75, dem.shape[0])).astype(int))
+        cols = np.unique(np.linspace(0, dem.shape[1] - 1, min(75, dem.shape[1])).astype(int))
+        z = dem[np.ix_(rows, cols)]
+        return jsonify(rows=rows.tolist(), cols=cols.tolist(),
+                       elevations=[[float(v) if np.isfinite(v) else None for v in row] for row in z],
+                       grid=meta["grid"], cell_m=meta["cell_m"], cell_x_m=meta["cell_x_m"],
+                       site=meta.get("site", "unknown"), spatial=meta.get("spatial", {}))
+
     @app.get("/api/manifest")
     def manifest():
         f = root / "routes.json"
