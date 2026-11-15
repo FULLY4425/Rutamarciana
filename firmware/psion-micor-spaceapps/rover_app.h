@@ -436,5 +436,3 @@ void roverTick(uint32_t now) {
   rvLastAt = at;
   if (now - rvLastDraw >= 100) { rvLastDraw = now; rvDrawPov(false); }   // <= 10 fps
 }
-
-

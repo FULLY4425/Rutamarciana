@@ -1,0 +1,3 @@
+# Preserve the supplied sketch line endings and treat filesystem pixels as binary.
+firmware/psion-micor-spaceapps/psion-micor-spaceapps.ino whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+firmware/psion-micor-spaceapps/data/pov/*.bin binary
