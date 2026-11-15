@@ -19,14 +19,14 @@ def test_anisotropic_routes_and_gradient():
     x, y = 4 * factor, 4.0
     flat = np.zeros((7, 7))
     def route(end):
-        return plan_routes(flat, flat, flat, y, (1, 1), end, 10000, 0, 0, 0, cell_x_m=x)['fast']
+        return plan_routes(flat, flat, flat, y, (1, 1), end, 10000, 0, [], 0, cell_x_m=x)['fast']
     assert route((1, 5))['outbound']['distance_m'] == pytest.approx(4 * x, abs=.05)
     assert route((5, 1))['outbound']['distance_m'] == pytest.approx(4 * y, abs=.05)
     assert route((5, 5))['outbound']['distance_m'] == pytest.approx(4 * np.hypot(x, y), abs=.05)
     dem = np.tile(np.arange(7) * .8, (7, 1))
     slope = slope_deg(dem, y, x)
     assert slope[3, 3] == pytest.approx(np.degrees(np.arctan(.8 / x)), abs=1e-5)
-    result = plan_routes(dem, slope, flat, y, (3, 1), (3, 5), 10000, 0, 0, 0, cell_x_m=x)
+    result = plan_routes(dem, slope, flat, y, (3, 1), (3, 5), 10000, 0, [], 0, cell_x_m=x)
     assert result['fast']['slope_max_deg'] == pytest.approx(slope[3, 3], abs=.01)
 
 
@@ -44,11 +44,11 @@ def test_jezero_projection_window_and_relay(tmp_path):
     assert spatial['crs'] == 'ESRI:103885'
     from pipeline.manifest import write_manifest
     slope = slope_deg(dem, y, x)
-    result = plan_routes(dem, slope, dem, y, (0, 0), (4, 4), 14400, 0, 0, 0, cell_x_m=x)
+    result = plan_routes(dem, slope, dem, y, (0, 0), (4, 4), 14400, 0, [], 0, cell_x_m=x)
     for name, value in [('dem', dem), ('slope', slope), ('rough', dem)]:
         np.save(tmp_path / f'{name}.npy', value)
     write_manifest(tmp_path / 'routes.json', site='test', waypoints=[], layers=[], routes=result,
-                   budget_s=14400, science_s=0, science_stops=0, reserve_fraction=0,
+                   budget_s=14400, science_s=0, science_waypoints=[], reserve_fraction=0,
                    cell_m=y, cell_x_m=x, spatial=spatial)
     client = create_app(str(tmp_path)).test_client()
     response = client.post('/api/route', json={'start': [0, 0], 'end': [4, 4]})

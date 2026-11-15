@@ -91,7 +91,8 @@ def main():
     ap.add_argument("--at", type=int, nargs=2, help="fila,col de la esquina superior izquierda (px del DEM)")
     ap.add_argument("--budget-h", type=float, default=4.0)
     ap.add_argument("--science-min", type=float, default=10.0)
-    ap.add_argument("--stops", type=int, default=5)
+    ap.add_argument("--science-waypoint", type=int, nargs=2, action="append", default=[],
+                    metavar=("ROW", "COL"), help="parada científica elegida; repetir en orden")
     ap.add_argument("--reserve-fraction", type=float, default=0.15)
     a = ap.parse_args()
 
@@ -111,7 +112,7 @@ def main():
     end = tuple(a.end) if a.end else (r - 3, c - 3)
 
     routes = plan_routes(dem, slope, rough, cell_m, start, end,
-                         a.budget_h * 3600, a.science_min * 60, a.stops, a.reserve_fraction,
+                         a.budget_h * 3600, a.science_min * 60, a.science_waypoint, a.reserve_fraction,
                          cell_x_m=cell_x_m)
 
     save_png(to_u8(slope), out / "preview.png")
@@ -132,7 +133,7 @@ def main():
         routes=routes,
         budget_s=a.budget_h * 3600,
         science_s=a.science_min * 60,
-        science_stops=a.stops,
+        science_waypoints=a.science_waypoint,
         reserve_fraction=a.reserve_fraction,
         cell_m=cell_m,
         cell_x_m=cell_x_m,

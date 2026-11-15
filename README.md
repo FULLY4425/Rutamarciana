@@ -26,7 +26,7 @@ curl -L -C - -o data/raw/jez_dtm_1m.tif \
   "https://planetarymaps.usgs.gov/mosaic/mars2020_trn/HiRISE/JEZ_hirise_soc_006_DTM_MOLAtopography_DeltaGeoid_1m_Eqc_latTs0_lon0_blend40.tif"
 
 python -m pipeline.build --dem data/raw/jez_dtm_1m.tif --rows 500 --cols 500 --out data/out \
-  --budget-h 4 --stops 5 --science-min 10 --reserve-fraction 0.15
+  --budget-h 4 --science-waypoint 100 200 --science-min 10 --reserve-fraction 0.15
 ```
 
 ## Endpoints del relay
@@ -36,45 +36,65 @@ python -m pipeline.build --dem data/raw/jez_dtm_1m.tif --rows 500 --cols 500 --o
 - `POST /api/route` — `{"start":[row,col],"end":[row,col]}` → dos rutas nuevas.
 - `GET /preview.png` — mapa de pendiente de la zona.
 
-### Contrato para la UI
+### Contrato v3 para la UI
 
-`GET /api/routes` entrega metadatos y `routes.safe` / `routes.fast`;
-`POST /api/route` conserva `safe` / `fast` directamente en la respuesta. Cada
-una contiene:
+`POST /api/route` acepta por ejemplo:
 
-- `objective`: `fastest` o `conservative`; `safe` es solo el alias histórico,
-  **no** una certificación.
-- `outbound` (START→END) y `return` (END→START): `points` como pares `[row,col]`,
-  `time_s`, `distance_m`, `slope_max_deg`, `slope_exposure_m`, `rough_mean`.
-- `time_s` y `distance_m` superiores: **suma de ida y regreso**. `points`
-  superior conserva únicamente la ida para compatibilidad con el mapa anterior;
-  dibujar `return.points` explícitamente para mostrar el regreso. `dose_msv`
-  es una estimación solo durante desplazamiento, no una medición.
-- Métricas superiores: máximo de pendiente, suma de exposición y media de
-  rugosidad ponderada por distancia de ambos tramos.
-- `budget.used_s`, `margin_s`, `reserve_s`, `fits_reserve` calculados con los
-  parámetros de la generación. El cliente puede recalcularlos al cambiar inputs.
+```json
+{"schema_version":3,"start":[2,2],"end":[497,497],"science_waypoints":[[100,200],[250,300]]}
+```
 
-Los metadatos `budget_s`, `science_s` (segundos **por parada**),
-`science_stops` (número de paradas) y `reserve_fraction` son explícitos. La
-fórmula es `used = time_s + science_stops * science_s`,
-`margin = budget_s - used`, `reserve = budget_s * reserve_fraction` y
-`fits_reserve = used + reserve <= budget_s`. Por defecto: 240 min, 5 paradas,
-10 min/parada y reserva de 15% del presupuesto; la reserva no se suma dos veces.
-La decisión usa precisión completa; los números JSON están redondeados, así que
-recalcularla solo con los valores mostrados puede diferir cerca del límite.
-Estos valores son supuestos de planificación, no telemetría ni presupuesto real.
-La UI actual conserva sus propias etiquetas y cálculo; su integración y
-etiquetado correctos requieren actualización por su propietario.
+`schema_version` es opcional en la petición, pero si se incluye debe ser 3.
+Las coordenadas son pares enteros `[row,col]` de la grilla, distintos entre sí,
+en rango y transitables. La lista es ordenada; si se omite es `[]`, sin ciencia.
+No se generan posiciones automáticamente. El POST usa la lista enviada, no las
+paradas del manifiesto. Una coordenada inválida, duplicada o un tramo imposible
+produce HTTP 400; el error identifica el tramo imposible (1-indexado).
 
-El POST requiere `dem.npy`, `slope.npy`, `rough.npy` y `routes.json` del mismo
-build; con artefactos antiguos responde 503 y hay que regenerar. Coordenadas
-inválidas o una ruta imposible responden 400. `GET /api/routes` devuelve 503
-si falta el manifest de `schema_version: 2` con `cell_x_m`; `/mock_routes.json` permanece
-disponible pero es antiguo y no garantiza este contrato.
-Los archivos históricos `cost_fast.npy` y `cost_safe.npy` se siguen generando
-por compatibilidad, pero son mapas escalares antiguos: no modelan dirección y
-no se usan para calcular ninguna de las rutas de la API nueva.
+En la respuesta, `science_waypoints` conserva el orden y `science_stops` es
+**solo salida**, calculado como `len(science_waypoints)`. `science_s` son
+segundos por parada. Cada `fast` / `safe` contiene:
+
+- `objective`: `fastest` o `conservative` (`safe` no certifica seguridad).
+- `outbound`: ida A → paradas en orden → B; `outbound.legs` contiene los
+  tramos consecutivos, cada uno con `points`, `time_s`, `distance_m`, pendiente,
+  exposición y rugosidad. `outbound.points` concatena los tramos sin duplicar
+  sus uniones. Mostrar también número y orden de las paradas.
+- `return`: recorrido dirigido y optimizado B → A, sin actividades de ciencia;
+  los mismos campos de métrica y `points`. La ruta puede cruzar una parada
+  física sin realizar otra actividad allí.
+- `time_s` es el tiempo total de desplazamiento ida + regreso, `distance_m`
+  la suma de longitudes de aristas de ambos recorridos, no la distancia recta.
+  Cada tramo y cada dirección tiene su propia distancia de aristas.
+  `science_total_s = len(science_waypoints) * science_s`, una sola vez;
+  `total_s = time_s + science_total_s`. Mostrar ida, regreso y total en cada
+  tarjeta. `points` superior es únicamente la ida, por compatibilidad.
+- `slope_max_deg`, `slope_exposure_m`, `rough_mean` agregan ambos recorridos;
+  `dose_msv` es solo una estimación durante desplazamiento, no telemetría.
+
+No se expone distancia directa A–B. Si la UI la calcula, debe diferenciarla de
+la distancia por la ruta y etiquetarla como distancia plana aproximada, no como
+geodésica exacta sin modelo y datum. Todos los totales se calculan a precisión
+completa y luego se redondean: sumar los valores visibles puede diferir.
+
+`budget_model: "legacy_provisional"` identifica los parámetros `budget_s`,
+`science_s`, `reserve_fraction` y los campos `budget` como simulación heredada,
+no un modelo EVA real. Se preservan la fórmula y reglas anteriores:
+`used = time_s + science_total_s`, `margin = budget_s - used`,
+`reserve = budget_s * reserve_fraction`, `fits_reserve = used + reserve <= budget_s`.
+La decisión usa precisión completa. La UI mantiene sus etiquetas y cálculos
+hasta que su propietario los integre; no se cambian reglas GO/NO-GO aquí.
+
+**Migración explícita:** `GET /api/routes` y POST requieren artefactos del mismo
+build con manifiesto `schema_version: 3`, `cell_m`, `cell_x_m` y los tres NPY.
+Los manifiestos v2 devuelven 503: regenerar el pipeline y elegir cada parada
+con `--science-waypoint ROW COL` repetido en orden (o ninguna). El antiguo
+`--stops` ya no se acepta: su contador no contiene ubicaciones. La petición
+con `science_stops` también se rechaza con 400, nunca se convierte en waypoints.
+`GET /api/routes` usa `routes.fast` y `routes.safe`; el POST los devuelve en la
+raíz. `/mock_routes.json` sigue siendo legado y no garantiza el contrato v3.
+Los mapas históricos `cost_fast.npy` y `cost_safe.npy` siguen por compatibilidad;
+no modelan dirección ni se usan para calcular estas rutas.
 
 ## Cómo se calcula (resumen)
 
