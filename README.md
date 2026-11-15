@@ -2,7 +2,7 @@
 
 Explorador de **todo Marte** con globo MOLA, mapas 2D/3D, recortes HiRISE, planificación educativa de recorridos, objetivos científicos y guía para celular y ESP32.
 
-**Aplicación:** [rutamarciana.onrender.com](https://rutamarciana.onrender.com). **Rama de la implementación:** `feat/ruta-marciana-servidor-local` en `FULLY4425/Rutamarciana`. Para descargarla, selecciona esa rama y usa **Code → Download ZIP**; cuando se integre en `main`, podrás descargar `main`.
+**Aplicación:** [rutamarciana.onrender.com](https://rutamarciana.onrender.com). **Rama principal:** `main` en `FULLY4425/Rutamarciana`. Para descargar el proyecto completo, selecciona `main` y usa **Code → Download ZIP**.
 
 ## Página y servidor en Render
 

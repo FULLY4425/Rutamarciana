@@ -13,7 +13,7 @@ Para utilizar la aplicación alojada basta un navegador con acceso a internet; n
 ## Configuración del servicio
 
 - Repositorio: `FULLY4425/Rutamarciana`.
-- Rama con la implementación actual: `feat/ruta-marciana-servidor-local`.
+- Rama configurada en el servicio existente: `feat/ruta-marciana-servidor-local`. La implementación también está integrada en `main`; fusionar la PR no cambia por sí solo la rama que Render sigue.
 - Python: 3.12, fijado en `.python-version`.
 - Build command: `pip install -r requirements-server.txt`.
 - Start command: `python server.py`.

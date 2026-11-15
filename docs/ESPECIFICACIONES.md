@@ -1,6 +1,6 @@
 # Especificaciones funcionales y técnicas
 
-Estado documentado: 15 de noviembre de 2026. Describe lo implementado en `feat/ruta-marciana-servidor-local`; no constituye una lista de funciones futuras. [Índice general](../README.md).
+Estado documentado: 15 de noviembre de 2026. Describe lo implementado en `main`; no constituye una lista de funciones futuras. [Índice general](../README.md).
 
 Guía de cada pantalla y flujo: [Manual web](MANUAL_WEB.md). Inventario completo: [Controles](CONTROLES_WEB.md). Diagnóstico: [Solución de problemas](SOLUCION_DE_PROBLEMAS.md).
 

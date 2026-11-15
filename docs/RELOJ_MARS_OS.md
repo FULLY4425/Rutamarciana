@@ -37,7 +37,7 @@ La segunda pantalla usa el driver `oled240.h` recibido, a pesar de que el nombre
 
 ## Compilar y cargar
 
-En GitHub selecciona la rama `feat/ruta-marciana-servidor-local`, pulsa **Code → Download ZIP** y extrae el repositorio completo. Abre `firmware/psion-marte-os/psion-marte-os.ino` en Arduino IDE. No copies solamente esa carpeta: incluye cabeceras compartidas de `firmware/psion-micor-spaceapps`.
+En GitHub selecciona la rama `main`, pulsa **Code → Download ZIP** y extrae el repositorio completo. Abre `firmware/psion-marte-os/psion-marte-os.ino` en Arduino IDE. No copies solamente esa carpeta: incluye cabeceras compartidas de `firmware/psion-micor-spaceapps`.
 
 Configuración: **ESP32 Dev Module**, ESP32 core **3.3.12**, CPU 240 MHz, flash 4 MB, partición **No OTA (2MB APP/2MB SPIFFS)**. Bibliotecas: Adafruit GFX Library y Adafruit ST7735 and ST7789 Library, con Adafruit BusIO como dependencia. No requiere NimBLE ni Adafruit SSD1306 para este sistema.
 

@@ -1,6 +1,6 @@
 # Manual completo de la página Ruta Marciana
 
-Estado: 15 de noviembre de 2026. Describe la interfaz de la rama `feat/ruta-marciana-servidor-local`, incluida la organización lateral actual. [Índice de documentación](README.md) · [Referencia de controles](CONTROLES_WEB.md) · [Problemas frecuentes](SOLUCION_DE_PROBLEMAS.md).
+Estado: 15 de noviembre de 2026. Describe la interfaz de la rama `main`, incluida la organización lateral actual. [Índice de documentación](README.md) · [Referencia de controles](CONTROLES_WEB.md) · [Problemas frecuentes](SOLUCION_DE_PROBLEMAS.md).
 
 ## 1. Entrar y reconocer los modos
 

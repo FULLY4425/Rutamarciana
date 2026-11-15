@@ -2,7 +2,7 @@
 
 ## Descargar y arrancar
 
-1. En GitHub, selecciona la rama que contiene estos cambios y pulsa **Code → Download ZIP**. Cuando esté integrada en `main`, descarga esa rama.
+1. En GitHub, selecciona la rama **main** de `FULLY4425/Rutamarciana` y pulsa **Code → Download ZIP**.
 2. Extrae **toda** la carpeta en un lugar con permisos de escritura.
 3. Instala Python **3.10 o posterior** (recomendado: 3.11 o 3.12). En Windows marca **Add Python to PATH**. En Linux puede ser necesario instalar `python3-venv`.
 4. Abre una terminal dentro de la carpeta extraída y ejecuta:

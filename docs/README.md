@@ -1,6 +1,6 @@
 # Documentación de Ruta Marciana
 
-**Aplicación:** https://rutamarciana.onrender.com. **Repositorio:** [FULLY4425/Rutamarciana](https://github.com/FULLY4425/Rutamarciana). La implementación documentada está en la rama `feat/ruta-marciana-servidor-local`; selecciónala para leer o descargar la versión actual.
+**Aplicación:** https://rutamarciana.onrender.com. **Repositorio:** [FULLY4425/Rutamarciana](https://github.com/FULLY4425/Rutamarciana). La implementación documentada está en la rama `main`; selecciónala para leer o descargar la versión actual.
 
 Actualizado el **15 de noviembre de 2026**, con la interfaz de pestañas laterales y los dos firmwares ESP32. Los manuales describen funciones implementadas; las observaciones científicas, los escenarios educativos y las funciones pendientes de prueba física se distinguen en cada documento.
 
