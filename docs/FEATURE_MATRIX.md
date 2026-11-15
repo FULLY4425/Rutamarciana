@@ -13,6 +13,7 @@
 | Indicaciones y voz | Giros, distancias, ciencia y regreso; selección de voces españolas instaladas, ritmo y volumen. Depende del dispositivo; no requiere API de pago. |
 | Guía celular / ESP32 | Vista de indicaciones grandes, GPS real del celular vinculado explícitamente a la ruta de Marte a escala 1:1, y receptor Wi-Fi para el firmware ESP32 de la bitácora suministrada. Ubicación antigua, mala precisión o desconexión ponen la guía en espera. |
 | Recálculo y polvo | Desvío simulado/manual y cambio de escenario recalculan lo restante conservando el hogar H. Polvo reduce velocidad; tormenta añade una exclusión hipotética. Sin paso, pausa y reintento. El presupuesto corresponde al nuevo tramo, sin descontar tiempo consumido. |
+| ROVER en ESP32 | Simulación independiente sobre ortofoto de Jezero, mosaicos LittleFS, panel y tarjetas. Sin proveedor geométrico muestra RUTA DEMO; la guía Wi-Fi no transfiere geometría automáticamente. [Módulo 3](MODULO_ROVER_ESP32.md). |
 | Exportación | JSON con puntos nombrados, ruta, métricas, escenario, restricciones, procedencia y fuentes. |
 
 ## Datos y límites

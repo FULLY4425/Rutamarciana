@@ -24,6 +24,8 @@
 #include "mision_map_contract.h"                 // Space Apps: contrato mapa (compañero) <-> presupuesto
 #include "eva_budget.h"                          // Space Apps: núcleo puro del presupuesto EVA
 #include "bitacora_core.h"                       // Space Apps: núcleo puro de BITACORA (formato de caminata)
+#include "pov_contract.h"                        // Space Apps: contrato OPCIONAL de geometría mapa -> POV
+#include "pov_core.h"                            // Space Apps: núcleo puro del POV del rover (fase 1)
 #include <time.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
@@ -260,7 +262,7 @@ const uint8_t PSION_FONT[1280] PROGMEM = {          // Adafruit GFX's 5x7 font (
   0x2A,0x2A,0x2A,0x2A,0x2A,0x44,0x44,0x5F,0x44,0x44,0x40,0x51,0x4A,0x44,0x40,0x40,0x44,0x4A,0x51,0x40,0x00,0x00,0xFF,0x01,0x03,0xE0,0x80,0xFF,0x00,0x00,0x08,0x08,0x6B,0x6B,0x08,0x36,0x12,0x36,0x24,0x36,
   0x06,0x0F,0x09,0x0F,0x06,0x00,0x00,0x18,0x18,0x00,0x00,0x00,0x10,0x10,0x00,0x30,0x40,0xFF,0x01,0x01,0x00,0x1F,0x01,0x01,0x1E,0x00,0x19,0x1D,0x17,0x12,0x00,0x3C,0x3C,0x3C,0x3C,0x00,0x00,0x00,0x00,0x00
 };
-const uint16_t ICON16[24][16] PROGMEM = {      // the app icons, 16 x 16, bit 15 = left (scratchpad icons.py)
+const uint16_t ICON16[25][16] PROGMEM = {      // the app icons, 16 x 16, bit 15 = left (scratchpad icons.py)
   {0x7FE0, 0x4030, 0x4028, 0x403C, 0x4004, 0x5014, 0x5014, 0x5114, 0x5394, 0x56D4, 0x5C74, 0x5834, 0x4004, 0x5FF4, 0x7FFC, 0x0000},   // word
   {0x0000, 0x7FFE, 0x7FFE, 0x4421, 0x4421, 0x7E7E, 0x4421, 0x4421, 0x7FFE, 0x4421, 0x4421, 0x7FFE, 0x4421, 0x4421, 0x7FFE, 0x0000},   // sheet
   {0x1FF8, 0x3FFC, 0x300C, 0x37EC, 0x300C, 0x3FFC, 0x36DC, 0x36DC, 0x3FFC, 0x36DC, 0x36DC, 0x3FFC, 0x36DC, 0x36DC, 0x3FFC, 0x1FF8},   // calc
@@ -284,6 +286,7 @@ const uint16_t ICON16[24][16] PROGMEM = {      // the app icons, 16 x 16, bit 15
   {0x0000, 0x0000, 0x7C3E, 0x8241, 0xBA5D, 0x8241, 0xBA5D, 0x8241, 0xBA5D, 0x8241, 0xBA5D, 0x8241, 0xFDBF, 0x03C0, 0x0000, 0x0000},   // books
   {0x0000, 0x03C0, 0x07E0, 0x0C30, 0x0C30, 0x0FF0, 0x07E0, 0x03C0, 0x0080, 0x0080, 0x0080, 0x0080, 0x01E0, 0x0330, 0x0618, 0x3FFC},   // mision: pin de mapa + suelo (Space Apps)
   {0x2490, 0x3FF8, 0x3800, 0x1800, 0x1800, 0x1BE0, 0x1800, 0x1800, 0x1BE0, 0x1800, 0x1800, 0x1B80, 0x1800, 0x1800, 0x1FF8, 0x0000},   // bitacora: cuaderno con anillas (Space Apps)
+  {0x0000, 0x0C00, 0x1E00, 0x0C00, 0x0000, 0x7FE0, 0x7FE0, 0x2108, 0x0000, 0x318C, 0x7BDE, 0x7BDE, 0x318C, 0x0000, 0x0000, 0x0000},   // rover: mastil + cubierta + ruedas (Space Apps)
   {0x0000, 0x7C7C, 0x7C7C, 0x7C7C, 0x7C7C, 0x7C7C, 0x0000, 0x0000, 0x0000, 0x7C7C, 0x7C7C, 0x7C7C, 0x7C7C, 0x7C7C, 0x0000, 0x0000},   // extras
 };
 // Pixels to the panel, already byte-swapped (high byte first). Call between startWrite() and endWrite(), right after
@@ -659,13 +662,14 @@ const uint16_t E_CORAL  = RGB565(232,  76,  61);
 const uint16_t K_INK    = RGB565( 24,  30,  26);                  // game sprite ink = the original C_INK
 // one accent per app id: MENU, WORD, SHEET, CALC, NOTES, CODE, FILES, TOOLS, MUSIC, WEB, PONG, FROGGER, GALAGA, FOREST, RACE,
 // CLOCK, STATS, WIFI, SETTINGS, NETLAB, RUN, BOOKS
-const uint16_t APP_ACCENT_BASE[24] = {
+const uint16_t APP_ACCENT_BASE[25] = {
   RGB565( 74, 105, 189), RGB565( 43,  87, 154), RGB565( 33, 115,  70), RGB565( 88,  96, 112),
   RGB565(214,  72, 140), RGB565(120,  80, 200), RGB565(176, 124,  52), RGB565(200,  45,  50), RGB565(236,  64, 122), RGB565( 88, 101, 242), RGB565(  0, 150, 199),
   RGB565(130, 180,  30), RGB565(205,  55,  85), RGB565( 38, 166,  91), RGB565(232, 108,  32),
   RGB565(196, 145,  10), RGB565(106,  76, 219), RGB565(  0, 137, 123), RGB565( 84, 110, 122), RGB565(  3, 155, 229),
   RGB565(126,  87, 255), RGB565(166,  90,  48),
-  RGB565(  0, 121, 107), RGB565(121,  85,  72)      // Space Apps: MISION (teal), BITACORA (cuaderno)
+  RGB565(  0, 121, 107), RGB565(121,  85,  72),     // Space Apps: MISION (teal), BITACORA (cuaderno)
+  RGB565(178,  60,  52)                             // Space Apps: ROVER (rojo marciano)
 };
 void applyTheme() {
   const uint16_t* t = THEMES[P.theme % 3];
@@ -674,7 +678,7 @@ void applyTheme() {
   E_DIMBAR = t[9]; E_BAR = t[10]; E_BARTXT = t[11]; E_ONACC = t[12];
 }
 uint16_t appAccent(int a) {
-  if (a < 0 || a > 23) a = 0;
+  if (a < 0 || a > 24) a = 0;
   if (P.theme == TH_LCD) return C_INK;                            // the 90s screen only has one ink
   return P.accentMode ? APP_ACCENT_BASE[0] : APP_ACCENT_BASE[a];
 }
@@ -708,7 +712,7 @@ const uint8_t FRAME_INTERVAL_MS = 16;
 
 enum { APP_MENU, APP_WORD, APP_SHEET, APP_CALC, APP_NOTES, APP_CODE, APP_FILES, APP_TOOLS, APP_MUSIC, APP_WEB,
        APP_PONG, APP_FROGGER, APP_GALAGA, APP_FOREST, APP_RACE, APP_CLOCK, APP_STATS, APP_WIFI, APP_SETTINGS, APP_NETLAB,
-       APP_RUN, APP_BOOKS, APP_MISION, APP_BITACORA };   // Space Apps: MISION (mapa del compañero + presupuesto) y BITACORA al final
+       APP_RUN, APP_BOOKS, APP_MISION, APP_BITACORA, APP_ROVER };   // Space Apps: MISION, BITACORA y ROVER (POV) al final
 enum { SET_DIFFICULTY, SET_SPEED, SET_START, SET_MODE, SET_TRACK };
 bool gameApp(int a) { return (a >= APP_PONG && a <= APP_RACE) || a == APP_RUN; }   // (the PC view of a game isn't repaired)
 int  app = APP_MENU;
@@ -723,9 +727,9 @@ int  menuSel = 0;
 const char* mood = ":3";
 bool oledDirty = true;
 unsigned long lastOled = 0;
-const char APP_NAMES_P[] PROGMEM = "WORD\nSHEET\nCALC\nNOTES\nCODE\nFILES\nTOOLS\nMUSIC\nWEB\nPONG\nFROGGER\nGALAGA\nFOREST\nRACE\nCLOCK\nSTATS\nWIFI\nSETTINGS\nNETLAB\nMICOR RUN\nBOOKS\nMISION\nBITACORA";
+const char APP_NAMES_P[] PROGMEM = "WORD\nSHEET\nCALC\nNOTES\nCODE\nFILES\nTOOLS\nMUSIC\nWEB\nPONG\nFROGGER\nGALAGA\nFOREST\nRACE\nCLOCK\nSTATS\nWIFI\nSETTINGS\nNETLAB\nMICOR RUN\nBOOKS\nMISION\nBITACORA\nROVER";
 const char* appName(int i) { return pgmItem(APP_NAMES_P, i); }
-const char APP_DESC_P[] PROGMEM = "documents + charts\ncells, formulas, charts\nscientific + graphs\njot ideas with the knob\nBASIC + mini C++\neverything in flash\n12 handy little tools\ngroovebox: synths + drums\nnews, weather, AI + more\nfox vs robo-kitty\nhop across the road\nfox vs the mice\nmicor's forest quest\nzoom with furry friends\nbig clock + set time\ncpu / ram graphs\nnetworks + password\nthemes, sound + more\nWiFi + network tests\n3D space tunnel run\ne-books: txt, docx, PDF\nmapa + presupuesto EVA\nregistro EVA + exportar";
+const char APP_DESC_P[] PROGMEM = "documents + charts\ncells, formulas, charts\nscientific + graphs\njot ideas with the knob\nBASIC + mini C++\neverything in flash\n12 handy little tools\ngroovebox: synths + drums\nnews, weather, AI + more\nfox vs robo-kitty\nhop across the road\nfox vs the mice\nmicor's forest quest\nzoom with furry friends\nbig clock + set time\ncpu / ram graphs\nnetworks + password\nthemes, sound + more\nWiFi + network tests\n3D space tunnel run\ne-books: txt, docx, PDF\nmapa + presupuesto EVA\nregistro EVA + exportar\nPOV del rover en Jezero";
 uint8_t gameDifficulty[16] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
 uint8_t gameSpeed[16] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
 bool gameSetupActive = false;
@@ -1444,8 +1448,8 @@ const char DOCK_NAMES_P[] PROGMEM = "Word\nSheet\nCalc\nNotes\nCode\nFiles\nCloc
 int dockIndexOf(int a) { for (int i = 0; i < 7; i++) if (DOCK_APPS[i] == a) return i; return 7; }
 // The app icons (ICON16, pixel art): s = 1 in lists and the dock, 2 or 3 on the desktops. Runs of ink are drawn as
 // whole rectangles, so even the big ones are quick.
-void drawIcon16(int i, int x, int y, int s, uint16_t c) {   // i = app id - 1, 23 = Extras
-  if (i < 0 || i > 23) i = 23;
+void drawIcon16(int i, int x, int y, int s, uint16_t c) {   // i = app id - 1, 24 = Extras
+  if (i < 0 || i > 24) i = 24;
   for (int r = 0; r < 16; r++) {
     uint16_t bits = pgm_read_word(&ICON16[i][r]);
     for (int k = 0; k < 16; ) {
@@ -1458,7 +1462,7 @@ void drawIcon16(int i, int x, int y, int s, uint16_t c) {   // i = app id - 1, 2
 }
 void drawMiniGlyph(int i, int cx, int cy, uint16_t c, uint16_t bg) {   // i = app id - 1 (99 = Extras)
   (void)bg;
-  drawIcon16(i >= 0 && i < 24 ? i : 23, cx - 8, cy - 8, 1, c);
+  drawIcon16(i >= 0 && i < 25 ? i : 24, cx - 8, cy - 8, 1, c);
 }
 void drawDockTab(int i, bool sel) {
   int x = DOCK_X0 + i * DOCK_TAB, a = i < 7 ? (int)DOCK_APPS[i] : (int)APP_MENU;
@@ -1618,7 +1622,7 @@ int kbTick(int clicks, bool press) {             // KB_NONE, KB_TYPED (char in k
 
 // ================= MENU (EPOC desktop) =================
 // Ledger of apps on the left (6 rows visible + scroll bar), System panel on the right, dock at the bottom.
-const int MENU_N = 23, MENU_VIS = 6, LEDGER_X = 4, LEDGER_Y = 22, LEDGER_W = 202, LEDGER_ROW = 24, LEDGER_HEAD = 14;
+const int MENU_N = 24, MENU_VIS = 6, LEDGER_X = 4, LEDGER_Y = 22, LEDGER_W = 202, LEDGER_ROW = 24, LEDGER_HEAD = 14;
 const int SYS_X = 210, SYS_W = 106;
 int menuTop = 0;
 
@@ -1727,7 +1731,7 @@ void drawIconGlyph(int i, int x, int y, uint16_t fg, uint16_t bg) {
   }
 }
 // ---------- ledger (left) ----------
-const char APP_KIND_P[] PROGMEM = "DOC\nDOC\nTOOL\nTOOL\nDEV\nSYS\nTOOL\nDAW\nNET\nGAME\nGAME\nGAME\nRPG\nGAME\nTOOL\nTOOL\nSYS\nSYS\nNET\n3D\nDOC\nTOOL\nTOOL";
+const char APP_KIND_P[] PROGMEM = "DOC\nDOC\nTOOL\nTOOL\nDEV\nSYS\nTOOL\nDAW\nNET\nGAME\nGAME\nGAME\nRPG\nGAME\nTOOL\nTOOL\nSYS\nSYS\nNET\n3D\nDOC\nTOOL\nTOOL\nTOOL";
 const char* appKind(int i) { return pgmItem(APP_KIND_P, i); }
 uint16_t menuAccent() { return appAccent(1 + menuSel); }
 void drawLedgerFrame() {
@@ -20026,6 +20030,7 @@ void drawOled() {
     case APP_FILES: oledFiles(); break;
     case APP_MISION: oledMision(); break;
     case APP_BITACORA: oledBitacora(); break;
+    case APP_ROVER: oledRover(); break;
     case APP_STATS:
       oledHead(FS("STATS"));
       oled.setTextSize(2);
@@ -20287,6 +20292,7 @@ void enterApp(int a) {
     if (app == APP_RUN) runLeave();
     if (app == APP_MISION) misionLeave();           // Space Apps: guarda /eva.cfg
     if (app == APP_BITACORA) bitacoraLeave();       // Space Apps: cierra popup/prompt
+    if (app == APP_ROVER) roverLeave();             // Space Apps: cierra el POV (solo estado, sin writes)
     if (!imgStream) { free(netIn); netIn = nullptr; }   // (4.2) the network read buffer: back to the heap
   }
   app = a;
@@ -20333,6 +20339,7 @@ void enterApp(int a) {
       case APP_BOOKS: booksEnter(); break;
       case APP_MISION: misionEnter(); break;
       case APP_BITACORA: bitacoraEnter(); break;
+      case APP_ROVER: roverEnter(); break;
     }
   }
   oledDirty = true;
@@ -20542,6 +20549,7 @@ void loop() {
     else if (app == APP_MUSIC && musicWantsBack()) musicBack();   // HOWL RACK: pages, menus, a note's menu
     else if (app == APP_MISION && misionWantsBack()) misionBack();      // Space Apps: mapa -> presupuesto
     else if (app == APP_BITACORA && bitacoraWantsBack()) bitacoraBack();  // Space Apps: entradas -> caminatas
+    else if (app == APP_ROVER && roverWantsBack()) roverBack();          // Space Apps: tarjeta -> POV
     else if (app != APP_MENU) enterApp(APP_MENU);
     else if (!saverOn) deskHold();                   // home screen: Seven's Start menu
   }
@@ -20573,6 +20581,7 @@ void loop() {
       case APP_BOOKS: booksTick(now); break;
       case APP_MISION: misionTick(now); break;
       case APP_BITACORA: bitacoraTick(now); break;
+      case APP_ROVER: roverTick(now); break;
     }
   }
   if (padEv) {                                   // (4.1) a direction nobody took: a knob turn (up / left = back one)

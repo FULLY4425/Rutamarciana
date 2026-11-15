@@ -25,7 +25,7 @@ El caso científico completo es **Glen Torridon / Gale**: óptica y topografía 
 | Inspiración en otras misiones/cuerpos | Opcional | Analogía lunar declarada para presupuesto; no se copia cartografía terrestre sobre Marte ni se confunden coordenadas |
 | Datos históricos, futuros o sin marco temporal específico | Alternativas permitidas | Caso histórico: productos PDS con sol y etiquetas de fechas, relieve orbital estable y escenarios hipotéticos separados |
 | Imágenes de superficie de misiones para anticipar el destino | Opcional | Referencias a archivos NASA disponibles; no se incorporaron panoramas fotográficos por destino. La vista de superficie sigue siendo una reconstrucción DEM, marcada como tal |
-| Considerar transporte robótico o trabajo en parejas | Opcional | Dos astronautas y planificación para pareja. No se implementó un modelo de transporte en rover, carga robótica ni rutas con vehículo |
+| Considerar transporte robótico o trabajo en parejas | Opcional | Dos astronautas y planificación para pareja. También existe una app de simulación ROVER sobre ortofoto de Jezero; no hay transporte físico, modelo energético o rutas certificadas con vehículo |
 
 ## Funciones añadidas tras la auditoría
 

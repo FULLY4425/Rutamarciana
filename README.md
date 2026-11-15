@@ -34,6 +34,7 @@ La alternativa local sigue disponible con `python iniciar.py`. Configuración, c
 | [Datos y fuentes](docs/DATOS_Y_FUENTES.md) | NASA/PDS/USGS, resoluciones, coordenadas, preparación y procedencia |
 | [Servidor local](INICIAR_SERVIDOR.md) | Descargar el ZIP de GitHub, instalar y ejecutar Python |
 | [Render](RENDER.md) | Configuración del servicio, arranque, memoria y almacenamiento |
+| [Módulo 3 · ROVER](docs/MODULO_ROVER_ESP32.md) | Simulación sobre ortofoto de Jezero, tarjetas, mosaicos LittleFS y contrato geométrico |
 | [Celular y ESP32](docs/NAVEGADOR_ESP32.md) | GPS de entrenamiento, vinculación, TFT 320×240 y compilación |
 | [Presupuesto EVA](docs/eva_budget_lunar_analog.md) | Fórmulas, supuestos y límites del modelo educativo |
 | [Cambios implementados](docs/CAMBIOS_IMPLEMENTADOS.md) | Evolución de las funciones y estado de verificación |
@@ -50,6 +51,7 @@ La alternativa local sigue disponible con `python iniciar.py`. Configuración, c
 - Giros, distancias, paradas y llegada, con voces españolas del dispositivo, selección de voz, ritmo y volumen.
 - Recálculo desde una posición simulada o vinculada al GPS, conservando el hogar; polvo/tormentas hipotéticos y pausa cuando no hay paso.
 - **Reloj / celular**: GPS terrestre vinculado explícitamente al mapa de Marte para entrenamiento 1:1, con orientación elegida y coordenadas terrestres procesadas en el celular.
+- App **ROVER** en el ESP32: simulación sobre ortofoto de Jezero, recorrido manual/animado y tarjetas de llegada; geometría demo rotulada cuando no hay proveedor.
 - Receptor **ESP32-WROOM-32**, TFT **320×240 horizontal** y OLED: indicaciones por Wi-Fi, enlace temporal privado y espera ante datos antiguos. Voz en el celular.
 - Objetivo e hipótesis de misión, equipo y factor de marcha, áreas de exclusión manual y cuaderno web de observaciones propias.
 - Exportación JSON de misión y bitácora embebida con exportación JSON/CSV y sincronización manual.
@@ -98,7 +100,7 @@ node --test tests/*.cjs
 
 Node.js se usa para pruebas, no para servir la aplicación. Las pruebas nativas C++ requieren `g++` con soporte de AddressSanitizer/UBSan; tampoco es necesario para utilizar el servidor. `requirements-server.txt` contiene las dependencias de ejecución; las completas añaden pytest y rasterio para pruebas e importación geoespacial. También existen `make demo` y `make serve` para el flujo de desarrollo con `data/out`.
 
-La versión actual del firmware fue compilada para ESP32 core 3.3.12, partición `no_ota`: **1,980,518 B de flash (94%) y 93,692 B de RAM estática (28%)**. Las pruebas automáticas no sustituyen una prueba física de GPS, Wi-Fi, voz, pantallas o batería.
+La versión actual del firmware fue compilada para ESP32 core 3.3.12, partición `no_ota`: **1,992,078 B de flash (94%) y 94,516 B de RAM estática (28%)**. Las pruebas automáticas no sustituyen una prueba física de GPS, Wi-Fi, voz, pantallas o batería.
 
 ## Créditos y procedencia
 

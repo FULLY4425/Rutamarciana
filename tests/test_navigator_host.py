@@ -34,5 +34,5 @@ def test_uploaded_firmware_unrelated_files_are_byte_identical():
     root=Path(__file__).resolve().parents[1]/'firmware/psion-micor-spaceapps'
     manifest=json.loads((root/'upstream-sha256.json').read_text())
     for name,digest in manifest['files_before_navigation_changes'].items():
-        if name!='spaceapps_apps.h':
+        if name not in ('spaceapps_apps.h','psion-micor-spaceapps.ino'):
             assert hashlib.sha256((root/name).read_bytes()).hexdigest()==digest

@@ -27,7 +27,7 @@ Registro funcional hasta el **15 de noviembre de 2026**. No es un roadmap ni una
 - Firmware completo, ESP32 core 3.3.12, partición `no_ota`: **1,980,518 bytes de flash (94%)**, **93,692 bytes de RAM estática (28%)**. La memoria dinámica de TLS, tareas y aplicaciones se añade en ejecución.
 - Verificación HTTP pública: vista de bolsillo y script de navegación disponibles, credenciales separadas, publicación/lectura y revocación de sesión, paquete de 16 líneas. Se observó transferencia chunked y se adaptó el receptor acotado, con recompilación correcta.
 - Integración en host: resultado de ruta Python → mensaje autenticado → paquete real → parser C++ y campos EVA.
-- Los archivos del sketch principal, forest y núcleos de bitácora/EVA/contrato preservan sus hashes del ZIP aportado.
+- Forest y los núcleos de bitácora/EVA/contrato preservan sus hashes. El sketch principal incorporó después los enganches de ROVER.
 
 Estos resultados son evidencia de desarrollo, no una garantía permanente para cualquier entorno. Comandos reproducibles en el [README](../README.md#desarrollo-y-comprobaciones) y en la [guía ESP](NAVEGADOR_ESP32.md).
 
@@ -42,3 +42,9 @@ Precisión GPS y orientación escogida en un celular real, permisos/voz de cada 
 ## Revisión del reto científico
 
 La [auditoría completa](AUDITORIA_RETO_NASA.md) distingue objetivos centrales y propuestas opcionales del texto proporcionado. Se añadieron química PDS cuantitativa, combinación de tres clases de datos en Glen, objetivo/hipótesis, equipo/factor de movilidad, exclusiones manuales y cuaderno web. **177 pruebas Python aprobadas (2 omitidas) y 29 comprobaciones JavaScript aprobadas**, incluidos emparejamiento/hashes, factor de marcha sin penalización inventada por kg, ausencia de interpolación química y persistencia por región. No se cambió el firmware del ESP ni se añadió meteorología/radiación observada o panoramas fotográficos reales.
+
+## Integración del módulo 3 suministrado
+
+Se añadió la app ROVER del ZIP v2, con ortofoto Jezero en 64 mosaicos LittleFS, núcleo/contrato POV, panel y tarjetas. Se corrigieron stride de filas parciales, clipping del visor y buffers de texto, conservando la guía TFT, bitácora y presupuesto actuales. Compilación integrada: **1,992,078 B flash, 94,516 B RAM estática**; 27/27 pruebas EVA, 40/40 bitácora y 109/109 POV de la entrega aprobadas. Imagen LittleFS construida y mosaicos recompuestos sin alterar el PNG/JSON original. No hay transferencia automática de geometría web ni rover físico. [Detalles](MODULO_ROVER_ESP32.md).
+
+Validación del árbol integrado tras el módulo ROVER: **183 pruebas Python aprobadas (2 omitidas) y 29 comprobaciones JavaScript aprobadas**. La comprobación nativa adicional cubre lectura por filas, bordes de 52 píxeles, ausencia de archivos, recorte del viewport y textos largos. No se ha probado ni flasheado una placa física.

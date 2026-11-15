@@ -176,3 +176,9 @@ El plan incluye objetivo/hipótesis de hasta 600 caracteres, equipo de hasta 300
 La interfaz permite marcar hasta 7 exclusiones circulares manuales (radio de 1–10000 m, acotado a la diagonal del terreno), más la zona de tormenta. Se guardan por región/rejilla y se representan con el resto de restricciones. Cambiarlas invalida la ruta anterior. No hay detección automática de grandes rocas.
 
 El cuaderno web guarda hasta 100 observaciones propias de hasta 600 caracteres, por región/rejilla, con punto, nombre, fecha y origen no verificado. No adjunta fotos binarias ni produce mediciones de sensores. Puede borrar entradas y exportarlas con el plan. Objetivo, equipo, zonas y notas se guardan localmente; la exportación añade metadatos de las capas. Estas notas no sincronizan automáticamente con la bitácora del ESP.
+
+## Módulo 3: app ROVER
+
+El ESP32 incluye un visor independiente de simulación sobre ortofoto cenital de Jezero. Ventana de 200×160 en la TFT 320×240, panel lateral, marcador con rumbo, avance por encoder, pausa/play, escalas ×1/×10/×100 accesibles en tarjetas y tarjetas de llegada por parada. Foto RGB565 en 64 mosaicos LittleFS; buffer de píxeles de 128 bytes, sin incorporar la foto en PROGMEM.
+
+El proveedor geométrico opcional admite START, hasta 8 paradas y END (10 puntos), en píxeles de la ortofoto de 500×500. Sin él hay RUTA DEMO rotulada, con velocidad nominal de 0.04 m/s proyectados y geometría determinista; puede consumir los tiempos del presupuesto como escenario. No transfiere automáticamente la ruta del navegador ni usa el GPS como telemetría de un rover. Los metros son proyectados a 4 m/px; no equivalen exactamente a la escala física corregida del planificador web. No implementa conducción, energía o peligros robóticos. [Especificación completa del módulo](MODULO_ROVER_ESP32.md).

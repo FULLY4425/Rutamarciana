@@ -21,6 +21,8 @@ bool btLoad(int id); bool btSave(); void btScan(); void btFallback(); void btMan
 void btExport(int mode); void btDraw(); bool btWrite(const char* path, const char* data);
 bool btNextIdentity(char* out, size_t n);
 void btPath(char* p, size_t n, int id);
+void roverEnter(); void roverLeave(); bool roverWantsBack(); void roverBack();
+void roverTick(uint32_t now); void oledRover(); void roverLoad();
 
 // ================= SPACE APPS: MISION (presupuesto EVA + slot de mapa) =================
 // Dos pantallas hermanas de una sola experiencia "Misión": PRESUPUESTO (este módulo)
@@ -604,5 +606,7 @@ void bitacoraTick(uint32_t now) {
   }
 }
 
+
+#include "rover_app.h"
 
 #endif

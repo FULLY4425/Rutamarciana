@@ -86,7 +86,7 @@ El manifiesto de bitácora, las sesiones de guía y los JSON exportados son cana
 
 ## Integración embebida
 
-El sketch principal, `forest.ino`, `bitacora_core.h`, `eva_budget.h` y `mision_map_contract.h` se conservan byte a byte del ZIP aportado, registrados en `upstream-sha256.json`. Se modifica el espacio Misión en `spaceapps_apps.h` y se añaden:
+`forest.ino`, `bitacora_core.h`, `eva_budget.h` y `mision_map_contract.h` se conservan byte a byte de las entregas aportadas. El sketch principal añade los enganches append-only de ROVER; los manifiestos de hashes conservan ambas procedencias. Se modifica el espacio Misión en `spaceapps_apps.h` y se añaden:
 
 - `navigator_core.h`: parser acotado, paquete y estado/frescura, sin dependencia de Arduino.
 - `navigator_link.h`: tarea HTTPS, vinculación, proveedor EVA y adaptación al shell.
@@ -110,3 +110,7 @@ No se incorpora un framework de frontend, base de datos o servicio de voz extern
 - HTTP público: disponibilidad de recursos y enlace autenticado de guía comprobados; no equivale a probar una placa.
 
 Para cambios solo de documentación basta contrastar código, enlaces y ejemplos; no se necesitan nuevos tests que repliquen párrafos. Para modificar planificación o firmware, ejecutar las pruebas pertinentes de esos módulos y recompilar cuando corresponda. La prueba física de GNSS del celular, Wi-Fi/TLS de la placa, TFT/OLED, audio y batería sigue siendo manual.
+
+## Módulo 3 ROVER
+
+`pov_core.h` y `pov_contract.h` definen la simulación/contrato geométrico; `rover_app.h` implementa su ciclo de vida y lectura de mosaicos, y `pov_render.h` recorta la geometría al visor. La nueva app usa LittleFS `data/pov` con archivos preparados por `pipeline.pov_tiles`. Se integró sin reemplazar Misión ni la guía de bolsillo. El canal de guía contiene tiempos/indicaciones y no es un proveedor automático de geometría. [Diseño, pruebas y carga de datos](MODULO_ROVER_ESP32.md).
