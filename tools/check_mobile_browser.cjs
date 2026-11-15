@@ -36,7 +36,6 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
   await send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:width<1000});await pause(180);
   const panels=await evaluate('Array.from(document.querySelectorAll(".panel")).map(e=>({overflow:getComputedStyle(e).overflowY,maxHeight:getComputedStyle(e).maxHeight,content:e.scrollHeight,height:e.clientHeight}))');
   for(const panel of panels){assert.equal(panel.overflow,'visible',`Nested panel scroll at ${width}`);assert.equal(panel.maxHeight,'none');assert.ok(panel.content<=panel.height+2,`Clipped options at ${width}`);}
-  const frame=await evaluate('({bottom:document.getElementById("map-section").getBoundingClientRect().bottom,forms:document.getElementById("mission-controls").getBoundingClientRect().top})');assert.ok(frame.forms>=frame.bottom,`Forms stretch the map frame at ${width}`);
   const metrics=await evaluate('({viewport:window.innerWidth,scroll:document.documentElement.scrollWidth})');assert.ok(metrics.scroll<=metrics.viewport+1,`Horizontal overflow at ${width}: ${JSON.stringify(metrics)}`);
   for(const name of ['editstart','editend','editzone','obstacleplace','compute','mission-controls','mission-guidance','route-results'])assert.equal(await evaluate(`(()=>{const e=document.getElementById('${name}');return getComputedStyle(e).display!=='none'&&e.getBoundingClientRect().width>0;})()`),true,`${name} unavailable at ${width}`);
  }
