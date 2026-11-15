@@ -14,6 +14,20 @@ desde cada parada.
 > son factibilidad bajo supuestos declarados. Las rutas no certifican seguridad: la rugosidad es
 > un proxy del DEM y no detecta rocas ni arena.
 
+## Servidor local desde el ZIP de GitHub
+
+Extrae el ZIP de **Code → Download ZIP**, abre una terminal en la carpeta y ejecuta:
+
+```bash
+python iniciar.py
+```
+
+Requiere Python 3.10+ e internet en la primera instalación. El lanzador prepara
+su entorno aislado, genera la demo sintética si no hay terreno y sirve la app
+con Waitress en `http://127.0.0.1:8080/`. No requiere Git, Node.js o Make.
+Guía para Windows/Linux, acceso desde la red y datos reales:
+[INICIAR_SERVIDOR.md](INICIAR_SERVIDOR.md).
+
 ## Arranque
 
 ```bash
