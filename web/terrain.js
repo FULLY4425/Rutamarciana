@@ -105,8 +105,12 @@ let pointer=null, moved=false;
 cvs.style.touchAction='none';
 cvs.addEventListener('pointerdown',ev=>{pointer={x:ev.clientX,y:ev.clientY,startX:ev.clientX,startY:ev.clientY};moved=false;cvs.setPointerCapture(ev.pointerId);});
 cvs.addEventListener('pointermove',ev=>{
-  if(!pointer||flat)return;
+  if(!pointer)return;
   if(Math.hypot(ev.clientX-pointer.startX,ev.clientY-pointer.startY)>5)moved=true;
+  if(flat){
+    if(moved && state.view.k>1){const rect=cvs.getBoundingClientRect();state.view.ox+=(ev.clientX-pointer.x)/rect.width*cvs.width;state.view.oy+=(ev.clientY-pointer.y)/rect.height*cvs.height;clampView();draw();}
+    pointer.x=ev.clientX;pointer.y=ev.clientY;return;
+  }
   if(moved){yaw+=(ev.clientX-pointer.x)*0.006;tilt=Math.max(0.15,Math.min(1.35,tilt+(ev.clientY-pointer.y)*0.004));draw();}
   pointer.x=ev.clientX;pointer.y=ev.clientY;
 });
@@ -114,7 +118,7 @@ cvs.addEventListener('pointercancel',()=>{pointer=null;});
 cvs.addEventListener('pointerup',ev=>{
   if(!pointer)return;pointer=null;if(moved)return;
   const rect=cvs.getBoundingClientRect(), x=(ev.clientX-rect.left)/rect.width*1000,y=(ev.clientY-rect.top)/rect.height*1000;
-  if(flat){selectPoint([Math.round(y/1000*(state.grid.rows-1)),Math.round(x/1000*(state.grid.cols-1))]);return;}
+  if(flat){selectPoint(c2g(ev.clientX,ev.clientY));return;}
   // Hit-test frontmost visible triangle, interpolate original grid coordinates.
   for(let k=triangles.length-1;k>=0;k--){const t=triangles[k], [a,b,c]=t.pts;
     const den=(b[1]-c[1])*(a[0]-c[0])+(c[0]-b[0])*(a[1]-c[1]);if(Math.abs(den)<1e-8)continue;
@@ -123,9 +127,9 @@ cvs.addEventListener('pointerup',ev=>{
     if(u>=0&&v>=0&&w>=0){const ids=t.ids;selectPoint([Math.round(u*terrain.rows[ids[0][0]]+v*terrain.rows[ids[1][0]]+w*terrain.rows[ids[2][0]]),Math.round(u*terrain.cols[ids[0][1]]+v*terrain.cols[ids[1][1]]+w*terrain.cols[ids[2][1]])]);break;}
   }
 });
-cvs.addEventListener('wheel',ev=>{if(flat)return;ev.preventDefault();zoom=Math.max(0.5,Math.min(2.5,zoom*Math.exp(-ev.deltaY*0.001)));draw();},{passive:false});
-byId('viewmode').onclick=()=>{flat=!flat;byId('viewmode').textContent=flat?'Vista 3D':'Vista 2D';draw();};
-byId('camerareset').onclick=()=>{yaw=-0.35;tilt=0.85;zoom=1;draw();};
+cvs.addEventListener('wheel',ev=>{if(flat){ev.preventDefault();zoomAt(ev.clientX,ev.clientY,ev.deltaY<0?1.25:1/1.25);return;}ev.preventDefault();zoom=Math.max(0.5,Math.min(2.5,zoom*Math.exp(-ev.deltaY*0.001)));draw();},{passive:false});
+byId('viewmode').onclick=()=>{flat=!flat;document.querySelector('.zoomctl').hidden=!flat;clampView();byId('viewmode').textContent=flat?'Vista 3D':'Vista 2D';draw();};
+byId('camerareset').onclick=()=>{yaw=-0.35;tilt=0.85;zoom=1;resetView();};
 byId('relief').oninput=ev=>{exaggeration=Number(ev.target.value);document.querySelector('.meta').textContent=`${state.grid.rows} × ${state.grid.cols} · RELIEVE ×${exaggeration} · ARRASTRA PARA GIRAR`;draw();};
 byId('progress').oninput=ev=>{window.MissionGuidance?.stop();running=false;byId('play').textContent='Continuar';progress=Number(ev.target.value)/1000;draw();};
 byId('trackroute').onchange=()=>{running=false;progress=0;byId('progress').value=0;byId('play').textContent='Iniciar';draw();};

@@ -3,12 +3,14 @@ const ctx = cvs.getContext("2d");
 const cards = document.getElementById("cards");
 const hint = document.getElementById("hint");
 const mockflag = document.getElementById("mockflag");
+const scalebarM = document.getElementById("scalebar-m");
 
 const bg = new Image();
 bg.src = "/preview.png";
 
 const state = {
   revision: 0,
+  view: { k: 1, ox: 0, oy: 0 },
   grid: { rows: 500, cols: 500 },
   cellM: 4.0,
   cellXM: 4.0,
@@ -22,6 +24,7 @@ const state = {
   viaServer: true,  // false when the mock fallback is used
 };
 
+const VIEW_K_MIN = 1, VIEW_K_MAX = 16;
 const STATUS_LABEL = { cabe: "CABE ✓", justo: "JUSTO", no_cabe: "NO CABE ✗" };
 
 function meters(a, b) {
@@ -32,15 +35,6 @@ function meters(a, b) {
 
 function fmtMin(s) { return (s / 60).toFixed(0); }
 function fmtKm(m) { return (m / 1000).toFixed(2); }
-
-function legPath(p, legStart) {
-  // "A → S1" style labels for the outbound legs; return is B → A.
-  const names = ["A", "S1", "S2", "S3", "S4", "S5", "B"];
-  if (legStart === "return") return "B → A";
-  const from = names[legStart];
-  const to = names[legStart + 1];
-  return `${from} → ${to}`;
-}
 
 function legCard(leg, label, extraCls) {
   if (!leg) return "";
@@ -158,12 +152,61 @@ function renderCards() {
   }
 }
 
+// grid → canvas coordinates, transformed by the current view (zoom + pan)
 function g2c(pt) {
   const [r, c] = pt;
+  const bx = (c / (state.grid.cols - 1)) * cvs.width;
+  const by = (r / (state.grid.rows - 1)) * cvs.height;
+  return [bx * state.view.k + state.view.ox, by * state.view.k + state.view.oy];
+}
+
+// client px → grid coordinates, inverse of g2c
+function c2g(clientX, clientY) {
+  const rect = cvs.getBoundingClientRect();
+  const x = (clientX - rect.left) / rect.width * cvs.width;
+  const y = (clientY - rect.top) / rect.height * cvs.height;
+  const bx = (x - state.view.ox) / state.view.k;
+  const by = (y - state.view.oy) / state.view.k;
   return [
-    (c / (state.grid.cols - 1)) * cvs.width,
-    (r / (state.grid.rows - 1)) * cvs.height,
+    Math.max(0, Math.min(state.grid.rows - 1, Math.round(by / cvs.height * (state.grid.rows - 1)))),
+    Math.max(0, Math.min(state.grid.cols - 1, Math.round(bx / cvs.width * (state.grid.cols - 1)))),
   ];
+}
+
+function clampView() {
+  const v = state.view;
+  v.k = Math.max(VIEW_K_MIN, Math.min(VIEW_K_MAX, v.k));
+  if (v.k <= 1) { v.ox = 0; v.oy = 0; }
+  else {
+    const mx = cvs.width * (1 - v.k), my = cvs.height * (1 - v.k);
+    v.ox = Math.max(mx, Math.min(0, v.ox));
+    v.oy = Math.max(my, Math.min(0, v.oy));
+  }
+  if (scalebarM) scalebarM.textContent = Math.round((state.grid.cols - 1) * state.cellXM * 0.25 / v.k / 10) * 10 + " M";
+}
+
+function zoomAt(clientX, clientY, factor) {
+  const rect = cvs.getBoundingClientRect();
+  const mx = (clientX - rect.left) / rect.width * cvs.width;
+  const my = (clientY - rect.top) / rect.height * cvs.height;
+  const v = state.view;
+  const k = Math.max(VIEW_K_MIN, Math.min(VIEW_K_MAX, v.k * factor));
+  v.ox = mx - (mx - v.ox) * (k / v.k);
+  v.oy = my - (my - v.oy) * (k / v.k);
+  v.k = k;
+  clampView();
+  draw();
+}
+
+function setZoom(factor) {
+  const rect = cvs.getBoundingClientRect();
+  zoomAt(rect.left + rect.width / 2, rect.top + rect.height / 2, factor);
+}
+
+function resetView() {
+  state.view = { k: 1, ox: 0, oy: 0 };
+  clampView();
+  draw();
 }
 
 // small legible tag with a dark plate so labels read over the orthofoto
@@ -176,41 +219,77 @@ function tag(text, x, y, color) {
   ctx.fillText(text, x + 1, y);
 }
 
+function tracePath(pts) {
+  ctx.beginPath();
+  pts.forEach((p, i) => {
+    const [x, y] = g2c(p);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+}
+
+// draw a route line: dark under-stroke first so it reads over the orthofoto
+function drawRoute(pts, color, width, dash) {
+  if (!pts || pts.length < 2) return;
+  ctx.setLineDash(dash || []);
+  ctx.strokeStyle = "rgba(7, 9, 9, 0.7)";
+  ctx.lineWidth = width + 3;
+  tracePath(pts);
+  ctx.stroke();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  tracePath(pts);
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+// direction chevrons along a path so return direction (B → A) is visible
+function drawChevrons(pts, color) {
+  if (!pts || pts.length < 8) return;
+  const step = Math.max(6, Math.floor(pts.length / 14));
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.lineWidth = 2;
+  for (let i = step; i < pts.length - 1; i += step) {
+    const [x1, y1] = g2c(pts[i - 1]);
+    const [x2, y2] = g2c(pts[i]);
+    const [x3, y3] = g2c(pts[Math.min(i + 1, pts.length - 1)]);
+    const ang = Math.atan2(y3 - y1, x3 - x1);
+    ctx.save();
+    ctx.translate(x2, y2);
+    ctx.rotate(ang);
+    ctx.beginPath();
+    ctx.moveTo(-5, -5); ctx.lineTo(3, 0); ctx.lineTo(-5, 5);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
 function draw2d() {
   ctx.clearRect(0, 0, cvs.width, cvs.height);
+  ctx.save();
   if (bg.complete && bg.naturalWidth) {
-    ctx.drawImage(bg, 0, 0, cvs.width, cvs.height);
+    if (state.view.k === 1) ctx.drawImage(bg, 0, 0, cvs.width, cvs.height);
+    else ctx.drawImage(bg, state.view.ox, state.view.oy, cvs.width * state.view.k, cvs.height * state.view.k);
   } else {
     ctx.fillStyle = "#0b0d0e";
     ctx.fillRect(0, 0, cvs.width, cvs.height);
   }
+  ctx.restore();
 
   if (state.data) {
     for (const [name, color] of [["fast", "#f08a3c"], ["safe", "#f2c14e"]]) {
       const route = state.data[name];
-      if (!route || !route.points || route.points.length < 2) continue;
-      const dash = name === "fast" ? [10, 8] : [];
-      // dark under-stroke so the line reads over the rust orthofoto
-      ctx.strokeStyle = "rgba(7, 9, 9, 0.7)";
-      ctx.lineWidth = name === "safe" ? 6 : 5;
-      ctx.setLineDash(dash);
-      ctx.beginPath();
-      route.points.forEach((p, i) => {
-        const [x, y] = g2c(p);
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      });
-      ctx.stroke();
-      ctx.strokeStyle = color;
-      ctx.lineWidth = name === "safe" ? 3 : 3;
-      ctx.beginPath();
-      route.points.forEach((p, i) => {
-        const [x, y] = g2c(p);
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      });
-      ctx.stroke();
-      ctx.setLineDash([]);
+      if (!route) continue;
+      const isFast = name === "fast";
+      // ida: solid (safe) or dashed (fast), thicker
+      drawRoute(route.points, color, 3, isFast ? [10, 8] : []);
+      // regreso: dotted, thinner, with direction chevrons toward A
+      if (route.return && route.return.points) {
+        drawRoute(route.return.points, color, 2, [1.5, 7]);
+        drawChevrons(route.return.points, color);
+      }
     }
   }
 
@@ -313,6 +392,10 @@ function selectPoint(pt) {
   hint.textContent = nextHint();
   draw();
 }
+
+document.getElementById("zin").addEventListener("click", () => setZoom(1.3));
+document.getElementById("zout").addEventListener("click", () => setZoom(1 / 1.3));
+document.getElementById("zreset").addEventListener("click", resetView);
 
 document.getElementById("compute").addEventListener("click", compute);
 

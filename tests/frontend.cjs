@@ -10,6 +10,10 @@ vm.runInContext(`
 terrain={rows:[0,10],cols:[0,10],elevations:[[0,10],[10,20]],base:0};
 state.grid={rows:11,cols:11};state.cellM=4;state.cellXM=3;
 if(elevation([5,5])!==10)throw Error('Bilinear elevation');
+state.view={k:2,ox:-100,oy:-200};
+const projectedPoint=g2c([5,5]);
+if(JSON.stringify(c2g(...projectedPoint))!==JSON.stringify([5,5]))throw Error('Zoom point selection inverse');
+state.view={k:1,ox:0,oy:0};
 const trip=samplePath([[0,0],[0,10],[10,10]],0.5);
 if(trip.total!==70 || trip.distance!==35 || trip.point[0]!==1.25)throw Error('Physical route distance');
 state.data={safe:{points:[[0,0],[0,10]],return:{points:[[0,10],[0,0]]}}};
