@@ -1152,7 +1152,7 @@ void envSave(const char* js) {                   // Save only environment, not t
   if (!fsOk) return;
   static MrEnv e;if(!mrParseEnv(js,&e,nullptr,0))return;
   static char packed[2048];int n=snprintf(packed,sizeof packed,"{\"weather\":\"%s\",\"label\":\"Escenario educativo\",\"sourceType\":\"synthetic\",\"speedKmH\":%.6f,\"restrictions\":[",e.key,e.speed);
-  for(int k=0;k<e.nZones&&n<(int)sizeof packed;k++)n+=snprintf(packed+n,sizeof packed-n,"%s{\"lat\":%.12f,\"lon\":%.12f,\"radiusMeters\":%.3f}",k?",":"",e.zone[k].lat,e.zone[k].lon,e.zone[k].r);
+  for(int k=0;k<e.nZones&&n<(int)sizeof packed;k++)n+=snprintf(packed+n,sizeof packed-n,"%s{\"name\":\"%s\",\"lat\":%.12f,\"lon\":%.12f,\"radiusMeters\":%.3f}",k?",":"",!strcmp(e.zone[k].name,"hypothetical_dust")?"hypothetical_dust":"manual_obstacle",e.zone[k].lat,e.zone[k].lon,e.zone[k].r);
   if(n<(int)sizeof packed)n+=snprintf(packed+n,sizeof packed-n,"]}");
   if(n>=(int)sizeof packed)return;
   File f = LittleFS.open("/marte/env.json", "w");

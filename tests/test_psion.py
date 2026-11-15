@@ -76,6 +76,8 @@ int main(){
  assert(mrParseReply(valid,&rp)&&rp.nStops==2);assert(!mrParseReply("{\"stops\":[{\"x\":999,\"y\":0}]}",&rp));
  MrEnv env{};assert(mrParseEnv("{\"weather\":\"dust\",\"speedKmH\":1.6,\"restrictions\":[]}",&env,nullptr,0));
  mrEnv=env;mrZoneCells();assert(mrEnv.speed==1.6);
+ mrEnv.nZones=1;strcpy(mrEnv.zone[0].name,"hypothetical_dust");mrEnv.zone[0].lat=MR_NORTH-40*MR_STEP;mrEnv.zone[0].lon=MR_WEST+70*MR_STEP;mrEnv.zone[0].r=30;
+ assert(mrRequestJson(body,sizeof body)>0);assert(strstr(body,"hypothetical_dust"));
 }
 ''')
     subprocess.run(['g++','-std=c++17','-fsanitize=address,undefined','-fno-omit-frame-pointer','-I',str(ROOT/'firmware/psion-marte-os'),str(src),'-o',str(exe)],check=True,capture_output=True)

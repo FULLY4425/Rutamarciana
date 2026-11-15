@@ -475,7 +475,7 @@ inline int mrRequestJson(char* out, int n) {     // -> length (0 = didn't fit)
   if (o < n) o += snprintf(out + o, n - o, ",\"environment\":{\"weather\":\"%s\",\"blocked_zones\":[",mrEnv.key);
   for(int k=0;k<mrEnv.nZones && o<n;k++){
     const MrZone& z=mrEnv.zone[k];
-    o+=snprintf(out+o,n-o,"%s{\"center\":[%.8f,%.8f],\"radius_m\":%.3f,\"kind\":\"manual_obstacle\"}",k?",":"",(MR_NORTH-z.lat)/MR_STEP,(z.lon-MR_WEST)/MR_STEP,z.r);
+    o+=snprintf(out+o,n-o,"%s{\"center\":[%.8f,%.8f],\"radius_m\":%.3f,\"kind\":\"%s\"}",k?",":"",(MR_NORTH-z.lat)/MR_STEP,(z.lon-MR_WEST)/MR_STEP,z.r,!strcmp(z.name,"hypothetical_dust")?"hypothetical_dust":"manual_obstacle");
   }
   if (o < n) o += snprintf(out + o, n - o, "]}}");
   return o < n ? o : 0;
