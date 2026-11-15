@@ -45,7 +45,7 @@ function samplePath(path,fraction) {
 function drawTerrain() {
   if (activeData !== state.data) { activeData=state.data;running=false;progress=0;byId('progress').value=0;byId('play').textContent='Iniciar'; }
   if(flat) draw2d();
-  else {
+  else if (!window.SurfaceView?.isOpen()) {
     ctx.fillStyle='#0d1215';ctx.fillRect(0,0,1000,1000);triangles=[];
     if(terrain) {
       projected=terrain.rows.map((r,i)=>terrain.cols.map((c,j)=>project([r,c],terrain.elevations[i][j])));
@@ -80,13 +80,26 @@ function drawTerrain() {
     const sample=samplePath(path,progress);
     line([...path.slice(0,sample.index),sample.point],'#ffffff',4);
     marker(sample.point,'EVA · SIMULACIÓN','#ffffff');
+    const lookDistance=sample.distance<sample.total?Math.min(sample.total,sample.distance+8):Math.max(0,sample.distance-8);
+    window.SurfaceView?.update({terrain,path,sample,ahead:samplePath(path,lookDistance/(sample.total||1))});
     window.MissionGuidance?.update(state.data,byId('trackroute').value,sample,running,{x:state.cellXM,y:state.cellM});
     byId('trackinfo').textContent=`${(progress*100).toFixed(0)}% · ${(sample.distance/1000).toFixed(2)} / ${(sample.total/1000).toFixed(2)} km · fila ${sample.point[0].toFixed(0)}, col ${sample.point[1].toFixed(0)}`;
   } else {
+    window.SurfaceView?.update({terrain,path,sample:null});
     window.MissionGuidance?.update(state.data,byId('trackroute').value,null,false,{x:state.cellXM,y:state.cellM});
     byId('trackinfo').textContent='Calcula una ruta para explorar el recorrido.';
   }
 }
+window.addEventListener('surface-close',()=>draw());
+window.addEventListener('surface-step',event=>{
+  const path=trackingPath();
+  if(path.length<2)return;
+  const total=samplePath(path,progress).total;
+  if(!total)return;
+  window.MissionGuidance?.stop();running=false;
+  progress=Math.max(0,Math.min(1,progress+event.detail/total));
+  byId('progress').value=Math.round(progress*1000);byId('play').textContent='Continuar';draw();
+});
 window.drawTerrain=drawTerrain;
 let pointer=null, moved=false;
 cvs.style.touchAction='none';

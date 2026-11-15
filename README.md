@@ -165,3 +165,38 @@ El motor Python de planificación y presupuesto EVA permanece sin cambios.
 ```bash
 node --test tests/navigation.cjs
 ```
+
+### Vista de superficie (estilo Street View)
+
+Con terreno y una ruta calculada, pulsa **Vista de superficie**. La cámara sigue
+la ruta a 1,70 m sobre la malla, siempre con relieve ×1, independientemente de
+la exageración vertical del mapa general. Arrastra para mirar en cualquier
+dirección, usa la rueda para ajustar el campo visual, o las flechas izquierda y
+derecha para girar. Los botones ±5 m y las flechas arriba/abajo desplazan la
+posición sobre la ruta y pausan la reproducción. **Mirar hacia la ruta** centra
+la cámara y **Volver al mapa** / Escape recuperan el mapa general.
+
+**Iniciar**, la barra de avance y la guía por voz del panel siguen controlando
+el mismo recorrido. La vista WebGL añade iluminación del relieve y bruma
+ilustrativa; no modifica el DEM, las rutas ni los supuestos EVA. Al avanzar
+manualmente se mantienen sincronizadas posición, distancia e indicaciones.
+
+No son fotografías panorámicas tomadas desde el suelo: es una reconstrucción
+a partir del DEM activo. La demo sintética se identifica explícitamente.
+La resolución visual está limitada a las muestras de `/api/terrain` (hasta
+75×75); no se inventan rocas, detalle de elevación o geometría en zonas NoData.
+La altura de cámara se interpola sobre los mismos triángulos dibujados.
+
+La ortofoto HiRISE solo se carga sobre una malla real cuando coinciden CRS,
+los cuatro límites (tolerancia de 0,1 m) y la ventana de origen declarada en
+`assets/jezero_ortho_4m.json`. Esto comprueba la correspondencia declarada de
+ventana; no certifica precisión de georreferenciación. Si no coincide, se usa
+color ilustrativo. La iluminación y bruma tampoco representan condiciones
+meteorológicas observadas. Sin WebGL, permanecen disponibles mapa y guía.
+
+El componente está aislado en `web/streetview.js`; recibe la posición del
+seguimiento existente, reutiliza sus controles y no altera la planificación.
+
+```bash
+node --test tests/streetview.cjs tests/navigation.cjs
+```

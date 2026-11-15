@@ -90,6 +90,14 @@ def create_app(data_dir: str):
     def reference_image():
         return send_from_directory(ROOT / "assets", "jezero_ortho_4m.png")
 
+    @app.get("/reference-metadata")
+    def reference_metadata():
+        return send_from_directory(ROOT / "assets", "jezero_ortho_4m.json")
+
+    @app.get("/streetview.js")
+    def streetview_js():
+        return send_from_directory(WEB, "streetview.js")
+
     @app.get("/navigation.js")
     def navigation_js():
         return send_from_directory(WEB, "navigation.js")

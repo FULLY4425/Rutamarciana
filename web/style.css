@@ -605,3 +605,17 @@ select {border-radius:5px;font-family:monospace;}
 .guidance button[aria-pressed=true] {background:#b1dfce;color:#153029;border-color:#b1dfce;}
 .guidance details {font-size:12px;color:#c8d6cf;}.guidance summary {cursor:pointer;}
 #directionslist {padding-left:20px;margin-bottom:0;}#directionslist li {padding:6px 0;line-height:1.5;}
+.surfaceview {position:absolute;inset:0;z-index:5;overflow:hidden;background:linear-gradient(#342b2c 0%,#a57557 40%,#a1664a 65%,#674331 100%);border:1px solid #886b52;border-radius:10px;}
+.surfaceview[hidden] {display:none;}
+#surfacecanvas {width:100%;height:100%;background:transparent;border:0;touch-action:none;cursor:grab;}
+#surfacecanvas:active {cursor:grabbing;}
+.surface-top {position:absolute;top:0;left:0;right:0;padding:20px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;background:linear-gradient(#191719c9,transparent);pointer-events:none;}
+.surface-top button {pointer-events:auto;background:#1d2429cc;color:#eee5d7;border:1px solid #8b7966;}
+.surface-top strong {display:block;font:11px monospace;letter-spacing:.14em;color:#f0ddc4;}
+#surfaceheading {display:block;margin-top:8px;font:10px monospace;color:#dfc5a9;}
+.surface-crosshair {position:absolute;top:50%;left:50%;color:#f3dfbe99;font:26px monospace;transform:translate(-50%,-50%);pointer-events:none;}
+.surface-bottom {position:absolute;bottom:0;left:0;right:0;padding:20px;background:linear-gradient(transparent,#181719ed);text-align:center;pointer-events:none;}
+.surface-bottom p {font:11px/1.6 monospace;color:#f3d2b0;}.surface-bottom small {display:block;margin-top:12px;font-size:11px;color:#d9c6b3;}
+.surface-actions {display:flex;justify-content:center;gap:9px;flex-wrap:wrap;pointer-events:auto;}
+.surface-actions button {background:#e4d0aa;color:#28211a;border-color:#e4d0aa;font-size:10px;letter-spacing:.02em;}
+@media(max-width:600px){.surface-top,.surface-bottom{padding:10px;}.surface-top strong{font-size:9px;}.surface-top button{padding:7px;font-size:9px;}#surfaceheading{font-size:8px;}.surface-bottom small{font-size:9px;}.surface-bottom p{font-size:9px;}.surface-actions button{padding:6px;font-size:9px;}}

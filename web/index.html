@@ -9,8 +9,14 @@
 <body>
 <nav class="missionbar"><a href="/">◈ RUTA MARCIANA</a><span>EXPLORADOR DE TERRENO / JEZERO</span><b id="source">Cargando terreno…</b></nav><main>
   <section class="mapwrap">
-    <div class="stage"><div class="maptools"><button id="viewmode">Vista 2D</button><button id="camerareset" class="ghost">Centrar cámara</button><label>Relieve <input id="relief" type="range" min="1" max="8" value="3" aria-label="Exageración vertical"></label></div>
+    <div class="stage"><div class="maptools"><button id="surfaceopen" aria-pressed="false" disabled>Vista de superficie</button><button id="viewmode">Vista 2D</button><button id="camerareset" class="ghost">Centrar cámara</button><label>Relieve <input id="relief" type="range" min="1" max="8" value="3" aria-label="Exageración vertical"></label></div>
       <canvas id="map" width="1000" height="1000"></canvas>
+      <section id="surfaceview" class="surfaceview" hidden aria-label="Recorrido a nivel de superficie">
+        <canvas id="surfacecanvas" tabindex="0" aria-label="Vista de superficie. Arrastra para mirar. Flechas izquierda y derecha para girar; arriba y abajo para avanzar; Escape para salir."></canvas>
+        <div class="surface-top"><div><strong>EXPLORAR LA SUPERFICIE</strong><span id="surfaceheading"></span></div><button id="surfaceclose">Volver al mapa</button></div>
+        <div class="surface-crosshair" aria-hidden="true">+</div>
+        <div class="surface-bottom"><p id="surfacestatus" role="status">Cargando reconstrucción…</p><div class="surface-actions"><button id="surfaceback" aria-label="Retroceder cinco metros">↓ −5 m</button><button id="surfaceforward" aria-label="Avanzar cinco metros">↑ +5 m</button><button id="surfacerecenter">Mirar hacia la ruta</button></div><small>Arrastra: mirar 360° · Rueda: zoom · Flechas ↑ ↓: caminar por la ruta · Iniciar: recorrido con guía</small></div>
+      </section>
       <div class="chrome" aria-hidden="true">
         <div class="corner tl"></div>
         <div class="corner tr"></div>
@@ -85,6 +91,6 @@
     <p class="note"><span class="note-t">Alcance del modelo</span>Presupuesto de escenario: marcha 2 km/h, ciencia 20 min/parada, entrada y salida 30 min y reserva fija de 30 min aparte. No representa capacidad certificada de un traje ni un criterio NASA GO/NO-GO. La rugosidad del DEM no detecta rocas o arena. Marte no tiene GPS: posición relativa al mapa.</p>
   </aside>
 </main>
-<script src="/app.js"></script><script src="/navigation.js"></script><script src="/guidance.js"></script><script src="/terrain.js"></script>
+<script src="/app.js"></script><script src="/navigation.js"></script><script src="/guidance.js"></script><script src="/streetview.js"></script><script src="/terrain.js"></script>
 </body>
 </html>
