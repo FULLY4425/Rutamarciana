@@ -236,27 +236,8 @@ textarea {width:100%;min-height:65px;resize:vertical;border:1px solid var(--line
 
 .psion-exchange {max-width:900px;margin:24px auto;padding:16px;border:1px solid var(--line);border-radius:8px;}.psion-exchange details[open] {display:grid;gap:12px;}.psion-exchange p,.psion-exchange small {line-height:1.6;}.psion-exchange input {max-width:150px;min-height:44px;}
 
-/* Independent option cards: each tool opens without expanding the whole sidebar. */
-.workspace {align-items:start;}
+/* Options follow document height; the page owns scrolling, including on desktop. */
+.workspace {align-items:start;overflow:visible;}
 .workspace-toolbar {align-self:stretch;}
-.panel {align-self:start;gap:12px;}
+.panel {align-self:start;max-height:none;overflow:visible;}
 .mapwrap {justify-content:flex-start;}
-.option-group {flex:none;min-width:0;width:100%;border:1px solid var(--line-strong);border-radius:8px;background:var(--panel-2);overflow:clip;}
-.option-group>summary {display:list-item;cursor:pointer;padding:14px 12px;font-size:12px;font-weight:600;line-height:1.5;min-height:46px;color:var(--ink);}
-.option-group>summary::marker {color:var(--teal);}
-.option-group>summary:focus-visible {outline:2px solid var(--teal);outline-offset:-3px;}
-.option-group[open]>summary {border-bottom:1px solid var(--line);background:#203029;}
-.option-group>section {padding:12px;border:0;border-radius:0;background:transparent;min-width:0;}
-.option-group>section>.sectionlabel:first-child {display:none;}
-.option-group .tracking {padding-top:12px;}
-.option-group .row {min-width:0;}
-@media(min-width:1001px){
- .panel {max-height:calc(100dvh - 24px);scrollbar-gutter:stable;}
-}
-@media(max-width:1000px){
- .details-panel>.option-group {grid-column:1/-1;}
-}
-@media(max-width:700px), (max-width:1000px) and (pointer:coarse){
- .option-group>summary {font-size:14px;}
- .panel {max-height:none;}
-}
