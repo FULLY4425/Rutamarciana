@@ -19,7 +19,18 @@
         <div class="ruler ruler-x"></div>
         <div class="ruler ruler-y"></div>
         <div class="meta">JEZERO W · GRID 500 × 500 · CELL ≈ 4 M</div>
-        <div class="scalebar"><span>0</span><i></i><span>500 M</span></div>
+        <div class="legend" aria-hidden="true">
+          <span class="lg"><i class="l-solid"></i> ida</span>
+          <span class="lg"><i class="l-dot"></i> regreso</span>
+          <span class="lg"><i class="l-sw orange"></i> fast</span>
+          <span class="lg"><i class="l-sw yellow"></i> safe</span>
+        </div>
+        <div class="scalebar"><span>0</span><i></i><span id="scalebar-m">500 M</span></div>
+        <div class="zoomctl">
+          <button id="zin" title="Zoom in">+</button>
+          <button id="zout" title="Zoom out">−</button>
+          <button id="zreset" title="Reset view">⌖</button>
+        </div>
       </div>
       <div class="hint" id="hint">Click the START point.</div>
     </div>
