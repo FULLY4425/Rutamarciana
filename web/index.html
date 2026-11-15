@@ -3,55 +3,29 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Ruta Marciana · Explorador EVA</title>
+<meta name="theme-color" content="#101414">
+<meta name="description" content="Planifica un recorrido EVA en Jezero: explora el terreno 3D, compara rutas y sigue cada paso con una guía de voz.">
+<title>Ruta Marciana · Explorador de Jezero</title>
 <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-<nav class="missionbar"><a href="/">◈ RUTA MARCIANA</a><span>EXPLORADOR DE TERRENO / JEZERO</span><b id="source">Cargando terreno…</b></nav><main>
-  <section class="mapwrap">
-    <div class="stage"><div class="maptools"><button id="surfaceopen" aria-pressed="false" disabled>Vista de superficie</button><button id="viewmode">Vista 2D</button><button id="camerareset" class="ghost">Centrar cámara</button><label>Relieve <input id="relief" type="range" min="1" max="8" value="3" aria-label="Exageración vertical"></label></div>
-      <canvas id="map" width="1000" height="1000"></canvas>
-      <section id="surfaceview" class="surfaceview" hidden aria-label="Recorrido a nivel de superficie">
-        <canvas id="surfacecanvas" tabindex="0" aria-label="Vista de superficie. Arrastra para mirar. Flechas izquierda y derecha para girar; arriba y abajo para avanzar; Escape para salir."></canvas>
-        <div class="surface-top"><div><strong>EXPLORAR LA SUPERFICIE</strong><span id="surfaceheading"></span></div><button id="surfaceclose">Volver al mapa</button></div>
-        <div class="surface-crosshair" aria-hidden="true">+</div>
-        <div class="surface-bottom"><p id="surfacestatus" role="status">Cargando reconstrucción…</p><div class="surface-actions"><button id="surfaceback" aria-label="Retroceder cinco metros">↓ −5 m</button><button id="surfaceforward" aria-label="Avanzar cinco metros">↑ +5 m</button><button id="surfacerecenter">Mirar hacia la ruta</button></div><small>Arrastra: mirar 360° · Rueda: zoom · Flechas ↑ ↓: caminar por la ruta · Iniciar: recorrido con guía</small></div>
-      </section>
-      <div class="chrome" aria-hidden="true">
-        <div class="corner tl"></div>
-        <div class="corner tr"></div>
-        <div class="corner bl"></div>
-        <div class="corner br"></div>
-        <div class="ruler ruler-x"></div>
-        <div class="ruler ruler-y"></div>
-        <div class="meta">TERRENO 3D · ARRASTRA PARA GIRAR · RUEDA PARA ZOOM</div>
-        <div class="legend" aria-hidden="true">
-          <span class="lg"><i class="l-solid"></i> ida</span>
-          <span class="lg"><i class="l-dot"></i> regreso</span>
-          <span class="lg"><i class="l-sw orange"></i> fast</span>
-          <span class="lg"><i class="l-sw yellow"></i> safe</span>
-        </div>
-        <div class="scalebar"><span>0</span><i></i><span id="scalebar-m">500 M</span></div>
-        <div class="zoomctl" hidden>
-          <button id="zin" title="Zoom in">+</button>
-          <button id="zout" title="Zoom out">−</button>
-          <button id="zreset" title="Reset view">⌖</button>
-        </div>
-      </div>
-      <div class="hint" id="hint">Selecciona A: punto de salida.</div>
-    </div>
-  </section>
+<a class="skip-link" href="#mission-controls">Ir al plan de misión</a>
+<header class="missionbar">
+  <a class="brand" href="/" aria-label="Ruta Marciana, inicio"><span class="emblem" aria-hidden="true">◈</span><span>RUTA <b>MARCIANA</b><small>MICOR FIELD / EXPLORADOR EVA</small></span></a>
+  <nav aria-label="Navegación principal"><a href="#mission-controls">Plan de misión</a><a href="#mission-sources">Fuentes y alcance ↗</a><b id="source" role="status">Cargando terreno…</b></nav>
+</header>
+<section class="intro" aria-labelledby="explorer-title">
+  <div><p class="eyebrow">EXPLORACIÓN EVA / JEZERO</p><h1 id="explorer-title">Explora el terreno.<br><span>Traza tu siguiente paso.</span></h1><p>Una salida, un destino y la ciencia en el camino.<br>Compara rutas y ensaya tu recorrido sobre el relieve.</p></div>
+  <div class="location"><span>MARTE / CRÁTER JEZERO</span><strong>Tu misión empieza aquí.</strong><small>HiRISE · PLANIFICACIÓN DE ESCENARIO</small></div>
+</section>
+<main class="workspace" aria-label="Explorador de Jezero">
+  <header class="workspace-toolbar"><div class="explorer-brand"><span class="eyebrow">MARS / EXPLORER</span><strong>Ojo de Jezero</strong><small>Mapa, relieve y recorrido de superficie</small></div><div class="maptools"><button id="surfaceopen" aria-pressed="false" disabled>Vista de superficie</button><button id="viewmode">Vista 2D</button><button id="camerareset" class="ghost">Centrar cámara</button><label>Relieve <input id="relief" type="range" min="1" max="8" value="3" aria-label="Exageración vertical"></label></div></header>
+  <aside class="panel plan-panel" id="mission-controls" aria-labelledby="plan-title">
+    <header class="head"><p class="sectionlabel">01 / PLAN DE MISIÓN</p><h2 id="plan-title">Diseña tu caminata.</h2><p class="sub">Coloca A, B y las paradas en el mapa. El regreso se calcula por separado.</p></header>
+    <div class="point-key" aria-label="Puntos del recorrido"><span><i class="start-dot"></i>A · Salida</span><span><i class="stop-dot"></i>S · Ciencia</span><span><i class="end-dot"></i>B · Destino</span></div>
+    <div class="flag" id="mockflag" hidden>No se pudo calcular la ruta. Revisa los puntos y el servidor.</div>
 
-  <aside class="panel">
-    <header class="head">
-      <div class="tickrow" aria-hidden="true"></div>
-      <h1>PLANIFICA TU EVA</h1>
-      <p class="sub">Jezero / Marte · Micor Field</p>
-    </header>
-
-    <div class="flag" id="mockflag" hidden>Precomputed routes — server call failed, not a live calculation</div>
-
-    <section class="controls">
+    <section class="controls" aria-label="Parámetros de misión">
       <div class="row">
         <label for="budget">Presupuesto EVA</label>
         <select id="budget">
@@ -81,7 +55,7 @@
         </select>
       </div>
 
-      <div id="reco" class="reco">—</div>
+      <div id="reco" class="reco" role="status">Selecciona los puntos y calcula tu recorrido.</div>
 
       <div class="actions">
         <button id="compute">Calcular rutas</button>
@@ -89,19 +63,54 @@
       </div>
     </section>
 
-    <section class="tracking"><div class="sectionlabel">SEGUIMIENTO DE RECORRIDO</div><div class="row"><select id="trackroute" aria-label="Ruta a seguir"><option value="safe">SAFE · conservadora</option><option value="fast">FAST · rápida</option></select><button id="play">Iniciar</button></div><input id="progress" type="range" min="0" max="1000" value="0" aria-label="Avance del recorrido"><output id="trackinfo" aria-live="polite">Calcula una ruta para explorar el recorrido.</output><p>Simulación de ida y regreso · posición relativa al mapa · sin telemetría.</p><button id="export" class="ghost">Exportar misión JSON</button></section><section class="guidance" aria-label="Indicaciones de navegación">
+    <section class="tracking"><div class="sectionlabel">SEGUIMIENTO DE RECORRIDO</div><div class="row"><select id="trackroute" aria-label="Ruta a seguir"><option value="safe">SAFE · conservadora</option><option value="fast">FAST · rápida</option></select><button id="play">Iniciar</button></div><input id="progress" type="range" min="0" max="1000" value="0" aria-label="Avance del recorrido"><output id="trackinfo" aria-live="polite">Calcula una ruta para explorar el recorrido.</output><p>Simulación de ida y regreso · posición relativa al mapa · sin telemetría.</p><button id="export" class="ghost">Exportar misión JSON</button></section>  </aside>
+  <section class="mapwrap" aria-label="Mapa interactivo">
+    <div class="stage">
+      <canvas id="map" width="1000" height="1000" aria-label="Mapa de Jezero: selecciona salida, destino y paradas; arrastra para explorar el relieve"></canvas>
+      <section id="surfaceview" class="surfaceview" hidden aria-label="Recorrido a nivel de superficie">
+        <canvas id="surfacecanvas" tabindex="0" aria-label="Vista de superficie. Arrastra para mirar. Flechas izquierda y derecha para girar; arriba y abajo para avanzar; Escape para salir."></canvas>
+        <div class="surface-top"><div><strong>EXPLORAR LA SUPERFICIE</strong><span id="surfaceheading"></span></div><button id="surfaceclose">Volver al mapa</button></div>
+        <div class="surface-crosshair" aria-hidden="true">+</div>
+        <div class="surface-bottom"><p id="surfacestatus" role="status">Cargando reconstrucción…</p><div class="surface-actions"><button id="surfaceback" aria-label="Retroceder cinco metros">↓ −5 m</button><button id="surfaceforward" aria-label="Avanzar cinco metros">↑ +5 m</button><button id="surfacerecenter">Mirar hacia la ruta</button></div><small>Arrastra: mirar 360° · Rueda: zoom · Flechas ↑ ↓: caminar por la ruta · Iniciar: recorrido con guía</small></div>
+      </section>
+      <div class="chrome">
+        <div class="corner tl"></div>
+        <div class="corner tr"></div>
+        <div class="corner bl"></div>
+        <div class="corner br"></div>
+        <div class="ruler ruler-x"></div>
+        <div class="ruler ruler-y"></div>
+        <div class="meta">TERRENO 3D · ARRASTRA PARA GIRAR · RUEDA PARA ZOOM</div>
+        <div class="legend" aria-hidden="true">
+          <span class="lg"><i class="l-solid"></i> ida</span>
+          <span class="lg"><i class="l-dot"></i> regreso</span>
+          <span class="lg"><i class="l-sw orange"></i> fast</span>
+          <span class="lg"><i class="l-sw yellow"></i> safe</span>
+        </div>
+        <div class="scalebar"><span>0</span><i></i><span id="scalebar-m">500 M</span></div>
+        <div class="zoomctl" role="group" aria-label="Zoom del mapa 2D" hidden>
+          <button id="zin" title="Acercar" aria-label="Acercar">+</button>
+          <button id="zout" title="Alejar" aria-label="Alejar">−</button>
+          <button id="zreset" title="Restablecer vista" aria-label="Restablecer vista">⌖</button>
+        </div>
+      </div>
+      <div class="hint" id="hint">Selecciona A: punto de salida.</div>
+    </div>
+    <div class="map-caption"><span>↑ N · POSICIÓN RELATIVA AL MAPA</span><span>Arrastra para explorar · Rueda para acercar</span></div>
+  </section>
+  <aside class="panel details-panel" aria-labelledby="journey-title"><header class="head"><p class="sectionlabel">02 / CUADERNO DE RECORRIDO</p><h2 id="journey-title">Cada paso, en contexto.</h2><p class="sub">Sigue las indicaciones y compara la factibilidad de tu misión.</p></header>
+<section class="guidance" aria-label="Indicaciones de navegación">
       <div class="sectionlabel">GUÍA PASO A PASO · SIMULACIÓN</div>
       <div class="direction"><span id="directionsymbol" aria-hidden="true">↑</span><div><strong id="directiondistance">—</strong><p id="directiontext">Calcula una ruta para recibir indicaciones.</p></div></div>
       <p id="directionremaining"></p>
       <div class="row"><button id="voice" class="ghost" aria-pressed="false">Activar voz</button><button id="repeatdirection" class="ghost" disabled>Repetir indicación</button></div>
       <p id="voicestatus" role="status"></p>
       <details><summary>Próximas indicaciones</summary><ol id="directionslist"></ol></details>
-    </section><div id="cards"></div>
-
-    <details class="reference"><summary>Ortofoto de referencia · Jezero</summary><img src="/reference-image" alt="Ortofoto HiRISE de Jezero incluida en el repositorio"><p>Referencia visual de un recorte de 2 × 2 km. No se superpone a un DEM de otra ventana ni a la demo sintética. NASA/JPL-Caltech/University of Arizona/USGS · CC0.</p></details>
-    <p class="note"><span class="note-t">Alcance del modelo</span>Presupuesto de escenario: marcha 2 km/h, ciencia 20 min/parada, entrada y salida 30 min y reserva fija de 30 min aparte. No representa capacidad certificada de un traje ni un criterio NASA GO/NO-GO. La rugosidad del DEM no detecta rocas o arena. Marte no tiene GPS: posición relativa al mapa.</p>
-  </aside>
+    </section><section class="route-results" aria-label="Comparación de rutas"><p class="sectionlabel">03 / RUTAS Y PRESUPUESTO EVA</p><div id="cards"></div><p class="results-empty">Calcula un recorrido para comparar FAST y SAFE, sus tramos y el presupuesto de la misión.</p></section>
+    <details class="reference" id="mission-sources"><summary>Ortofoto de referencia · Jezero</summary><img src="/reference-image" alt="Ortofoto HiRISE de Jezero incluida en el repositorio"><p>Referencia visual de un recorte de 2 × 2 km. No se superpone a un DEM de otra ventana ni a la demo sintética. NASA/JPL-Caltech/University of Arizona/USGS · CC0.</p></details>
+    <p class="note"><span class="note-t">Alcance del modelo</span>Presupuesto de escenario: marcha 2 km/h, ciencia 20 min/parada, entrada y salida 30 min y reserva fija de 30 min aparte. No representa capacidad certificada de un traje ni un criterio NASA GO/NO-GO. La rugosidad del DEM no detecta rocas o arena. Marte no tiene GPS: posición relativa al mapa.</p>  </aside>
 </main>
+<footer class="mission-footer"><span>◈ RUTA MARCIANA <b>/ MICOR FIELD</b></span><span>Planificación y recorrido simulados · Sin telemetría en vivo</span></footer>
 <script src="/app.js"></script><script src="/navigation.js"></script><script src="/guidance.js"></script><script src="/streetview.js"></script><script src="/terrain.js"></script>
 </body>
 </html>
