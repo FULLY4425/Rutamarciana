@@ -2,10 +2,17 @@
 
 **Lobos Espaciales** · NASA Space Apps
 
-Planificador de caminatas EVA en **Jezero, Marte**: mapa con ortofoto HiRISE, rutas ida/regreso
-(rápida y conservadora) con paradas científicas ordenadas estilo Google Maps, y presupuesto EVA
-de escenario. **No es telemetría ni criterio NASA GO/NO-GO** — los veredictos CABE/JUSTO/NO CABE
-son factibilidad bajo supuestos declarados; las rutas no certifican seguridad.
+Planificador de caminatas EVA en **Jezero, Marte**: mapa con ortofoto HiRISE real, rutas de
+ida y regreso con paradas científicas que el usuario coloca estilo Google Maps, y un presupuesto
+EVA de escenario que dice si el recorrido cabe en el tiempo del traje.
+
+Dos rutas por punto: **FAST** minimiza el tiempo de desplazamiento y **SAFE** penaliza pendiente
+y rugosidad del terreno. Ambas calculan el regreso por separado y revisan el retorno de emergencia
+desde cada parada.
+
+> **No es telemetría ni un criterio oficial NASA GO/NO-GO.** Los veredictos CABE / JUSTO / NO CABE
+> son factibilidad bajo supuestos declarados. Las rutas no certifican seguridad: la rugosidad es
+> un proxy del DEM y no detecta rocas ni arena.
 
 ## Arranque
 
@@ -28,10 +35,34 @@ python -m pipeline.build --dem data/raw/jez_dtm_1m.tif --rows 500 --cols 500 --o
 
 ## Cómo usar la página
 
-1. Elige **Suit budget** (240 min default), **Number of science stops** (0–5, default 0) y **Science per stop**.
-2. Clic en el mapa: A → B → S1…SN (en orden de visita).
-3. `COMPUTE ROUTES`: cada tarjeta muestra tramos de ida por separado, regreso aparte, distancias
-   (ruta vs línea recta "flat"), desglose del presupuesto y retorno de emergencia por parada (60 min / 2 km).
+1. Elige **Suit budget** (240 min default), **Number of science stops** (0–5, default 0) y
+   **Science per stop**. Con 0 paradas se calcula directo A→B y B→A.
+2. Clic en el mapa: primero A (inicio), luego B (fin) y después S1…SN en el orden en que se
+   quiere visitarlas. Cambiar budget o science recalcula solo.
+3. `COMPUTE ROUTES` genera ambas rutas. Cada tarjeta muestra:
+   - **Tramos de ida por separado** (A→S1, S1→S2, …, S2→B) con minutos y km de cada uno
+   - **REGRESO** como tarjeta propia: es un tramo directo optimizado B→A, sin repetir la ciencia
+   - **Distancias:** km recorridos vs línea recta A–B etiquetada como aproximación plana
+   - **Presupuesto desglosado:** ida + ciencia + regreso + overhead = tiempo operacional,
+     con la reserva fija mostrada aparte (no se cuenta dos veces)
+   - **Retorno de emergencia:** la parada más lejana contra el límite de 60 min / 2 km
+   - **Veredicto CABE ✓ / JUSTO / NO CABE** con holgura y el término que la limita
+
+## Cómo funciona
+
+El DEM se recorta y se promedia en bloques de celda (pendiente, rugosidad y celdas NoData
+excluidas del tránsito). El tiempo de cada paso entre vecinos usa una velocidad de Tobler
+normalizada a la marcha del escenario, y Dijkstra busca el mínimo por perfil: tiempo puro para
+FAST, costo penalizado por pendiente y rugosidad para SAFE.
+
+El presupuesto suma `egress + ida + N × tiempo por parada + regreso + ingress` y compara contra
+el suit budget; `slack = budget − operacional − reserva`. Los supuestos son configurables por
+build o por POST y viajan con la respuesta (`scenario.values`), junto con su procedencia.
+
+**Supuestos del escenario** (base: analogía lunar — no existe estándar marciano público):
+presupuesto 240 min, marcha 2 km/h (supuesto Artemis/TBR, no promedio), 20 min/parada
+(evidencia Apollo, no universal), overhead 30 min, reserva fija 30 min aparte, contingencia
+de retorno 60 min / 2 km. El `15%` de versiones anteriores ya no se usa.
 
 ## API (relay :8080)
 
@@ -43,16 +74,22 @@ python -m pipeline.build --dem data/raw/jez_dtm_1m.tif --rows 500 --cols 500 --o
 | `POST /api/bitacora` | Guarda una caminata del firmware Psion (`bitacora/<id>.json`) |
 | `GET /health` | Estado |
 
-**Supuestos del escenario** (sobrescribibles en build o POST): presupuesto 240 min, marcha 2 km/h
-(supuesto Artemis/TBR, no promedio), 20 min/parada (evidencia Apollo, no universal), overhead 30 min,
-reserva fija 30 min aparte, contingencia de retorno 60 min / 2 km (analogía lunar — no hay estándar
-marciano público). El `15%` antiguo no se usa.
+Ejemplo de POST:
+
+```json
+{"schema_version":3, "start":[100,100], "end":[400,400], "science_waypoints":[[250,200],[300,350]]}
+```
+
+Las paradas van ordenadas y el conteo se deriva de la lista. Coordenada inválida, duplicada o
+tramo imposible → HTTP 400; manifiesto de un build anterior → 503 (regenerar `data/out`).
 
 ## Pruebas
 
 ```bash
 .venv/bin/python -m pytest -q -p no:cacheprovider   # 115 passed
 ```
+
+Incluye un smoke test contra el DEM real de Jezero (se auto-omite si el TIFF no está descargado).
 
 ## Documentación completa
 
@@ -64,5 +101,4 @@ Supuestos, fórmula del presupuesto, contrato v3 detallado y límites conocidos:
 Ortomosaico y DTM: NASA/JPL-Caltech/University of Arizona/USGS — HiRISE Jezero TRN,
 Fergason et al. 2020 (CC0 1.0). Terminales: plataforma Psion Micor 4.2 (desarrollo previo del equipo).
 
-**Limitación principal:** la rugosidad es un proxy del DEM — no detecta rocas ni arena y no
-valida seguridad EVA. Marte no tiene GPS: la posición es relativa al mapa.
+Marte no tiene GPS: la posición es relativa al mapa.
